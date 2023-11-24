@@ -1,0 +1,5 @@
+root = true
+
+[*.{fs,fsi,fsx}]
+fsharp_multiline_bracket_style = stroustrup
+fsharp_bar_before_discriminated_union_declaration = true

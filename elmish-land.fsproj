@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>ElmishLand</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="templates\index.html" CopyToOutputDirectory="Always"/>
+        <None Include="templates\package-lock.json" CopyToOutputDirectory="Always"/>
+        <None Include="templates\package.json" CopyToOutputDirectory="Always"/>
+        <None Include="templates\PROJECT_NAME.fsproj" CopyToOutputDirectory="Always"/>
+        <None Include="templates\src\Shared.fs" CopyToOutputDirectory="Always"/>
+        <None Include="templates\src\App.fs" CopyToOutputDirectory="Always"/>
+        <None Include="templates\src\Routes.fs" CopyToOutputDirectory="Always"/>
+        <None Include="templates\src\Pages\Page.fs" CopyToOutputDirectory="Always"/>
+        <None Include="templates\global.json" CopyToOutputDirectory="Always"/>
+        <None Include="templates\.config\dotnet-tools.json" CopyToOutputDirectory="Always"/>
+        <Compile Include="Base.fs"/>
+        <Compile Include="Init.fs"/>
+        <Compile Include="Server.fs"/>
+        <Compile Include="Help.fs"/>
+        <Compile Include="Program.fs"/>
+        <None Include=".editorconfig"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Argu" Version="6.1.1"/>
+    </ItemGroup>
+
+</Project>
