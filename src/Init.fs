@@ -10,7 +10,7 @@ let init (projectName: string) =
         Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, projectName))
 
     let templatesDir =
-        Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "templates")
+        Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "src", "templates")
 
     if not projectDir.Exists then
         projectDir.Create()
