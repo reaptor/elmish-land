@@ -6,10 +6,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="Routes.fs" CopyToOutputDirectory="Always"/>
-        <None Include="Shared.fs" CopyToOutputDirectory="Always"/>
-        <None Include="Pages/Page.fs" CopyToOutputDirectory="Always"/>
-        <None Include="App.fs" CopyToOutputDirectory="Always"/>
+        <Compile Include="src\Routes.fs" CopyToOutputDirectory="Always"/>
+        <Compile Include="src\Shared.fs" CopyToOutputDirectory="Always"/>
+        <Compile Include="src\Pages/Page.fs" CopyToOutputDirectory="Always"/>
+        <Compile Include="src\App.fs" CopyToOutputDirectory="Always"/>
     </ItemGroup>
 
     <ItemGroup>

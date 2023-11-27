@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "postinstall": "dotnet tool restore",
-    "prestart": "npm install",
-    "start": "dotnet fable watch --run vite",
-    "build": "dotnet fable --run vite"
+    "elmish-land:start": "dotnet fable --run vite",
+    "elmish-land:build": "dotnet fable --noCache --run vite build"
   },
   "dependencies": {
     "react": "^18.2.0",

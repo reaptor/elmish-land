@@ -6,50 +6,36 @@ open System.Reflection
 open ElmishLand.Base
 
 let init (projectName: string) =
-    let projectDir =
-        Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, projectName))
+    let cp src dst replace =
+        let templatesDir =
+            Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "src", "templates")
 
-    let templatesDir =
-        Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "src", "templates")
+        let dstPath =
+            Path.Combine(Environment.CurrentDirectory, projectName, Path.Combine(List.toArray dst))
 
-    if not projectDir.Exists then
-        projectDir.Create()
+        let dstDir = Path.GetDirectoryName(dstPath)
+
+        if not (Directory.Exists dstDir) then
+            Directory.CreateDirectory(dstDir) |> ignore
+
+        File.Copy(Path.Combine(templatesDir, Path.Combine(List.toArray src)), dstPath)
+
+        match replace with
+        | Some f -> File.ReadAllText(dstPath) |> f |> (fun x -> File.WriteAllText(dstPath, x))
+        | None -> ()
 
     try
-        let cp src dst =
-            File.Copy(Path.Combine(templatesDir, src), Path.Combine(projectDir.FullName, dst))
-
-        let cpSame fileName = cp fileName fileName
-        cp "PROJECT_NAME.fsproj" $"%s{projectName}.fsproj"
-        cpSame "global.json"
-        cpSame "package.json"
-        cpSame "package-lock.json"
-        cpSame "index.html"
-
-        let dotnetConfigDir = DirectoryInfo(Path.Combine(projectDir.FullName, ".config"))
-
-        if not dotnetConfigDir.Exists then
-            dotnetConfigDir.Create()
-
-        cpSame (Path.Combine(dotnetConfigDir.Name, "dotnet-tools.json"))
-
-        let srcDir = DirectoryInfo(Path.Combine(projectDir.FullName, "src"))
-
-        if not srcDir.Exists then
-            srcDir.Create()
-
-        cpSame (Path.Combine(srcDir.Name, "Shared.fs"))
-        cpSame (Path.Combine(srcDir.Name, "App.fs"))
-        cpSame (Path.Combine(srcDir.Name, "Routes.fs"))
-        let pagesDir = DirectoryInfo(Path.Combine(srcDir.FullName, "Pages"))
-
-        if not pagesDir.Exists then
-            pagesDir.Create()
-
-        cpSame (Path.Combine(srcDir.Name, pagesDir.Name, "Page.fs"))
-
-        let packageJsonPath = Path.Combine(projectDir.FullName, "package.json")
-        File.WriteAllText(packageJsonPath, File.ReadAllText(packageJsonPath).Replace("{{PROJECT_NAME}}", projectName))
+        let cpSame fileName replace = cp fileName fileName replace
+        cp [ "PROJECT_NAME.fsproj" ] [ $"%s{projectName}.fsproj" ] None
+        cpSame [ "global.json" ] None
+        cpSame [ "index.html" ] None
+        cpSame [ ".config"; "dotnet-tools.json" ] None
+        cpSame [ "src"; "Shared.fs" ] None
+        cp [ "src"; "App.template" ] [ "src"; "App.fs" ] (Some(fun x -> x))
+        cpSame [ "src"; "Routes.fs" ] None
+        cpSame [ "src"; "Pages"; "Page.fs" ] None
+        cpSame [ "package.json" ] (Some(fun x -> x.Replace("{{PROJECT_NAME}}", projectName)))
+        cpSame [ "package-lock.json" ] None
 
         printfn
             $"""
