@@ -4,6 +4,7 @@ open System
 open System.IO
 open System.Reflection
 open ElmishLand.Base
+open ElmishLand.TemplateEngine
 
 let init (projectName: string) =
     let cp src dst replace =
@@ -25,17 +26,36 @@ let init (projectName: string) =
         | None -> ()
 
     try
+        let dstPath = Path.Combine(Environment.CurrentDirectory, projectName)
+
+        if Directory.Exists(dstPath) then
+            Directory.Delete(dstPath, true)
+
         let cpSame fileName replace = cp fileName fileName replace
         cp [ "PROJECT_NAME.fsproj" ] [ $"%s{projectName}.fsproj" ] None
         cpSame [ "global.json" ] None
         cpSame [ "index.html" ] None
-        cpSame [ ".config"; "dotnet-tools.json" ] None
-        cpSame [ "src"; "Shared.fs" ] None
-        cp [ "src"; "App.template" ] [ "src"; "App.fs" ] (Some(fun x -> x))
-        cpSame [ "src"; "Routes.fs" ] None
-        cpSame [ "src"; "Pages"; "Page.fs" ] None
         cpSame [ "package.json" ] (Some(fun x -> x.Replace("{{PROJECT_NAME}}", projectName)))
         cpSame [ "package-lock.json" ] None
+        cp [ "dotnet-tools.json" ] [ ".config"; "dotnet-tools.json" ] None
+        // cp [ "Routes.fs" ] [ "src"; "Routes.fs" ] None
+        cp [ "Shared.fs" ] [ "src"; "Shared.fs" ] None
+        // cp [ "App.template" ] [ "src"; "App.fs" ] None
+        // cp [ "Page.template" ] [ "src"; "Pages"; "Page.fs" ] None
+
+        let routeData = {
+            Routes = [|
+                {
+                    Name = "Home"
+                    Args = ""
+                    Url = "/"
+                    UrlSegments = [| "/" |]
+                    Query = ""
+                }
+            |]
+        }
+
+        cp [ "Routes.template" ] [ "src"; "Routes.fs" ] (Some(processTemplate routeData))
 
         printfn
             $"""

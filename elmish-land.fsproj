@@ -10,18 +10,39 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="src\templates\index.html" CopyToOutputDirectory="Always"/>
-        <None Include="src\templates\package-lock.json" CopyToOutputDirectory="Always"/>
-        <None Include="src\templates\package.json" CopyToOutputDirectory="Always"/>
-        <None Include="src\templates\PROJECT_NAME.fsproj" CopyToOutputDirectory="Always"/>
-        <None Include="src\templates\src\Shared.fs" CopyToOutputDirectory="Always"/>
-        <None Include="src\templates\src\App.template" CopyToOutputDirectory="Always"/>
-        <None Include="src\templates\src\Routes.fs" CopyToOutputDirectory="Always"/>
-        <None Include="src\templates\src\Pages\Page.fs" CopyToOutputDirectory="Always"/>
-        <None Include="src\templates\global.json" CopyToOutputDirectory="Always"/>
-        <None Include="src\templates\.config\dotnet-tools.json" CopyToOutputDirectory="Always"/>
+        <None Include="src\templates\package-lock.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="src\templates\package.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="src\templates\PROJECT_NAME.fsproj">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="src\templates\global.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="src\templates\dotnet-tools.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="src\templates\index.html">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="src\templates\Routes.template">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="src\templates\Shared.fs">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="src\templates\Page.template">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="src\templates\App.handlebars">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
         <Compile Include="src\Base.fs"/>
         <Compile Include="src\FsProj.fs"/>
+        <Compile Include="src\TemplateEngine.fs" />
         <Compile Include="src\Init.fs"/>
         <Compile Include="src\Server.fs"/>
         <Compile Include="src\Build.fs"/>
@@ -34,6 +55,7 @@
 
     <ItemGroup>
         <PackageReference Include="Argu" Version="6.1.1"/>
+        <PackageReference Include="Handlebars.Net" Version="2.1.4" />
     </ItemGroup>
 
 </Project>

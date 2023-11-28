@@ -1,0 +1,131 @@
+﻿module {{ProjectName}}.App
+
+open Elmish
+open Elmish.React
+open Elmish.HMR
+open Feliz
+open Feliz.Router
+open {{ProjectName}}.Routes
+
+[<RequireQualifiedAccess>]
+type Page =
+    {{#each apa}}
+    | %s{RouteFsharpTypeName.value name} of %s{moduleName name}.Model
+    {{/each}}
+    | NotFound
+
+type Model = {
+    Shared: Pages.Shared.Model
+    CurrentRoute: Route
+    CurrentPage: Page
+}
+
+type Msg =
+| SharedMsg of Pages.Shared.Msg
+| RouteChanged of Route
+{{#each apa}}
+| %s{msgName name} of %s{moduleName name}.Msg
+{{/each}}
+
+let init () =
+    let initialUrl = Route.parse (Router.currentUrl ())
+    let sharedModel, sharedCmd = Pages.Shared.init ()
+
+    let defaultModel = {
+        Shared = sharedModel
+        CurrentRoute = initialUrl
+        CurrentPage = Page.NotFound
+    }
+
+    let initPage init initArgs page msg =
+        let nextModel, nextCmd = init initArgs
+        let nextPage = page nextModel
+
+        {
+            defaultModel with
+                CurrentPage = nextPage
+        },
+        Cmd.batch [ sharedCmd; Cmd.map msg nextCmd ]
+
+    match initialUrl with
+    {{#each apa}}
+    | Route.%s{RouteFsharpTypeName.value name}%s{RouteArg.asMatchString args} ->
+        initPage %s{moduleName name}.init %s{RouteArg.asParamString args} Page.%s{RouteFsharpTypeName.value name} %s{msgName name}""")
+    {{/each}}
+    | Route.NotFound ->
+        {
+            defaultModel with
+                CurrentPage = Page.NotFound
+        },
+        Cmd.none
+
+let update (msg: Msg) (model: Model) =
+    let updatePage update msg' model' page msg =
+        let model'', cmd = update msg' model'
+
+        {
+            model with
+                CurrentPage = page model''
+        },
+        Cmd.map msg cmd
+    match msg, model.CurrentPage with
+    | SharedMsg msg', _ ->
+        let model'', cmd = Pages.Shared.update msg' model.Shared
+        { model with Shared = model'' }, Cmd.map SharedMsg cmd
+    | RouteChanged nextRoute, _ ->
+        let changeRoute init initArgs page msg =
+            let model', msg' = init initArgs
+            {
+                model with
+                    CurrentPage = page model'
+                    CurrentRoute = nextRoute
+            },
+            Cmd.map msg msg'
+        match nextRoute with
+        {{#each apa}}
+        | Route.%s{RouteFsharpTypeName.value name} %s{RouteArg.asMatchString args} ->
+            changeRoute %s{moduleName name}.init %s{RouteArg.asParamString args} Page.%s{RouteFsharpTypeName.value name} %s{msgName name}
+        {{/each}}
+        | Route.NotFound ->
+            {{
+                model with
+                    CurrentPage = Page.NotFound
+                    CurrentRoute = Route.NotFound
+            }},
+            Cmd.none
+    {{#each apa}}
+    | %s{msgName name} msg', Page.%s{RouteFsharpTypeName.value name} model' ->
+        updatePage  %s{moduleName name}.update msg' model' Page.%s{RouteFsharpTypeName.value name} %s{msgName name}
+    {{/each}}
+    | msg', model' ->
+        printfn $"Unhandled App.Msg and CurrentPage.Model. Got\nMsg:\n%%A{msg'}\nCurrentPage.Model:\n%%A{model'}"
+        model, Cmd.none
+
+let view (model: Model) (dispatch: Msg -> unit) =
+    let currentPageView =
+        match model.CurrentPage with
+        {{#each apa}}
+        | Page.%s{RouteFsharpTypeName.value name} m -> %s{moduleName name}.view m (%s{msgName name} >> dispatch)
+        {{/each}}
+        | Page.NotFound -> Html.h1 "Sidan kunde inte hittas"
+
+    React.router [
+        router.onUrlChanged (Route.parse >> RouteChanged >> dispatch)
+        router.children [ currentPageView ]
+    ]
+
+let subscribe model =
+    Sub.batch [
+        Sub.map "Shared_App" SharedMsg [ Pages.Shared.subscribeShared id ]
+        match model.CurrentPage with
+        {{#each apa}}
+        | Page.%s{RouteFsharpTypeName.value name} m -> Sub.map "%s{RouteFsharpTypeName.value name}" %s{msgName name} (%s{moduleName name}.subscribe m)
+        {{/each}}
+        | Page.NotFound -> Sub.none
+    ]
+
+Program.mkProgram init update view
+|> Program.withErrorHandler (fun (msg, ex) -> printfn "Program error handler:\r\n%%s\r\n%%O" msg ex)
+|> Program.withReactBatched "app"
+|> Program.withSubscription subscribe
+|> Program.run
