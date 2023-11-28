@@ -28,7 +28,7 @@
         <None Include="src\templates\index.html">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
-        <None Include="src\templates\Routes.template">
+        <None Include="src\templates\Routes.handlebars">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Include="src\templates\Shared.fs">

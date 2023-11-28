@@ -1,16 +1,17 @@
-﻿module {{ProjectName}}.App
+﻿{{Disclaimer}}
+
+module {{RootModule}}.App
 
 open Elmish
 open Elmish.React
 open Elmish.HMR
 open Feliz
 open Feliz.Router
-open {{ProjectName}}.Routes
 
 [<RequireQualifiedAccess>]
 type Page =
-    {{#each apa}}
-    | %s{RouteFsharpTypeName.value name} of %s{moduleName name}.Model
+    {{#each Routes}}
+    | {{Name}} of {{ModuleName}}.Model
     {{/each}}
     | NotFound
 
@@ -23,8 +24,8 @@ type Model = {
 type Msg =
 | SharedMsg of Pages.Shared.Msg
 | RouteChanged of Route
-{{#each apa}}
-| %s{msgName name} of %s{moduleName name}.Msg
+{{#each Routes}}
+| {{Name}}Msg of{{ModuleName}}.Msg
 {{/each}}
 
 let init () =
@@ -48,9 +49,9 @@ let init () =
         Cmd.batch [ sharedCmd; Cmd.map msg nextCmd ]
 
     match initialUrl with
-    {{#each apa}}
-    | Route.%s{RouteFsharpTypeName.value name}%s{RouteArg.asMatchString args} ->
-        initPage %s{moduleName name}.init %s{RouteArg.asParamString args} Page.%s{RouteFsharpTypeName.value name} %s{msgName name}""")
+    {{#each Routes}}
+    | Route.{{Name}} {{#if ArgsPattern}}{{ArgsPattern}}{{/if}}->
+        initPage {{ModuleName}}.init ({{ArgsUsage}}) Page.{{Name}} {{Name}}Msg""")
     {{/each}}
     | Route.NotFound ->
         {
@@ -82,7 +83,7 @@ let update (msg: Msg) (model: Model) =
             },
             Cmd.map msg msg'
         match nextRoute with
-        {{#each apa}}
+        {{#each Routes}}
         | Route.%s{RouteFsharpTypeName.value name} %s{RouteArg.asMatchString args} ->
             changeRoute %s{moduleName name}.init %s{RouteArg.asParamString args} Page.%s{RouteFsharpTypeName.value name} %s{msgName name}
         {{/each}}

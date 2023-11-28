@@ -26,6 +26,13 @@ let getProjectPath workingDirectory =
 
     Path.ChangeExtension(Path.Combine(projectDir, DirectoryInfo(projectDir).Name), "fsproj")
 
+let commandHeader s =
+    let header = $"%s{appTitle} (v%s{version}) %s{s}"
+
+    $"""
+    %s{header}
+    %s{String.init header.Length (fun _ -> "-")}
+"""
 
 let private runProcessInternal
     (workingDirectory: string option)

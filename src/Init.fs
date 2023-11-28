@@ -47,9 +47,13 @@ let init (projectName: string) =
             Routes = [|
                 {
                     Name = "Home"
-                    Args = ""
+                    ModuleName = "Home"
+                    ArgsDefinition = ""
+                    ArgsUsage = ""
+                    ArgsPattern = ""
                     Url = "/"
-                    UrlSegments = [| "/" |]
+                    UrlPattern = ""
+                    UrlPatternWithQuery = ""
                     Query = ""
                 }
             |]
@@ -59,12 +63,11 @@ let init (projectName: string) =
 
         printfn
             $"""
-        %s{appTitle} (v%s{version}) created a new project in ./%s{projectName}
-        ⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺
-        Here are some next steps:
+    %s{commandHeader $"created a new project in ./%s{projectName}"}
+    Here are some next steps:
 
-        cd %s{projectName}
-        elmish-land server
+    cd %s{projectName}
+    elmish-land server
         """
     with :? IOException as ex ->
         printfn $"%s{ex.Message}"
