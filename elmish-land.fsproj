@@ -53,6 +53,7 @@
         <None Include=".editorconfig"/>
         <None Include=".gitignore"/>
         <None Include="GitVersion.yml"/>
+        <Content Include="README.md" />
     </ItemGroup>
 
     <ItemGroup>
