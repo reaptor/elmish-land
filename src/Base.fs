@@ -13,9 +13,8 @@ let appTitle = "Elmish Land"
 let cliName = "elmish-land"
 
 let version =
-    FileVersionInfo
-        .GetVersionInfo(Assembly.GetExecutingAssembly().Location)
-        .FileVersion
+    FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location)
+    |> fun v -> $"%i{v.FileMajorPart}.%i{v.FileMinorPart}.%i{v.FileBuildPart}"
 
 let help eachLine =
     $"""
