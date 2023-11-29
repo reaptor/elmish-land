@@ -52,6 +52,7 @@
         <None Include=".config/dotnet-tools.json"/>
         <None Include=".editorconfig"/>
         <None Include=".gitignore"/>
+        <None Include="GitVersion.yml"/>
     </ItemGroup>
 
     <ItemGroup>
