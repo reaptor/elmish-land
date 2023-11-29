@@ -1,35 +1,7 @@
-﻿open System
-open System.IO
-open System.Text.RegularExpressions
-open Argu
-open ElmishLand.Init
+﻿open ElmishLand.Init
 open ElmishLand.Server
 open ElmishLand.Build
 open ElmishLand.Help
-
-type AddArgs =
-    | Page
-    | Layout
-
-    interface IArgParserTemplate with
-        member this.Usage =
-            match this with
-            | Page -> "add a new page."
-            | Layout -> "add a new layout."
-
-type CliArguments =
-    | Init of projectName: string
-    | Server
-    | Build
-    | [<CliPrefix(CliPrefix.None)>] Add of ParseResults<AddArgs>
-
-    interface IArgParserTemplate with
-        member s.Usage =
-            match s with
-            | Init _ -> "create a new project."
-            | Server -> "run a local dev server."
-            | Build -> "build your app for production."
-            | Add _ -> "add pages or layouts to your project."
 
 [<EntryPoint>]
 let main argv =

@@ -15,10 +15,11 @@ module String =
 let handlebars (src: string) model =
     let handlebars = Handlebars.Create()
     handlebars.Configuration.ThrowOnUnresolvedBindingExpression <- true
+
     try
         handlebars.Compile(src).Invoke(model)
-    with
-    | ex -> raise (Exception($"Handlebars compilation failed.\n%s{src}\n%A{model}", ex))
+    with ex ->
+        raise (Exception($"Handlebars compilation failed.\n%s{src}\n%A{model}", ex))
 
 type Route = {
     Name: string

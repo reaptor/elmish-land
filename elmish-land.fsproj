@@ -54,7 +54,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Argu" Version="6.1.1"/>
         <PackageReference Include="Handlebars.Net" Version="2.1.4" />
     </ItemGroup>
 
