@@ -49,10 +49,16 @@
         <Compile Include="src\AddPage.fs"/>
         <Compile Include="src\Program.fs"/>
         <None Include="src\NewFile1.fsx"/>
+        <None Include=".config/dotnet-tools.json"/>
         <None Include=".editorconfig"/>
+        <None Include=".gitignore"/>
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Handlebars.Net" Version="2.1.4" />
     </ItemGroup>
 

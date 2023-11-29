@@ -17,5 +17,9 @@ let main argv =
     | [ "add layout"; name ] -> 0
     | [ "routes" ] -> 0
     | _ ->
-        printfn $"%s{help id}"
+        let welcomeTitle = $"Welcome to %s{appTitle}! (v%s{version})"
+        printfn $"""
+    %s{welcomeTitle}
+    %s{String.init welcomeTitle.Length (fun _ -> "-")}
+    %s{help id}"""
         0
