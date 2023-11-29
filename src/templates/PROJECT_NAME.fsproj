@@ -8,11 +8,13 @@
     <ItemGroup>
         <Compile Include="src\Routes.fs"/>
         <Compile Include="src\Shared.fs"/>
-        <Compile Include="src\Pages/Page.fs"/>
+        <Compile Include="src\Pages\Home\Page.fs"/>
         <Compile Include="src\App.fs"/>
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Fable.Elmish.HMR" Version="7.0.0" />
+        <PackageReference Include="Fable.Elmish.React" Version="4.0.0" />
         <PackageReference Include="Feliz" Version="2.7.0" />
         <PackageReference Include="Feliz.Router" Version="4.0.0" />
         <PackageReference Include="Elmish" Version="4.1.0"/>

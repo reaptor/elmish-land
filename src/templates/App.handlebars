@@ -1,5 +1,4 @@
 ﻿{{Disclaimer}}
-
 module {{RootModule}}.App
 
 open Elmish
@@ -7,6 +6,8 @@ open Elmish.React
 open Elmish.HMR
 open Feliz
 open Feliz.Router
+open {{RootModule}}.Routes
+open {{RootModule}}.Pages
 
 [<RequireQualifiedAccess>]
 type Page =
@@ -16,21 +17,21 @@ type Page =
     | NotFound
 
 type Model = {
-    Shared: Pages.Shared.Model
+    Shared: Shared.Model
     CurrentRoute: Route
     CurrentPage: Page
 }
 
 type Msg =
-| SharedMsg of Pages.Shared.Msg
+| SharedMsg of Shared.Msg
 | RouteChanged of Route
 {{#each Routes}}
-| {{Name}}Msg of{{ModuleName}}.Msg
+| {{Name}}Msg of {{ModuleName}}.Msg
 {{/each}}
 
 let init () =
     let initialUrl = Route.parse (Router.currentUrl ())
-    let sharedModel, sharedCmd = Pages.Shared.init ()
+    let sharedModel, sharedCmd = Shared.init ()
 
     let defaultModel = {
         Shared = sharedModel
@@ -51,7 +52,7 @@ let init () =
     match initialUrl with
     {{#each Routes}}
     | Route.{{Name}} {{#if ArgsPattern}}{{ArgsPattern}}{{/if}}->
-        initPage {{ModuleName}}.init ({{ArgsUsage}}) Page.{{Name}} {{Name}}Msg""")
+        initPage {{ModuleName}}.init ({{ArgsUsage}}) Page.{{Name}} {{Name}}Msg
     {{/each}}
     | Route.NotFound ->
         {
@@ -71,7 +72,7 @@ let update (msg: Msg) (model: Model) =
         Cmd.map msg cmd
     match msg, model.CurrentPage with
     | SharedMsg msg', _ ->
-        let model'', cmd = Pages.Shared.update msg' model.Shared
+        let model'', cmd = Shared.update msg' model.Shared
         { model with Shared = model'' }, Cmd.map SharedMsg cmd
     | RouteChanged nextRoute, _ ->
         let changeRoute init initArgs page msg =
@@ -84,29 +85,29 @@ let update (msg: Msg) (model: Model) =
             Cmd.map msg msg'
         match nextRoute with
         {{#each Routes}}
-        | Route.%s{RouteFsharpTypeName.value name} %s{RouteArg.asMatchString args} ->
-            changeRoute %s{moduleName name}.init %s{RouteArg.asParamString args} Page.%s{RouteFsharpTypeName.value name} %s{msgName name}
+        | Route.{{Name}} {{#if ArgsDefinition}}({{ArgsDefinition}}){{/if}} ->
+            changeRoute {{ModuleName}}.init {{#if ArgsUsage}}({{ArgsUsage}}){{/if}} Page.{{Name}} {{Name}}Msg
         {{/each}}
         | Route.NotFound ->
-            {{
+            {
                 model with
                     CurrentPage = Page.NotFound
                     CurrentRoute = Route.NotFound
-            }},
+            },
             Cmd.none
-    {{#each apa}}
-    | %s{msgName name} msg', Page.%s{RouteFsharpTypeName.value name} model' ->
-        updatePage  %s{moduleName name}.update msg' model' Page.%s{RouteFsharpTypeName.value name} %s{msgName name}
+    {{#each Routes}}
+    | {{Name}}Msg msg', Page.{{Name}} model' ->
+        updatePage {{ModuleName}}.update msg' model' Page.{{Name}} {{Name}}Msg
     {{/each}}
     | msg', model' ->
-        printfn $"Unhandled App.Msg and CurrentPage.Model. Got\nMsg:\n%%A{msg'}\nCurrentPage.Model:\n%%A{model'}"
+        printfn $"Unhandled App.Msg and CurrentPage.Model. Got\nMsg:\n%A{msg'}\nCurrentPage.Model:\n%A{model'}"
         model, Cmd.none
 
 let view (model: Model) (dispatch: Msg -> unit) =
     let currentPageView =
         match model.CurrentPage with
-        {{#each apa}}
-        | Page.%s{RouteFsharpTypeName.value name} m -> %s{moduleName name}.view m (%s{msgName name} >> dispatch)
+        {{#each Routes}}
+        | Page.{{Name}} m -> {{ModuleName}}.view m ({{Name}}Msg >> dispatch)
         {{/each}}
         | Page.NotFound -> Html.h1 "Sidan kunde inte hittas"
 
@@ -117,16 +118,16 @@ let view (model: Model) (dispatch: Msg -> unit) =
 
 let subscribe model =
     Sub.batch [
-        Sub.map "Shared_App" SharedMsg [ Pages.Shared.subscribeShared id ]
+        Sub.map "Shared_App" SharedMsg [ Shared.subscribeShared id ]
         match model.CurrentPage with
-        {{#each apa}}
-        | Page.%s{RouteFsharpTypeName.value name} m -> Sub.map "%s{RouteFsharpTypeName.value name}" %s{msgName name} (%s{moduleName name}.subscribe m)
+        {{#each Routes}}
+        | Page.{{Name}} m -> Sub.map {{Name}} {{Name}}Msg ({{ModuleName}}.subscribe m)
         {{/each}}
         | Page.NotFound -> Sub.none
     ]
 
 Program.mkProgram init update view
-|> Program.withErrorHandler (fun (msg, ex) -> printfn "Program error handler:\r\n%%s\r\n%%O" msg ex)
+|> Program.withErrorHandler (fun (msg, ex) -> printfn "Program error handler:\r\n%s\r\n%O" msg ex)
 |> Program.withReactBatched "app"
 |> Program.withSubscription subscribe
 |> Program.run

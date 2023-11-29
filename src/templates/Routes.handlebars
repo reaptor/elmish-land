@@ -1,5 +1,4 @@
 ﻿{{Disclaimer}}
-
 module {{RootModule}}.Routes
 
 open Feliz.Router
@@ -21,9 +20,9 @@ module Route =
 
     let parse (xs: string list) =
         match xs |> List.map (fun x -> x.ToLowerInvariant ()) with
-        {{#each routes}}
+        {{#each Routes}}
         | {{UrlPattern}}
-        | {{UrlPatternWithQuery}} -> Route.{{Name}} {{#if Args}}({{Args}}){{/if}}
+        | {{UrlPatternWithQuery}} -> Route.{{Name}} {{#if ArgsUsage}}({{ArgsUsage}}){{/if}}
         {{/each}}
         | other ->
             printfn "Route not found: '%A'" other

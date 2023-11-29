@@ -15,7 +15,10 @@ module String =
 let handlebars (src: string) model =
     let handlebars = Handlebars.Create()
     handlebars.Configuration.ThrowOnUnresolvedBindingExpression <- true
-    handlebars.Compile(src).Invoke(model)
+    try
+        handlebars.Compile(src).Invoke(model)
+    with
+    | ex -> raise (Exception($"Handlebars compilation failed.\n%s{src}\n%A{model}", ex))
 
 type Route = {
     Name: string
@@ -26,10 +29,13 @@ type Route = {
     Url: string
     UrlPattern: string
     UrlPatternWithQuery: string
-    Query: string
 }
 
-type RouteData = { Routes: Route array }
+type RouteData = {
+    Disclaimer: string
+    RootModule: string
+    Routes: Route array
+}
 
 let getSortedPageFiles projectDir =
     Directory.GetFiles(projectDir, "page.fs", EnumerationOptions(RecurseSubdirectories = true))
@@ -139,7 +145,6 @@ let fileToRoute projectDir (file: string) =
             Url = url
             UrlPattern = urlPattern false
             UrlPatternWithQuery = urlPattern true
-            Query = ""
         }
     |> fun x ->
         printfn "%A" x
@@ -149,6 +154,8 @@ let getRouteData projectDir =
     let pageFiles = getSortedPageFiles projectDir
 
     {
+        Disclaimer = disclaimer
+        RootModule = quoteIfNeeded projectDir
         Routes = pageFiles |> Array.map (fileToRoute projectDir)
     }
 

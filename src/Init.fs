@@ -44,6 +44,8 @@ let init (projectName: string) =
         // cp [ "Page.template" ] [ "src"; "Pages"; "Page.fs" ] None
 
         let routeData = {
+            Disclaimer = disclaimer
+            RootModule = quoteIfNeeded projectName
             Routes = [|
                 {
                     Name = "Home"
@@ -52,14 +54,14 @@ let init (projectName: string) =
                     ArgsUsage = ""
                     ArgsPattern = ""
                     Url = "/"
-                    UrlPattern = ""
-                    UrlPatternWithQuery = ""
-                    Query = ""
+                    UrlPattern = "[]"
+                    UrlPatternWithQuery = "[]"
                 }
             |]
         }
 
-        cp [ "Routes.template" ] [ "src"; "Routes.fs" ] (Some(processTemplate routeData))
+        cp [ "Routes.handlebars" ] [ "src"; "Routes.fs" ] (Some(processTemplate routeData))
+        cp [ "App.handlebars" ] [ "src"; "App.fs" ] (Some(processTemplate routeData))
 
         printfn
             $"""

@@ -11,6 +11,7 @@ open System.Threading.Tasks
 let appTitle = "Elmish Land"
 let cliName = "elmish-land"
 let version = "0.0.1"
+let disclaimer = """// THIS FILE IS AUTO GENERATED"""
 
 let getTemplatesDir =
     Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "src", "templates")
