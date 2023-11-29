@@ -74,7 +74,7 @@ let private runProcessInternal
     let p =
         ProcessStartInfo(
             command,
-            args,
+            args |> String.concat " ",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             RedirectStandardInput = true,

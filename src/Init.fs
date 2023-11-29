@@ -38,7 +38,6 @@ let init (projectDir: string) =
         cpSame [ "global.json" ] None
         cpSame [ "index.html" ] None
         cpSame [ "package.json" ] (Some(fun x -> x.Replace("{{PROJECT_NAME}}", projectName)))
-        cpSame [ "package-lock.json" ] None
         cp [ "dotnet-tools.json" ] [ ".config"; "dotnet-tools.json" ] None
         // cp [ "Routes.fs" ] [ "src"; "Routes.fs" ] None
         // cp [ "App.template" ] [ "src"; "App.fs" ] None

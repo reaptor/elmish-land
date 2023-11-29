@@ -18,8 +18,11 @@ let main argv =
     | [ "routes" ] -> 0
     | _ ->
         let welcomeTitle = $"Welcome to %s{appTitle}! (v%s{version})"
-        printfn $"""
+
+        printfn
+            $"""
     %s{welcomeTitle}
     %s{String.init welcomeTitle.Length (fun _ -> "-")}
     %s{help id}"""
+
         0

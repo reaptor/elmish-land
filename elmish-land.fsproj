@@ -2,17 +2,14 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
-        <RootNamespace>ElmishLand</RootNamespace>
+        <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+        
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>elmish-land</ToolCommandName>
+        <PackageOutputPath>./nupkg</PackageOutputPath>
     </PropertyGroup>
 
     <ItemGroup>
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="src\templates\package-lock.json">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
         <None Include="src\templates\package.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
@@ -53,7 +50,8 @@
         <None Include=".editorconfig"/>
         <None Include=".gitignore"/>
         <None Include="GitVersion.yml"/>
-        <Content Include="README.md" />
+        <None Include="README.md" />
+        <None Include="global.json" />
     </ItemGroup>
 
     <ItemGroup>
