@@ -6,13 +6,13 @@ open System.Reflection
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
 
-let init (projectName: string) =
+let init (projectDir: string) =
     let cp src dst replace =
         let templatesDir =
             Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "src", "templates")
 
         let dstPath =
-            Path.Combine(Environment.CurrentDirectory, projectName, Path.Combine(List.toArray dst))
+            Path.Combine(Environment.CurrentDirectory, projectDir, Path.Combine(List.toArray dst))
 
         let dstDir = Path.GetDirectoryName(dstPath)
 
@@ -26,10 +26,12 @@ let init (projectName: string) =
         | None -> ()
 
     try
-        let dstPath = Path.Combine(Environment.CurrentDirectory, projectName)
+        let dstPath = Path.Combine(Environment.CurrentDirectory, projectDir)
 
         if Directory.Exists(dstPath) then
             Directory.Delete(dstPath, true)
+
+        let projectName = Path.GetFileName(projectDir)
 
         let cpSame fileName replace = cp fileName fileName replace
         cp [ "PROJECT_NAME.fsproj" ] [ $"%s{projectName}.fsproj" ] None
@@ -39,28 +41,39 @@ let init (projectName: string) =
         cpSame [ "package-lock.json" ] None
         cp [ "dotnet-tools.json" ] [ ".config"; "dotnet-tools.json" ] None
         // cp [ "Routes.fs" ] [ "src"; "Routes.fs" ] None
-        cp [ "Shared.fs" ] [ "src"; "Shared.fs" ] None
         // cp [ "App.template" ] [ "src"; "App.fs" ] None
         // cp [ "Page.template" ] [ "src"; "Pages"; "Page.fs" ] None
+
+        let homeRoute = {
+            Name = "Home"
+            ModuleName = $"%s{quoteIfNeeded projectName}.Pages.Home.Page"
+            ArgsDefinition = ""
+            ArgsUsage = ""
+            ArgsPattern = ""
+            Url = "/"
+            UrlPattern = "[]"
+            UrlPatternWithQuery = "[]"
+        }
 
         let routeData = {
             Disclaimer = disclaimer
             RootModule = quoteIfNeeded projectName
-            Routes = [|
-                {
-                    Name = "Home"
-                    ModuleName = "Home"
-                    ArgsDefinition = ""
-                    ArgsUsage = ""
-                    ArgsPattern = ""
-                    Url = "/"
-                    UrlPattern = "[]"
-                    UrlPatternWithQuery = "[]"
-                }
-            |]
+            Routes = [| homeRoute |]
         }
 
         cp [ "Routes.handlebars" ] [ "src"; "Routes.fs" ] (Some(processTemplate routeData))
+        cp [ "Shared.handlebars" ] [ "src"; "Shared.fs" ] (Some(processTemplate routeData))
+
+        cp
+            [ "Page.handlebars" ]
+            [ "src"; "Pages"; "Home"; "Page.fs" ]
+            (Some(
+                processTemplate {|
+                    RootModule = quoteIfNeeded projectName
+                    Route = homeRoute
+                |}
+            ))
+
         cp [ "App.handlebars" ] [ "src"; "App.fs" ] (Some(processTemplate routeData))
 
         printfn

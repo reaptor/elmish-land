@@ -86,7 +86,7 @@ let update (msg: Msg) (model: Model) =
         match nextRoute with
         {{#each Routes}}
         | Route.{{Name}} {{#if ArgsDefinition}}({{ArgsDefinition}}){{/if}} ->
-            changeRoute {{ModuleName}}.init {{#if ArgsUsage}}({{ArgsUsage}}){{/if}} Page.{{Name}} {{Name}}Msg
+            changeRoute {{ModuleName}}.init ({{#if ArgsUsage}}({{ArgsUsage}}){{/if}}) Page.{{Name}} {{Name}}Msg
         {{/each}}
         | Route.NotFound ->
             {
@@ -121,7 +121,7 @@ let subscribe model =
         Sub.map "Shared_App" SharedMsg [ Shared.subscribeShared id ]
         match model.CurrentPage with
         {{#each Routes}}
-        | Page.{{Name}} m -> Sub.map {{Name}} {{Name}}Msg ({{ModuleName}}.subscribe m)
+        | Page.{{Name}} m -> Sub.map "{{Name}}" {{Name}}Msg ({{ModuleName}}.subscribe m)
         {{/each}}
         | Page.NotFound -> Sub.none
     ]

@@ -1,4 +1,4 @@
-﻿module {{ProjectName}}.Pages.{{PageName}}.Page
+﻿module {{RootModule}}.Pages.{{Route.Name}}.Page
 
 open System
 open Feliz
@@ -8,7 +8,7 @@ type Model = unit
 
 type Msg = | NoOp
 
-let init {{InitArgs}}: Model * Cmd<Msg> =
+let init ({{Route.ArgsDefinition}}): Model * Cmd<Msg> =
     (),
     Cmd.none
 
@@ -17,6 +17,6 @@ let update (msg: Msg) (model: Model): Model * Cmd<Msg> =
     | NoOp -> model, Cmd.none
 
 let view (model: Model) (dispatch: Msg -> unit): ReactElement =
-    Html.text "{{PageName}}"
+    Html.text "{{Route.Name}}"
 
 let subscribe (model: Model) : (string list * ((Msg -> unit) -> IDisposable)) list = []

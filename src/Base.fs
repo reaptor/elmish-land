@@ -8,10 +8,37 @@ open System.Reflection
 open System.Threading
 open System.Threading.Tasks
 
+module String =
+    let asLines (s: string) =
+        s.Split(Environment.NewLine)
+
 let appTitle = "Elmish Land"
 let cliName = "elmish-land"
 let version = "0.0.1"
-let disclaimer = """// THIS FILE IS AUTO GENERATED"""
+let welcomeTitle = $"Welcome to %s{appTitle}! (v%s{version})"
+let help eachLine =
+    $"""
+    %s{welcomeTitle}
+    %s{String.init welcomeTitle.Length (fun _ -> "-")}
+
+    Here are the available commands:
+
+    %s{cliName} init <project-dir> ............. create a new project
+    %s{cliName} server <working-directory> ... run a local dev server
+    %s{cliName} build ................. build your app for production
+    %s{cliName} add page <url> ....................... add a new page
+    %s{cliName} add layout <name> .................. add a new layout
+    %s{cliName} routes .................. list all routes in your app
+
+    Want to learn more? Visit https://github.com/reaptor/elmish-land
+    """
+    |> fun s -> s.Split(Environment.NewLine)
+    |> Array.map eachLine
+    |> String.concat Environment.NewLine
+
+let disclaimer = $"""// THIS FILE IS AUTO GENERATED. ALL CONTENTS WILL BE OVERWRITTEN ON BUILD
+%s{help (fun s -> $"// %s{s}")}
+// THIS FILE IS AUTO GENERATED. ALL CONTENTS WILL BE OVERWRITTEN ON BUILD"""
 
 let getTemplatesDir =
     Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "src", "templates")

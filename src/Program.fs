@@ -1,13 +1,13 @@
-﻿open ElmishLand.Init
+﻿open ElmishLand.Base
+open ElmishLand.Init
 open ElmishLand.Server
 open ElmishLand.Build
-open ElmishLand.Help
 
 [<EntryPoint>]
 let main argv =
     match List.ofArray argv with
-    | [ "init"; projectName ] ->
-        init projectName
+    | [ "init"; projectDir ] ->
+        init projectDir
         0
     | [ "server" ] -> server None
     | [ "server"; workingDirectory ] -> server (Some workingDirectory)
@@ -17,5 +17,5 @@ let main argv =
     | [ "add layout"; name ] -> 0
     | [ "routes" ] -> 0
     | _ ->
-        help ()
+        printfn $"%s{help id}"
         0

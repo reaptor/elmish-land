@@ -15,6 +15,7 @@ module String =
 let handlebars (src: string) model =
     let handlebars = Handlebars.Create()
     handlebars.Configuration.ThrowOnUnresolvedBindingExpression <- true
+    handlebars.Configuration.NoEscape <- true
 
     try
         handlebars.Compile(src).Invoke(model)
@@ -160,4 +161,4 @@ let getRouteData projectDir =
         Routes = pageFiles |> Array.map (fileToRoute projectDir)
     }
 
-let processTemplate (routeData: RouteData) (src: string) = handlebars src routeData
+let processTemplate routeData (src: string) = handlebars src routeData
