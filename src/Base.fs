@@ -65,8 +65,112 @@ let commandHeader s =
     %s{String.init header.Length (fun _ -> "-")}
 """
 
+let canonicalizePath (path: string) = path.Replace("\\", "/")
+
+type FilePath = private | FilePath of string
+
+let (|FilePath|) (FilePath filePath) = filePath
+
+type ProjectDir = private | ProjectDir of FilePath
+
+type FileName = private | FileName of string
+
+module ProjectDir =
+    let fromFilePath filePath = ProjectDir filePath
+
+    let asFilePath (ProjectDir projectDir) = projectDir
+    let asString (ProjectDir(FilePath projectDir)) = projectDir
+
+module FilePath =
+    let currentDirectory = canonicalizePath Environment.CurrentDirectory |> FilePath
+    let fromString (filePath: string) = (canonicalizePath filePath) |> FilePath
+    let extension (FilePath filePath) = Path.GetExtension(filePath)
+
+    let ensureRelativeTo (ProjectDir(FilePath projectDir)) (FilePath filePath) =
+        filePath.Replace($"%s{projectDir}/", "") |> FilePath
+
+    let directoryPath (FilePath filePath) =
+        Path.GetDirectoryName(filePath) |> FilePath
+
+    let asString (FilePath filePath) = filePath
+
+    let equals (FilePath filePath1) (FilePath filePath2) =
+        filePath1.Equals(filePath2, StringComparison.InvariantCulture)
+
+    let appendParts append (FilePath basePath) =
+        let appendPath = append |> String.concat "/"
+        $"%s{basePath}/%s{appendPath}" |> FilePath
+
+    let appendFilePath append (FilePath basePath) =
+        $"%s{basePath}/%s{asString append}" |> FilePath
+
+    let startsWithParts parts (FilePath path) =
+        path.StartsWith(parts |> String.concat "/")
+
+    let endsWithParts parts (FilePath path) =
+        path.EndsWith(parts |> String.concat "/")
+
+module FileName =
+    let fromFilePath (FilePath filePath) = Path.GetFileName(filePath) |> FileName
+    let asString (FileName fileName) = fileName
+
+    let equalsString s (FileName fileName) =
+        fileName.Equals(s, StringComparison.InvariantCulture)
+
+let (|ProjectDir|) (ProjectDir projectDir) = projectDir
+
+type FsProjPath =
+    private
+    | FsProjPath of FilePath
+
+    static member fromProjectDir(ProjectDir(FilePath projectDir)) =
+        Path.ChangeExtension($"%s{projectDir}/%s{DirectoryInfo(projectDir).Name}", "fsproj")
+        |> FilePath
+        |> FsProjPath
+
+    static member asString(FsProjPath(FilePath str)) = str
+    static member asFilePath(FsProjPath filePath) = filePath
+
+let (|FsProjPath|) (FsProjPath projectPath) = projectPath
+
+type ProjectName =
+    private
+    | ProjectName of string
+
+    static member fromProjectDir(ProjectDir projectDir) =
+        projectDir |> FileName.fromFilePath |> FileName.asString |> ProjectName
+
+    static member asString(ProjectName projectName) = projectName
+
+let copyFile (projectDir: ProjectDir) src dst replace =
+    let templatesDir =
+        Assembly.GetExecutingAssembly().Location
+        |> FilePath.fromString
+        |> FilePath.directoryPath
+        |> FilePath.appendParts [ "src"; "templates" ]
+
+    let dstPath =
+        FilePath.currentDirectory
+        |> FilePath.appendFilePath (ProjectDir.asFilePath projectDir)
+        |> FilePath.appendParts dst
+
+    let dstDir = FilePath.directoryPath dstPath |> FilePath.asString
+
+    if not (Directory.Exists dstDir) then
+        Directory.CreateDirectory(dstDir) |> ignore
+
+    File.Copy(templatesDir |> FilePath.appendParts src |> FilePath.asString, FilePath.asString dstPath, true)
+
+    match replace with
+    | Some f ->
+        File.ReadAllText(FilePath.asString dstPath)
+        |> f
+        |> (fun x -> File.WriteAllText(FilePath.asString dstPath, x))
+    | None -> ()
+
+
 let private runProcessInternal
-    (workingDirectory: string option)
+    (projectDir: ProjectDir)
     (command: string)
     (args: string array)
     (cancellation: CancellationToken)
@@ -78,7 +182,7 @@ let private runProcessInternal
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             RedirectStandardInput = true,
-            WorkingDirectory = defaultArg workingDirectory Environment.CurrentDirectory
+            WorkingDirectory = ProjectDir.asString projectDir
         )
         |> Process.Start
 
@@ -103,24 +207,15 @@ let private runProcessInternal
         p.ExitCode
 
 
-let rec runProcess
-    (workingDirectory: string option)
-    (command: string)
-    (args: string array)
-    cancel
-    (completed: unit -> unit)
-    =
-    let exitCode = runProcessInternal workingDirectory command args cancel
+let rec runProcess (projectDir: ProjectDir) (command: string) (args: string array) cancel (completed: unit -> unit) =
+    let exitCode = runProcessInternal projectDir command args cancel
 
     if exitCode = 0 then
         completed ()
 
     exitCode
 
-let runProcesses
-    (processes: (string option * string * string array * CancellationToken) list)
-    (completed: unit -> unit)
-    =
+let runProcesses (processes: (ProjectDir * string * string array * CancellationToken) list) (completed: unit -> unit) =
     let exitCode =
         processes
         |> List.fold

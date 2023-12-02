@@ -3,55 +3,38 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
-        
+        <RootNamespace>ElmishLand</RootNamespace>
+
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>elmish-land</ToolCommandName>
         <PackageOutputPath>./nupkg</PackageOutputPath>
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="src\templates\package.json">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Include="src\templates\PROJECT_NAME.fsproj">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Include="src\templates\global.json">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Include="src\templates\dotnet-tools.json">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Include="src\templates\index.html">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Include="src\templates\Routes.handlebars">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Include="src\templates\Shared.handlebars">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Include="src\templates\Page.handlebars">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Include="src\templates\App.handlebars">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <Compile Include="src\Base.fs"/>
-        <Compile Include="src\FsProj.fs"/>
-        <Compile Include="src\TemplateEngine.fs" />
-        <Compile Include="src\Init.fs"/>
-        <Compile Include="src\Server.fs"/>
-        <Compile Include="src\Build.fs"/>
-        <Compile Include="src\AddPage.fs"/>
-        <Compile Include="src\Program.fs"/>
-        <None Include="src\NewFile1.fsx"/>
-        <None Include=".config/dotnet-tools.json"/>
-        <None Include=".editorconfig"/>
-        <None Include=".gitignore"/>
-        <None Include="GitVersion.yml"/>
-        <None Include="README.md" />
-        <None Include="global.json" />
+        <Content Include="src/templates/package.json" CopyToOutputDirectory="Always" />
+        <Content Include="src/templates/PROJECT_NAME.fsproj" CopyToOutputDirectory="Always" />
+        <Content Include="src/templates/global.json" CopyToOutputDirectory="Always" />
+        <Content Include="src/templates/dotnet-tools.json" CopyToOutputDirectory="Always" />
+        <Content Include="src/templates/index.html" CopyToOutputDirectory="Always" />
+        <Content Include="src/templates/Routes.handlebars" CopyToOutputDirectory="Always" />
+        <Content Include="src/templates/Shared.handlebars" CopyToOutputDirectory="Always" />
+        <Content Include="src/templates/Page.handlebars" CopyToOutputDirectory="Always" />
+        <Content Include="src/templates/App.handlebars" CopyToOutputDirectory="Always" />
+        <Compile Include="src/Base.fs"/>
+        <Compile Include="src/FsProj.fs"/>
+        <Compile Include="src/TemplateEngine.fs" />
+        <Compile Include="src/Init.fs"/>
+        <Compile Include="src/Server.fs" />
+        <Compile Include="src/Build.fs" />
+        <Compile Include="src/AddPage.fs"/>
+        <Compile Include="src/Program.fs"/>
+        <Content Include=".config/dotnet-tools.json"/>
+        <Content Include=".github/workflows/dotnet.yml" />
+        <Content Include=".editorconfig"/>
+        <Content Include=".gitignore"/>
+        <Content Include="GitVersion.yml"/>
+        <Content Include="README.md" />
+        <Content Include="global.json" />
     </ItemGroup>
 
     <ItemGroup>

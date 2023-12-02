@@ -3,54 +3,69 @@ module ElmishLand.FsProj
 open System
 open System.IO
 open System.Text.RegularExpressions
+open ElmishLand.Base
 
-let projectPath workingDirectory =
-    let projectDir =
-        match workingDirectory with
-        | Some workingDirectory' -> Path.Combine(Environment.CurrentDirectory, workingDirectory')
-        | None -> Environment.CurrentDirectory
-
-    Path.ChangeExtension(Path.Combine(projectDir, DirectoryInfo(projectDir).Name), "fsproj")
-
-let validate projectPath =
-    let formatError lineNr (line: string) (filepath: string) msg =
-        let colNr = line.IndexOf(filepath)
-        $"%s{projectPath}({lineNr},{colNr}) error: %s{msg}."
+let validate (projectDir: ProjectDir) =
+    let formatError lineNr (line: string) (FilePath filePath) msg =
+        let projectPath = FsProjPath.fromProjectDir projectDir
+        let colNr = line.IndexOf(filePath)
+        $"%s{FsProjPath.asString projectPath}({lineNr},{colNr}) error: %s{msg}."
 
     let printError (error: string) =
         Console.ForegroundColor <- ConsoleColor.Red
         Console.Error.WriteLine(error)
         Console.ResetColor()
 
-    let lines =
-        File.ReadAllLines(projectPath)
+    let includedFSharpFileInfo =
+        File.ReadAllLines(FsProjPath.fromProjectDir projectDir |> FsProjPath.asString)
         |> Array.mapi (fun lineNr line -> (lineNr + 1, line))
         |> Array.choose (fun (lineNr, line) ->
             let m = Regex.Match(line, """\s*<[Cc]ompile\s+[Ii]nclude="([^"]+)" """.TrimEnd())
 
             if m.Success then
-                Some(lineNr, line, m.Groups[1].Value.Replace("\\", "/"))
+                Some(lineNr, line, m.Groups[1].Value |> FilePath.fromString |> FilePath.ensureRelativeTo projectDir)
             else
                 None)
         |> Array.toList
 
+    let pagesDir =
+        projectDir |> ProjectDir.asFilePath |> FilePath.appendParts [ "src"; "Pages" ]
+
+    let actualPageFiles =
+        Directory.GetFiles(FilePath.asString pagesDir, "Page.fs", SearchOption.AllDirectories)
+        |> Array.map FilePath.fromString
+        |> Array.map (FilePath.ensureRelativeTo projectDir)
+        |> Set.ofArray
+
+    let includedPageFiles =
+        includedFSharpFileInfo
+        |> List.map (fun (_, _, filePath) -> filePath)
+        |> List.filter (fun x -> (FileName.fromFilePath x |> FileName.asString) = "Page.fs")
+        |> Set.ofList
+
+    let pageFilesMissingFromFsProj = Set.difference actualPageFiles includedPageFiles
+
     let errors: string list = [
-        match lines with
-        | (lineNr, line, filePath) :: _ when filePath <> "src/Routes.fs" ->
-            formatError lineNr line filePath "Routes.fs must be the first file in the project"
+        match includedFSharpFileInfo with
+        | (lineNr, line, filePath) :: _ when (FilePath.asString filePath) <> "src/Routes.fs" ->
+            formatError
+                lineNr
+                line
+                filePath
+                $"'%s{ProjectDir.asString projectDir}/src/Routes.fs' must be the first file in the project"
         | _ -> ()
 
         yield!
-            lines
+            includedFSharpFileInfo
             |> List.fold
-                (fun (prevFilePaths: string list, errors) (lineNr, line, filePath) ->
-                    let dir = Path.GetDirectoryName(filePath)
+                (fun (prevFilePaths: FilePath list, errors) (lineNr, line, filePath) ->
+                    let dir = FilePath.directoryPath filePath
 
                     match prevFilePaths with
                     | prevFilePath :: _ when
-                        dir <> "src"
-                        && dir <> Path.GetDirectoryName(prevFilePath)
-                        && prevFilePaths |> List.map Path.GetDirectoryName |> List.contains dir
+                        (FilePath.fromString "src" |> FilePath.equals dir |> not)
+                        && dir <> FilePath.directoryPath prevFilePath
+                        && prevFilePaths |> List.map FilePath.directoryPath |> List.contains dir
                         ->
                         filePath :: prevFilePaths,
                         formatError
@@ -60,10 +75,8 @@ let validate projectPath =
                             "Files in the same directory must be located directly before or after each other"
                         :: errors
                     | prevFilePath :: _ when
-                        Path
-                            .GetFileName(prevFilePath)
-                            .Equals("Page.fs", StringComparison.InvariantCultureIgnoreCase)
-                        && dir = Path.GetDirectoryName(prevFilePath)
+                        FileName.fromFilePath prevFilePath |> FileName.equalsString "Page.fs"
+                        && FilePath.directoryPath prevFilePath |> FilePath.equals dir
                         ->
                         filePath :: prevFilePaths,
                         formatError (lineNr - 1) line filePath "Page.fs files must be the last file in the directory"
@@ -73,10 +86,21 @@ let validate projectPath =
             |> snd
             |> List.rev
 
-        match List.tryLast lines with
-        | Some(lineNr, line, filePath) when filePath <> "src/App.fs" ->
-            formatError lineNr line filePath "App.fs must be the last file in the project"
+        match List.tryLast includedFSharpFileInfo with
+        | Some(lineNr, line, filePath) when "src/App.fs" |> FilePath.fromString |> FilePath.equals filePath |> not ->
+            formatError
+                lineNr
+                line
+                filePath
+                $"'%s{ProjectDir.asString projectDir}/src/App.fs' must be the last file in the project"
         | _ -> ()
+
+        for pageFile in pageFilesMissingFromFsProj do
+            $"""The page '%s{ProjectDir.asString projectDir}/%s{FilePath.asString pageFile}' is missing from the project file. Please add the file to the project using an IDE
+or add the following line to a ItemGroup in the project file '%s{ProjectDir.asString projectDir}':
+
+   <Compile Include="%s{FilePath.asString pageFile}" />
+   """
     ]
 
     for error in errors do

@@ -7,12 +7,12 @@ open ElmishLand.Build
 let main argv =
     match List.ofArray argv with
     | [ "init"; projectDir ] ->
-        init projectDir
+        init (projectDir |> FilePath.fromString |> ProjectDir.fromFilePath)
         0
-    | [ "server" ] -> server None
-    | [ "server"; workingDirectory ] -> server (Some workingDirectory)
-    | [ "build" ] -> build None
-    | [ "build"; workingDirectory ] -> build (Some workingDirectory)
+    | [ "server" ] -> server (ProjectDir.fromFilePath FilePath.currentDirectory)
+    | [ "server"; projectDir ] -> server (projectDir |> FilePath.fromString |> ProjectDir.fromFilePath)
+    | [ "build" ] -> build (ProjectDir.fromFilePath FilePath.currentDirectory)
+    | [ "build"; projectDir ] -> build (projectDir |> FilePath.fromString |> ProjectDir.fromFilePath)
     | [ "add page"; url ] -> 0
     | [ "add layout"; name ] -> 0
     | [ "routes" ] -> 0

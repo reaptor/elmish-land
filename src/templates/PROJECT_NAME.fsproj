@@ -2,14 +2,13 @@
 
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="src\Routes.fs"/>
-        <Compile Include="src\Shared.fs"/>
-        <Compile Include="src\Pages\Home\Page.fs"/>
-        <Compile Include="src\App.fs"/>
+        <Compile Include="src/Routes.fs"/>
+        <Compile Include="src/Shared.fs"/>
+        <Compile Include="src/Pages/Home/Page.fs"/>
+        <Compile Include="src/App.fs"/>
         <Content Include="global.json" />
         <Content Include="index.html" />
         <Content Include="package.json" />

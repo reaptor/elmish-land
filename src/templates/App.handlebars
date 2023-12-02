@@ -109,7 +109,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
         {{#each Routes}}
         | Page.{{Name}} m -> {{ModuleName}}.view m ({{Name}}Msg >> dispatch)
         {{/each}}
-        | Page.NotFound -> Html.h1 "Sidan kunde inte hittas"
+        | Page.NotFound -> Html.h1 "Page not found"
 
     React.router [
         router.onUrlChanged (Route.parse >> RouteChanged >> dispatch)

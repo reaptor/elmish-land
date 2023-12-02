@@ -22,6 +22,7 @@ jobs:
       uses: actions/setup-dotnet@v3
     - name: Tool restore
       run: dotnet tool restore
+    - name: Fantomas check
+      run: dotnet fantomas . --check
     - name: Pack
       run: dotnet pack
-    
