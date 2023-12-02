@@ -16,4 +16,4 @@ Code must be formatted with fantomas
     
     dotnet fantomas .
 
-//
+// Test pull request rules
