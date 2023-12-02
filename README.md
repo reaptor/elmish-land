@@ -15,5 +15,3 @@ Run elmish-land locally in development with the following commands:
 Code must be formatted with fantomas
     
     dotnet fantomas .
-
-// test 2
