@@ -16,4 +16,4 @@ Code must be formatted with fantomas
     
     dotnet fantomas .
 
-// test
+// test 2
