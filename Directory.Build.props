@@ -1,11 +1,10 @@
 <Project>
     <PropertyGroup>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryUrl>https://github.com/reaptor/elmish-land</RepositoryUrl>
         <PackageProjectUrl>/</PackageProjectUrl>
         <Copyright>Copyright © 2023</Copyright>
-        <PackageLicenseUrl>https://github.com/reaptor/elmish-land/blob/main/LICENSE</PackageLicenseUrl>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <FsDocsLicenseLink>https://github.com/reaptor/elmish-land/blob/main/LICENSE</FsDocsLicenseLink>
         <FsDocsLogoLink>https://fsharp.org</FsDocsLogoLink>
         <FsDocsLogoSource>img/logo.png</FsDocsLogoSource>

@@ -31,6 +31,9 @@
         <Content Include="docs\Index.md" />
         <Content Include="docs\Introduction.md" />
         <Content Include="docs\Other editors.md" />
+
+        <Content Include="README.md" Pack="true" PackagePath="\" />
+        <Content Include="LICENSE" Pack="true" PackagePath="\" />
     </ItemGroup>
 
     <ItemGroup>
