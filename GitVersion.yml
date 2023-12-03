@@ -1,4 +1,6 @@
-branches: {}
+branches:
+  main:
+    tag: alpha
 ignore:
   sha: []
 merge-message-formats: {}
