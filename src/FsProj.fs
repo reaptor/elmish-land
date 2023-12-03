@@ -29,7 +29,9 @@ let validate (projectDir: AbsoluteProjectDir) =
         |> Array.toList
 
     let pagesDir =
-        projectDir |> AbsoluteProjectDir.asFilePath |> FilePath.appendParts [ "src"; "Pages" ]
+        projectDir
+        |> AbsoluteProjectDir.asFilePath
+        |> FilePath.appendParts [ "src"; "Pages" ]
 
     let actualPageFiles =
         Directory.GetFiles(FilePath.asString pagesDir, "Page.fs", SearchOption.AllDirectories)

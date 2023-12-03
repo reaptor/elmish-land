@@ -6,3 +6,4 @@ nupkg
 .fsdocs
 output
 tmp
+docs.tar.gz

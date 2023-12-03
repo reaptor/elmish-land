@@ -109,10 +109,7 @@ module AbsoluteProjectDir =
         |> Path.TrimEndingDirectorySeparator
         |> FilePath
 
-    let defaultProjectDir =
-        FilePath.asString currentDirectory
-        |> FilePath
-        |> ProjectDir
+    let defaultProjectDir = FilePath.asString currentDirectory |> FilePath |> ProjectDir
 
     let fromFilePath (FilePath absoluteOrRelativeFilePath) =
         if Path.IsPathRooted absoluteOrRelativeFilePath then
@@ -165,9 +162,7 @@ let copyFile (projectDir: AbsoluteProjectDir) src dst replace =
         |> FilePath.directoryPath
         |> FilePath.appendParts [ "src"; "templates" ]
 
-    let dstPath =
-        AbsoluteProjectDir.asFilePath projectDir
-        |> FilePath.appendParts dst
+    let dstPath = AbsoluteProjectDir.asFilePath projectDir |> FilePath.appendParts dst
 
     let dstDir = FilePath.directoryPath dstPath |> FilePath.asString
 

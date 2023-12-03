@@ -41,7 +41,11 @@ type RouteData = {
 }
 
 let getSortedPageFiles (projectDir: AbsoluteProjectDir) =
-    Directory.GetFiles(AbsoluteProjectDir.asString projectDir, "Page.fs", EnumerationOptions(RecurseSubdirectories = true))
+    Directory.GetFiles(
+        AbsoluteProjectDir.asString projectDir,
+        "Page.fs",
+        EnumerationOptions(RecurseSubdirectories = true)
+    )
     |> Array.map FilePath.fromString
     |> Array.sortBy (fun x ->
         if x |> FilePath.endsWithParts [ "src"; "Pages"; "Page.fs" ] then
