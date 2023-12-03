@@ -6,6 +6,9 @@
         <RootNamespace>ElmishLand</RootNamespace>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryUrl>https://github.com/reaptor/elmish-land</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/reaptor/elmish-land</PackageProjectUrl>
+        <Copyright>Copyright © 2023</Copyright>
 
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>elmish-land</ToolCommandName>
