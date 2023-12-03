@@ -28,7 +28,7 @@
         <Compile Include="src/Build.fs" />
         <Compile Include="src/AddPage.fs" />
         <Compile Include="src/Program.fs" />
-        <Content Include="docs\Index.md" />
+        <Content Include="docs\index.md" />
         <Content Include="docs\Introduction.md" />
         <Content Include="docs\Other editors.md" />
 
