@@ -1,6 +1,6 @@
 ---
 title: Gettings Started
-category: Concepts
+category: Documentation
 categoryindex: 1
 index: 1
 ---

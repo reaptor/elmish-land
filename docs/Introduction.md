@@ -1,6 +1,6 @@
 ---
 title: Introduction
-category: Concepts
+category: Documentation
 categoryindex: 1
 index: 2
 ---
