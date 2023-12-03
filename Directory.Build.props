@@ -6,7 +6,7 @@
         <Copyright>Copyright © 2023</Copyright>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <FsDocsLicenseLink>https://github.com/reaptor/elmish-land/blob/main/LICENSE</FsDocsLicenseLink>
-        <FsDocsLogoLink>https://github.com/reaptor/elmish-land/logo.svg</FsDocsLogoLink>
+        <FsDocsLogoLink>https://github.com/reaptor/elmish-land</FsDocsLogoLink>
         <FsDocsLogoSource>logo.svg</FsDocsLogoSource>
         <FsDocsFaviconSource>logo.ico</FsDocsFaviconSource>
         <FsDocsWarnOnMissingDocs>true</FsDocsWarnOnMissingDocs>
