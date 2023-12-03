@@ -6,9 +6,9 @@ open ElmishLand.Base
 open ElmishLand.TemplateEngine
 open ElmishLand.FsProj
 
-let server (projectDir: ProjectDir) =
+let server (projectDir: AbsoluteProjectDir) =
     use watcher =
-        new FileSystemWatcher(ProjectDir.asString projectDir, IncludeSubdirectories = true)
+        new FileSystemWatcher(AbsoluteProjectDir.asString projectDir, IncludeSubdirectories = true)
 
     use mutable cts = new CancellationTokenSource()
     use resetEvt = new AutoResetEvent(false)

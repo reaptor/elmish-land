@@ -4,11 +4,20 @@
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
         <RootNamespace>ElmishLand</RootNamespace>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryUrl>https://github.com/reaptor/elmish-land</RepositoryUrl>
         <PackageProjectUrl>https://github.com/reaptor/elmish-land</PackageProjectUrl>
         <Copyright>Copyright © 2023</Copyright>
+
+        <PackageLicenseUrl>https://github.com/reaptor/elmish-land/blob/main/LICENSE</PackageLicenseUrl>
+        <FsDocsLogoLink>https://fsharp.org</FsDocsLogoLink>
+        <FsDocsLogoSource>img/logo.png</FsDocsLogoSource>
+        <FsDocsFaviconSource>img/favicon.ico</FsDocsFaviconSource>
+        <FsDocsWarnOnMissingDocs>true</FsDocsWarnOnMissingDocs>
+        <FsDocsTheme>default</FsDocsTheme>
 
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>elmish-land</ToolCommandName>
@@ -25,22 +34,28 @@
         <Content Include="src/templates/Shared.handlebars" CopyToOutputDirectory="Always" />
         <Content Include="src/templates/Page.handlebars" CopyToOutputDirectory="Always" />
         <Content Include="src/templates/App.handlebars" CopyToOutputDirectory="Always" />
-        <Compile Include="src/Base.fs"/>
-        <Compile Include="src/FsProj.fs"/>
+        <Compile Include="src/Base.fs" />
+        <Compile Include="src/FsProj.fs" />
         <Compile Include="src/TemplateEngine.fs" />
-        <Compile Include="src/Init.fs"/>
+        <Compile Include="src/Init.fs" />
         <Compile Include="src/Server.fs" />
         <Compile Include="src/Build.fs" />
-        <Compile Include="src/AddPage.fs"/>
-        <Compile Include="src/Program.fs"/>
-        <None Include=".config/dotnet-tools.json" Pack="false" />
-        <None Include=".github/workflows/dotnet.yml" Pack="false" />
-        <None Include=".editorconfig" Pack="false" />
-        <None Include=".gitignore" Pack="false"/>
-        <None Include="GitVersion.yml" Pack="false"/>
-        <None Include="global.json" Pack="false" />
-        <None Include="README.md" Pack="true" PackagePath="\" />
-        <None Include="CONTRIBUTING.md" />
+        <Compile Include="src/AddPage.fs" />
+        <Compile Include="src/Program.fs" />
+        <Content Include="docs\Index.md">
+          <Pack>true</Pack>
+          <PackagePath>/</PackagePath>
+        </Content>
+        <Content Include="docs\Introduction.md" />
+        <Content Include="docs\Other editors.md" />
+        <Content Include=".config/dotnet-tools.json" Pack="false" />
+        <Content Include=".github/workflows/dotnet.yml" Pack="false" />
+        <Content Include=".editorconfig" Pack="false" />
+        <Content Include=".gitignore" Pack="false" />
+        <Content Include="GitVersion.yml" Pack="false" />
+        <Content Include="global.json" Pack="false" />
+        <Content Include="README.md" Pack="true" PackagePath="\" />
+        <Content Include="CONTRIBUTING.md" />
     </ItemGroup>
 
     <ItemGroup>

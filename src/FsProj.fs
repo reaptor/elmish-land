@@ -5,7 +5,7 @@ open System.IO
 open System.Text.RegularExpressions
 open ElmishLand.Base
 
-let validate (projectDir: ProjectDir) =
+let validate (projectDir: AbsoluteProjectDir) =
     let formatError lineNr (line: string) (FilePath filePath) msg =
         let projectPath = FsProjPath.fromProjectDir projectDir
         let colNr = line.IndexOf(filePath)
@@ -29,7 +29,7 @@ let validate (projectDir: ProjectDir) =
         |> Array.toList
 
     let pagesDir =
-        projectDir |> ProjectDir.asFilePath |> FilePath.appendParts [ "src"; "Pages" ]
+        projectDir |> AbsoluteProjectDir.asFilePath |> FilePath.appendParts [ "src"; "Pages" ]
 
     let actualPageFiles =
         Directory.GetFiles(FilePath.asString pagesDir, "Page.fs", SearchOption.AllDirectories)
@@ -52,7 +52,7 @@ let validate (projectDir: ProjectDir) =
                 lineNr
                 line
                 filePath
-                $"'%s{ProjectDir.asString projectDir}/src/Routes.fs' must be the first file in the project"
+                $"'%s{AbsoluteProjectDir.asString projectDir}/src/Routes.fs' must be the first file in the project"
         | _ -> ()
 
         yield!
@@ -92,12 +92,12 @@ let validate (projectDir: ProjectDir) =
                 lineNr
                 line
                 filePath
-                $"'%s{ProjectDir.asString projectDir}/src/App.fs' must be the last file in the project"
+                $"'%s{AbsoluteProjectDir.asString projectDir}/src/App.fs' must be the last file in the project"
         | _ -> ()
 
         for pageFile in pageFilesMissingFromFsProj do
-            $"""The page '%s{ProjectDir.asString projectDir}/%s{FilePath.asString pageFile}' is missing from the project file. Please add the file to the project using an IDE
-or add the following line to a ItemGroup in the project file '%s{ProjectDir.asString projectDir}':
+            $"""The page '%s{AbsoluteProjectDir.asString projectDir}/%s{FilePath.asString pageFile}' is missing from the project file. Please add the file to the project using an IDE
+or add the following line to a ItemGroup in the project file '%s{AbsoluteProjectDir.asString projectDir}':
 
    <Compile Include="%s{FilePath.asString pageFile}" />
    """

@@ -5,7 +5,7 @@ open System.Threading
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
 
-let init (projectDir: ProjectDir) =
+let init (projectDir: AbsoluteProjectDir) =
     try
         let projectName = projectDir |> ProjectName.fromProjectDir
 
@@ -58,7 +58,7 @@ let init (projectDir: ProjectDir) =
     %s{commandHeader $"created a new project in ./%s{ProjectName.asString projectName}"}
     Here are some next steps:
 
-    elmish-land server
+    dotnet elmish-land server
         """
     with :? IOException as ex ->
         printfn $"%s{ex.Message}"

@@ -5,7 +5,7 @@ open ElmishLand.Base
 open ElmishLand.TemplateEngine
 open ElmishLand.FsProj
 
-let build (projectDir: ProjectDir) =
+let build (projectDir: AbsoluteProjectDir) =
     let routeData = getRouteData projectDir
     generateRoutesAndApp projectDir routeData
 

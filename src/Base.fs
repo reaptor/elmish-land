@@ -10,7 +10,7 @@ module String =
     let asLines (s: string) = s.Split(Environment.NewLine)
 
 let appTitle = "Elmish Land"
-let cliName = "elmish-land"
+let cliName = "dotnet elmish-land"
 
 let version =
     FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location)
@@ -20,12 +20,12 @@ let help eachLine =
     $"""
     Here are the available commands:
 
-    %s{cliName} init <project-dir> ............. create a new project
-    %s{cliName} server <working-directory> ... run a local dev server
-    %s{cliName} build ................. build your app for production
-    %s{cliName} add page <url> ....................... add a new page
-    %s{cliName} add layout <name> .................. add a new layout
-    %s{cliName} routes .................. list all routes in your app
+    %s{cliName} init ... create a new project in the current directory
+    %s{cliName} server ........................ run a local dev server
+    %s{cliName} build .................. build your app for production
+    %s{cliName} add page <url> ........................ add a new page
+    %s{cliName} add layout <name> ................... add a new layout
+    %s{cliName} routes ................... list all routes in your app
 
     Want to learn more? Visit https://github.com/reaptor/elmish-land
     """
@@ -71,18 +71,11 @@ type FilePath = private | FilePath of string
 
 let (|FilePath|) (FilePath filePath) = filePath
 
-type ProjectDir = private | ProjectDir of FilePath
+type AbsoluteProjectDir = private | ProjectDir of FilePath
 
 type FileName = private | FileName of string
 
-module ProjectDir =
-    let fromFilePath filePath = ProjectDir filePath
-
-    let asFilePath (ProjectDir projectDir) = projectDir
-    let asString (ProjectDir(FilePath projectDir)) = projectDir
-
 module FilePath =
-    let currentDirectory = canonicalizePath Environment.CurrentDirectory |> FilePath
     let fromString (filePath: string) = (canonicalizePath filePath) |> FilePath
     let extension (FilePath filePath) = Path.GetExtension(filePath)
 
@@ -109,6 +102,29 @@ module FilePath =
 
     let endsWithParts parts (FilePath path) =
         path.EndsWith(parts |> String.concat "/")
+
+module AbsoluteProjectDir =
+    let private currentDirectory =
+        canonicalizePath Environment.CurrentDirectory
+        |> Path.TrimEndingDirectorySeparator
+        |> FilePath
+
+    let defaultProjectDir =
+        FilePath.asString currentDirectory
+        |> FilePath
+        |> ProjectDir
+
+    let fromFilePath (FilePath absoluteOrRelativeFilePath) =
+        if Path.IsPathRooted absoluteOrRelativeFilePath then
+            Path.TrimEndingDirectorySeparator absoluteOrRelativeFilePath
+        else
+            $"%s{FilePath.asString currentDirectory}/%s{Path.TrimEndingDirectorySeparator absoluteOrRelativeFilePath}"
+        |> FilePath
+        |> ProjectDir
+
+    let asFilePath (ProjectDir projectDir) = projectDir
+    let asString (ProjectDir(FilePath projectDir)) = projectDir
+
 
 module FileName =
     let fromFilePath (FilePath filePath) = Path.GetFileName(filePath) |> FileName
@@ -142,7 +158,7 @@ type ProjectName =
 
     static member asString(ProjectName projectName) = projectName
 
-let copyFile (projectDir: ProjectDir) src dst replace =
+let copyFile (projectDir: AbsoluteProjectDir) src dst replace =
     let templatesDir =
         Assembly.GetExecutingAssembly().Location
         |> FilePath.fromString
@@ -150,8 +166,7 @@ let copyFile (projectDir: ProjectDir) src dst replace =
         |> FilePath.appendParts [ "src"; "templates" ]
 
     let dstPath =
-        FilePath.currentDirectory
-        |> FilePath.appendFilePath (ProjectDir.asFilePath projectDir)
+        AbsoluteProjectDir.asFilePath projectDir
         |> FilePath.appendParts dst
 
     let dstDir = FilePath.directoryPath dstPath |> FilePath.asString
@@ -170,7 +185,7 @@ let copyFile (projectDir: ProjectDir) src dst replace =
 
 
 let private runProcessInternal
-    (projectDir: ProjectDir)
+    (projectDir: AbsoluteProjectDir)
     (command: string)
     (args: string array)
     (cancellation: CancellationToken)
@@ -182,7 +197,7 @@ let private runProcessInternal
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             RedirectStandardInput = true,
-            WorkingDirectory = ProjectDir.asString projectDir
+            WorkingDirectory = AbsoluteProjectDir.asString projectDir
         )
         |> Process.Start
 
@@ -207,7 +222,13 @@ let private runProcessInternal
         p.ExitCode
 
 
-let rec runProcess (projectDir: ProjectDir) (command: string) (args: string array) cancel (completed: unit -> unit) =
+let rec runProcess
+    (projectDir: AbsoluteProjectDir)
+    (command: string)
+    (args: string array)
+    cancel
+    (completed: unit -> unit)
+    =
     let exitCode = runProcessInternal projectDir command args cancel
 
     if exitCode = 0 then
@@ -215,7 +236,10 @@ let rec runProcess (projectDir: ProjectDir) (command: string) (args: string arra
 
     exitCode
 
-let runProcesses (processes: (ProjectDir * string * string array * CancellationToken) list) (completed: unit -> unit) =
+let runProcesses
+    (processes: (AbsoluteProjectDir * string * string array * CancellationToken) list)
+    (completed: unit -> unit)
+    =
     let exitCode =
         processes
         |> List.fold

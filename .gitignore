@@ -3,3 +3,6 @@ obj
 bin
 .idea/
 nupkg
+.fsdocs
+output
+tmp
