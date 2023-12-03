@@ -8,7 +8,7 @@
         <FsDocsLicenseLink>https://github.com/reaptor/elmish-land/blob/main/LICENSE</FsDocsLicenseLink>
         <FsDocsLogoLink>https://reaptor.github.io/elmish-land/</FsDocsLogoLink>
         <FsDocsLogoSource>logo.svg</FsDocsLogoSource>
-        <FsDocsFaviconSource>logo.ico</FsDocsFaviconSource>
+        <FsDocsFaviconSource>favicon.ico</FsDocsFaviconSource>
         <FsDocsWarnOnMissingDocs>true</FsDocsWarnOnMissingDocs>
         <FsDocsTheme>default</FsDocsTheme>
     </PropertyGroup>

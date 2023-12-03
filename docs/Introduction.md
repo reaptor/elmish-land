@@ -39,7 +39,7 @@ Here's a breakdown of what those files and folders are:
 2. global.json - Specify which version of .NET to use.
 3. MyProject.fsproj - The F# project file
 4. src/Routes.fs - An auto generated file with the routes of your application.
-5. src/Shared.fs - ---
+5. src/Shared.fs - TODO
 6. src/Pages – The home for your page files, which correspond to URLs in your app.
 7. src/Layouts – Layouts allow you to nest pages within common UI.
 8. src/App.fs – An auto generated file with the entry point of your application.
@@ -60,7 +60,7 @@ src/
     ├── Settings
     │   └── Page.fs
     └── People/
-        └── Page.elm
+        └── Page.fs
 ```
 
 In the Pages and routes section, you'll learn more about the naming conventions for files.
