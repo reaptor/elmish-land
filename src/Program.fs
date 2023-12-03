@@ -6,6 +6,9 @@ open ElmishLand.Build
 [<EntryPoint>]
 let main argv =
     match List.ofArray argv with
+    | [ "init" ] ->
+        init (ProjectDir.fromFilePath FilePath.currentDirectory)
+        0
     | [ "init"; projectDir ] ->
         init (projectDir |> FilePath.fromString |> ProjectDir.fromFilePath)
         0

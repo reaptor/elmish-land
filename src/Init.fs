@@ -58,7 +58,6 @@ let init (projectDir: ProjectDir) =
     %s{commandHeader $"created a new project in ./%s{ProjectName.asString projectName}"}
     Here are some next steps:
 
-    cd %s{ProjectName.asString projectName}
     elmish-land server
         """
     with :? IOException as ex ->

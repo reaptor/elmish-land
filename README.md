@@ -26,7 +26,7 @@ cd MyProject
 
 ```bash
   dotnet new tool-manifest
-  dotnet tool install elmish-land
+  dotnet tool install elmish-land --prerelease
 ```
 
 #### Initialize the project
@@ -57,7 +57,7 @@ MyProject/
 The Elmish Land dotnet tool comes with a built in development server. Here's how to run your new project in the web browser:
 
 ```bash
-elm-land server
+dotnet elmish-land server
 ```
 
 You should see "Home" when you open `http://localhost:1234`
