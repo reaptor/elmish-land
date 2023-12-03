@@ -20,7 +20,7 @@ jobs:
     - name: Fantomas check
       run: dotnet fantomas . --check
     - name: Package tool
-      run: dotnet pack --properties Configuration=Release
+      run: dotnet pack
     - name: Generate the documentation
       run: dotnet fsdocs build --projects elmish-land.fsproj --properties Configuration=Release
     - name: Upload documentation
