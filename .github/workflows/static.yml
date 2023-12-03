@@ -35,13 +35,15 @@ jobs:
         uses: actions/setup-dotnet@v3
       - name: Tool restore
         run: dotnet tool restore
+      - name: Dotnet restore
+        run: dotnet restore
       - name: Build docs
-        run: dotnet fsdocs build
+        run: dotnet fsdocs build --output _site
       - name: Archive artifact
         run: |
-          rm output/Dockerfile 
-          rm output/index.json
-          tar -czvf github-pages output
+          rm _site/Dockerfile 
+          rm _site/index.json
+          tar -czvf github-pages _site
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact

@@ -5,20 +5,6 @@
         <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
         <RootNamespace>ElmishLand</RootNamespace>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <RepositoryUrl>https://github.com/reaptor/elmish-land</RepositoryUrl>
-        <PackageProjectUrl>https://github.com/reaptor/elmish-land</PackageProjectUrl>
-        <Copyright>Copyright © 2023</Copyright>
-
-        <PackageLicenseUrl>https://github.com/reaptor/elmish-land/blob/main/LICENSE</PackageLicenseUrl>
-        <FsDocsLogoLink>https://fsharp.org</FsDocsLogoLink>
-        <FsDocsLogoSource>img/logo.png</FsDocsLogoSource>
-        <FsDocsFaviconSource>img/favicon.ico</FsDocsFaviconSource>
-        <FsDocsWarnOnMissingDocs>true</FsDocsWarnOnMissingDocs>
-        <FsDocsTheme>default</FsDocsTheme>
-
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>elmish-land</ToolCommandName>
         <PackageOutputPath>./nupkg</PackageOutputPath>

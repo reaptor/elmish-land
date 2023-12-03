@@ -1,0 +1,17 @@
+<Project>
+    <PropertyGroup>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryUrl>https://github.com/reaptor/elmish-land</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/reaptor/elmish-land</PackageProjectUrl>
+        <Copyright>Copyright © 2023</Copyright>
+
+        <PackageLicenseUrl>https://github.com/reaptor/elmish-land/blob/main/LICENSE</PackageLicenseUrl>
+        <FsDocsLicenseLink>https://github.com/reaptor/elmish-land/blob/main/LICENSE</FsDocsLicenseLink>
+        <FsDocsLogoLink>https://fsharp.org</FsDocsLogoLink>
+        <FsDocsLogoSource>img/logo.png</FsDocsLogoSource>
+        <FsDocsFaviconSource>img/favicon.ico</FsDocsFaviconSource>
+        <FsDocsWarnOnMissingDocs>true</FsDocsWarnOnMissingDocs>
+        <FsDocsTheme>default</FsDocsTheme>
+    </PropertyGroup>
+</Project>
