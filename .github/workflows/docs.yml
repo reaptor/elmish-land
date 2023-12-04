@@ -35,6 +35,8 @@ jobs:
         uses: actions/setup-dotnet@v3
       - name: Tool restore
         run: dotnet tool restore
+      - name: Dotnet restore
+        run: dotnet restore
       - name: Build docs
         run: dotnet fsdocs build --projects elmish-land.fsproj --output output/elmish-land --properties Configuration=Release
       - name: Upload documentation
