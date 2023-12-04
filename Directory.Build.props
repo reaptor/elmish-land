@@ -1,12 +1,12 @@
 <Project>
     <PropertyGroup>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <RepositoryUrl>https://elmish.land</RepositoryUrl>
-        <PackageProjectUrl>/</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/reaptor/elmish-land</RepositoryUrl>
+        <PackageProjectUrl>https://elmish.land/</PackageProjectUrl>
         <Copyright>Copyright © 2023</Copyright>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <FsDocsLicenseLink>https://github.com/reaptor/elmish-land/blob/main/LICENSE</FsDocsLicenseLink>
-        <FsDocsLogoLink>https://elmish.land</FsDocsLogoLink>
+        <FsDocsLogoLink>https://elmish.land/</FsDocsLogoLink>
         <FsDocsLogoSource>logo.svg</FsDocsLogoSource>
         <FsDocsFaviconSource>favicon.ico</FsDocsFaviconSource>
         <FsDocsWarnOnMissingDocs>true</FsDocsWarnOnMissingDocs>
