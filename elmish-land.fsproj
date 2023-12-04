@@ -4,12 +4,10 @@
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
         <RootNamespace>ElmishLand</RootNamespace>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>elmish-land</ToolCommandName>
         <PackageOutputPath>./nupkg</PackageOutputPath>
     </PropertyGroup>
-
     <ItemGroup>
         <Content Include="src/templates/package.json" CopyToOutputDirectory="Always" />
         <Content Include="src/templates/PROJECT_NAME.fsproj" CopyToOutputDirectory="Always" />

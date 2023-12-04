@@ -2,7 +2,6 @@
     <PropertyGroup>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryUrl>https://github.com/reaptor/elmish-land</RepositoryUrl>
-        <PackageProjectUrl>/</PackageProjectUrl>
         <Copyright>Copyright © 2023</Copyright>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <FsDocsLicenseLink>https://github.com/reaptor/elmish-land/blob/main/LICENSE</FsDocsLicenseLink>

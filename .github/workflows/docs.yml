@@ -36,7 +36,7 @@ jobs:
       - name: Tool restore
         run: dotnet tool restore
       - name: Build docs
-        run: dotnet fsdocs build --projects elmish-land.fsproj --properties Configuration=Release
+        run: dotnet fsdocs build --clean --ignoreprojects --parameters root "https://elmish.land/" --properties Configuration=Release
       - name: Upload documentation
         uses: actions/upload-pages-artifact@v2
         with:
