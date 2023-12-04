@@ -38,7 +38,7 @@ jobs:
       - name: Dotnet restore
         run: dotnet restore
       - name: Build docs
-        run: dotnet fsdocs build --projects elmish-land.fsproj --output output/elmish-land --properties Configuration=Release
+        run: dotnet fsdocs build --projects elmish-land.fsproj --properties Configuration=Release
       - name: Upload documentation
         uses: actions/upload-pages-artifact@v2
         with:
