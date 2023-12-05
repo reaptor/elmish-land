@@ -1,9 +1,7 @@
 ---
-title: Other editors
-category: More resources
-categoryindex: 2
-index: 1
+sidebar_position: 10
 ---
+
 # Other editors
 * [JetBrains Rider](https://www.jetbrains.com/rider/)
 * [Visual Studio](https://visualstudio.microsoft.com/)

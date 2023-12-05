@@ -7,3 +7,4 @@ nupkg
 output
 tmp
 github-pages
+/docs/build/
