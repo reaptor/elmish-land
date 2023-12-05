@@ -4,6 +4,8 @@ sidebar_position: 1
 
 # Introduction
 
+Welcome to Elmish Land, a framework designed to help you build reliable web apps.
+
 ## What is Elmish Land?
 
 In the JavaScript ecosystem, the idea of an "application framework" is pretty common. In the React community, one popular framework is called Next.js. In the Vue.js community, you'll find a similar framework called Nuxt.
