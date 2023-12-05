@@ -50,28 +50,27 @@ let init (projectDir: AbsoluteProjectDir) =
 
         generateRoutesAndApp projectDir routeData
 
-        runProcesses
-            [
-                projectDir,
-                "dotnet",
-                [|
-                    "tool"
-                    "install"
-                    "elmish-land"
-                    if isPreRelease then "--prerelease" else ()
-                |],
-                CancellationToken.None
-                projectDir, "npm", [| "install" |], CancellationToken.None
-            ]
-            (fun () ->
-                printfn
-                    $"""
-                    %s{commandHeader $"created a new project in ./%s{ProjectName.asString projectName}"}
-                    Here are some next steps:
+        runProcesses [
+            projectDir,
+            "dotnet",
+            [|
+                "tool"
+                "install"
+                "elmish-land"
+                if isPreRelease then "--prerelease" else ()
+            |],
+            CancellationToken.None,
+            ignore
+            projectDir, "npm", [| "install" |], CancellationToken.None, ignore
+        ]
+        |> handleAppResult (fun () ->
+            printfn
+                $"""
+    %s{commandHeader $"created a new project in ./%s{ProjectName.asString projectName}"}
+    Run the following command to start the development server:
 
-                    dotnet elmish-land server
-                        """)
-            (fun () -> printfn "Failed to run npm install")
+    dotnet elmish-land server
+    """ )
 
     with :? IOException as ex ->
         printfn $"%s{ex.Message}"

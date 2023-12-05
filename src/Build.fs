@@ -9,14 +9,10 @@ let build (projectDir: AbsoluteProjectDir) =
     let routeData = getRouteData projectDir
     generateRoutesAndApp projectDir routeData
 
-    if validate projectDir = 0 then
-        runProcesses
-            [
-                projectDir, "npm", [| "install" |], CancellationToken.None
-                projectDir, "npm", [| "run"; "elmish-land:build" |], CancellationToken.None
-            ]
-            id
-        |> ignore
-
-    printfn "%s" (commandHeader "build was successful.")
-    0
+    validate projectDir
+    |> Result.bind (fun () ->
+        runProcesses [
+            projectDir, "npm", [| "install" |], CancellationToken.None, ignore
+            projectDir, "npm", [| "run"; "elmish-land:build" |], CancellationToken.None, ignore
+        ])
+    |> handleAppResult (fun () -> printfn "%s" (commandHeader "build was successful."))

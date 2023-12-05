@@ -1,6 +1,5 @@
 module ElmishLand.FsProj
 
-open System
 open System.IO
 open System.Text.RegularExpressions
 open ElmishLand.Base
@@ -10,11 +9,6 @@ let validate (projectDir: AbsoluteProjectDir) =
         let projectPath = FsProjPath.fromProjectDir projectDir
         let colNr = line.IndexOf(filePath)
         $"%s{FsProjPath.asString projectPath}({lineNr},{colNr}) error: %s{msg}."
-
-    let printError (error: string) =
-        Console.ForegroundColor <- ConsoleColor.Red
-        Console.Error.WriteLine(error)
-        Console.ResetColor()
 
     let includedFSharpFileInfo =
         File.ReadAllLines(FsProjPath.fromProjectDir projectDir |> FsProjPath.asString)
@@ -105,7 +99,6 @@ or add the following line to a ItemGroup in the project file '%s{AbsoluteProject
    """
     ]
 
-    for error in errors do
-        printError error
-
-    if errors.Length = 0 then 0 else -1
+    match errors with
+    | [] -> Ok()
+    | errors -> Error(FsProjValidationError errors)

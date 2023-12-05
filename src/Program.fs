@@ -5,9 +5,6 @@ open ElmishLand.Build
 
 [<EntryPoint>]
 let main argv =
-    let welcomeTitle = $"Welcome to %s{appTitle}"
-    printfn "%s" welcomeTitle
-
     match List.ofArray argv with
     | [ "init" ] -> init AbsoluteProjectDir.defaultProjectDir
     | [ "init"; projectDir ] -> init (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
@@ -19,8 +16,11 @@ let main argv =
     | [ "add layout"; name ] -> 0
     | [ "routes" ] -> 0
     | _ ->
+        let welcomeTitle = $"Welcome to %s{appTitle}"
+
         printfn
             $"""
+    %s{welcomeTitle}
     %s{String.init welcomeTitle.Length (fun _ -> "-")}
     %s{help id}"""
 

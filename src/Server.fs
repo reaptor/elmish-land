@@ -5,6 +5,7 @@ open System.Threading
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
 open ElmishLand.FsProj
+open System.Text.RegularExpressions
 
 let server (projectDir: AbsoluteProjectDir) =
     use watcher =
@@ -34,9 +35,21 @@ let server (projectDir: AbsoluteProjectDir) =
         generateRoutesAndApp projectDir routeData
         watcher.EnableRaisingEvents <- true
 
-        if validate projectDir = 0 then
-            runProcesses [ projectDir, "npm", [| "run"; "elmish-land:start" |], cts.Token ] id
-            |> ignore
+        validate projectDir
+        |> Result.bind (fun () ->
+            runProcess projectDir "npm" [| "run"; "elmish-land:start" |] cts.Token (fun output ->
+                let m = Regex.Match(output, "Local:   (http://localhost:\d+)")
+
+                if m.Success then
+                    let text = $"%s{appTitle} is ready at %s{m.Groups[1].Value}"
+
+                    printfn
+                        $"""
+    %s{text}
+    %s{String.init text.Length (fun _ -> "-")}
+    """     ))
+        |> handleAppResult ignore
+        |> ignore<int>
 
         resetEvt.WaitOne() |> ignore
         resetEvt.Reset() |> ignore
