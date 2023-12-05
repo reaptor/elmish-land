@@ -12,9 +12,14 @@ module String =
 let appTitle = "Elmish Land"
 let cliName = "dotnet elmish-land"
 
-let version =
+let fileVersionInfo =
     FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location)
-    |> fun v -> $"%i{v.FileMajorPart}.%i{v.FileMinorPart}.%i{v.FileBuildPart}"
+
+let version =
+    let v = fileVersionInfo
+    $"%i{v.FileMajorPart}.%i{v.FileMinorPart}.%i{v.FileBuildPart}"
+
+let isPreRelease = fileVersionInfo.IsPreRelease
 
 let help eachLine =
     $"""
@@ -234,6 +239,7 @@ let rec runProcess
 let runProcesses
     (processes: (AbsoluteProjectDir * string * string array * CancellationToken) list)
     (completed: unit -> unit)
+    (failed: unit -> unit)
     =
     let exitCode =
         processes
@@ -245,7 +251,5 @@ let runProcesses
                     previousExitCode)
             0
 
-    if exitCode = 0 then
-        completed ()
-
+    if exitCode = 0 then completed () else failed ()
     exitCode
