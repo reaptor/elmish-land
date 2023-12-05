@@ -44,7 +44,4 @@ let server (projectDir: AbsoluteProjectDir) =
         cts <- new CancellationTokenSource()
         loop ()
 
-    let exitCode =
-        runProcess projectDir "npm" [| "install" |] CancellationToken.None ignore
-
-    if exitCode <> 0 then exitCode else loop ()
+    loop ()
