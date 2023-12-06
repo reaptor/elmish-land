@@ -10,31 +10,31 @@
     </PropertyGroup>
     <ItemGroup>
         <EmbeddedResource Include="src/templates/package.json">
-            <LogicalName>templates</LogicalName>
+            <LogicalName>templates.package.json</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="src/templates/PROJECT_NAME.fsproj">
-            <LogicalName>templates</LogicalName>
+            <LogicalName>templates.PROJECT_NAME.fsproj</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="src/templates/global.json">
-            <LogicalName>templates</LogicalName>
+            <LogicalName>templates.global.json</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="src/templates/dotnet-tools.json">
-            <LogicalName>templates</LogicalName>
+            <LogicalName>templates.dotnet-tools.json</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="src/templates/index.html">
-            <LogicalName>templates</LogicalName>
+            <LogicalName>templates.index.html</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="src/templates/Routes.handlebars">
-            <LogicalName>templates</LogicalName>
+            <LogicalName>templates.Routes.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="src/templates/Shared.handlebars">
-            <LogicalName>templates</LogicalName>
+            <LogicalName>templates.Shared.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="src/templates/Page.handlebars">
-            <LogicalName>templates</LogicalName>
+            <LogicalName>templates.Page.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="src/templates/App.handlebars">
-            <LogicalName>templates</LogicalName>
+            <LogicalName>templates.App.handlebars</LogicalName>
         </EmbeddedResource>
         <Compile Include="src/Base.fs" />
         <Compile Include="src/FsProj.fs" />
