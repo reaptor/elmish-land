@@ -1,10 +1,13 @@
-﻿open ElmishLand.Base
+﻿open System.Diagnostics
+open ElmishLand.Base
 open ElmishLand.Init
 open ElmishLand.Server
 open ElmishLand.Build
 
 [<EntryPoint>]
 let main argv =
+    Debug.WriteLine $"argv: %A{argv}"
+
     match List.ofArray argv with
     | [ "init" ] -> init AbsoluteProjectDir.defaultProjectDir
     | [ "init"; projectDir ] -> init (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)

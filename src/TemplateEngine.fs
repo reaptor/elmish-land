@@ -179,6 +179,6 @@ let getRouteData (projectDir: AbsoluteProjectDir) =
 let processTemplate routeData (src: string) = handlebars src routeData
 
 let generateRoutesAndApp projectDir (routeData: RouteData) =
-    let copyFile = copyFile projectDir
-    copyFile [ "Routes.handlebars" ] [ "src"; "Routes.fs" ] (Some(processTemplate routeData))
-    copyFile [ "App.handlebars" ] [ "src"; "App.fs" ] (Some(processTemplate routeData))
+    let copyFile = writeResource projectDir
+    copyFile "Routes.handlebars" [ "src"; "Routes.fs" ] (Some(processTemplate routeData))
+    copyFile "App.handlebars" [ "src"; "App.fs" ] (Some(processTemplate routeData))

@@ -7,11 +7,17 @@ open System.Reflection
 open System.Threading
 open System.Text
 
+Debug.AutoFlush <- true
+Trace.Listeners.Add(new TextWriterTraceListener(Console.Out)) |> ignore<int>
+
 module String =
     let asLines (s: string) = s.Split(Environment.NewLine)
 
 let private fvi =
-    FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location)
+    let fileName = Process.GetCurrentProcess().MainModule.FileName
+    FileVersionInfo.GetVersionInfo(fileName)
+
+Debug.WriteLine($"FileVersionInfo: %A{fvi}")
 
 let version = $"%i{fvi.FileMajorPart}.%i{fvi.FileMinorPart}.%i{fvi.FileBuildPart}"
 
@@ -119,6 +125,8 @@ module FilePath =
 
 module AbsoluteProjectDir =
     let private currentDirectory =
+        Debug.WriteLine($"Using currentDirectory: '%s{Environment.CurrentDirectory}'")
+
         canonicalizePath Environment.CurrentDirectory
         |> Path.TrimEndingDirectorySeparator
         |> FilePath
@@ -187,13 +195,7 @@ let handleAppResult onSuccess =
 
         -1
 
-let copyFile (projectDir: AbsoluteProjectDir) src dst replace =
-    let templatesDir =
-        Assembly.GetExecutingAssembly().Location
-        |> FilePath.fromString
-        |> FilePath.directoryPath
-        |> FilePath.appendParts [ "src"; "templates" ]
-
+let writeResource (projectDir: AbsoluteProjectDir) (name: string) dst replace =
     let dstPath = AbsoluteProjectDir.asFilePath projectDir |> FilePath.appendParts dst
 
     let dstDir = FilePath.directoryPath dstPath |> FilePath.asString
@@ -201,7 +203,12 @@ let copyFile (projectDir: AbsoluteProjectDir) src dst replace =
     if not (Directory.Exists dstDir) then
         Directory.CreateDirectory(dstDir) |> ignore
 
-    File.Copy(templatesDir |> FilePath.appendParts src |> FilePath.asString, FilePath.asString dstPath, true)
+    let assembly = Assembly.GetExecutingAssembly()
+
+    use stream = assembly.GetManifestResourceStream($"templates.%s{name}")
+    use reader = new StreamReader(stream)
+    let fileContents = reader.ReadToEnd()
+    File.WriteAllText(FilePath.asString dstPath, fileContents)
 
     match replace with
     | Some f ->

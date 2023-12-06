@@ -9,15 +9,33 @@
         <PackageOutputPath>./nupkg</PackageOutputPath>
     </PropertyGroup>
     <ItemGroup>
-        <Content Include="src/templates/package.json" CopyToOutputDirectory="Always" />
-        <Content Include="src/templates/PROJECT_NAME.fsproj" CopyToOutputDirectory="Always" />
-        <Content Include="src/templates/global.json" CopyToOutputDirectory="Always" />
-        <Content Include="src/templates/dotnet-tools.json" CopyToOutputDirectory="Always" />
-        <Content Include="src/templates/index.html" CopyToOutputDirectory="Always" />
-        <Content Include="src/templates/Routes.handlebars" CopyToOutputDirectory="Always" />
-        <Content Include="src/templates/Shared.handlebars" CopyToOutputDirectory="Always" />
-        <Content Include="src/templates/Page.handlebars" CopyToOutputDirectory="Always" />
-        <Content Include="src/templates/App.handlebars" CopyToOutputDirectory="Always" />
+        <EmbeddedResource Include="src/templates/package.json">
+            <LogicalName>templates</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="src/templates/PROJECT_NAME.fsproj">
+            <LogicalName>templates</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="src/templates/global.json">
+            <LogicalName>templates</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="src/templates/dotnet-tools.json">
+            <LogicalName>templates</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="src/templates/index.html">
+            <LogicalName>templates</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="src/templates/Routes.handlebars">
+            <LogicalName>templates</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="src/templates/Shared.handlebars">
+            <LogicalName>templates</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="src/templates/Page.handlebars">
+            <LogicalName>templates</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="src/templates/App.handlebars">
+            <LogicalName>templates</LogicalName>
+        </EmbeddedResource>
         <Compile Include="src/Base.fs" />
         <Compile Include="src/FsProj.fs" />
         <Compile Include="src/TemplateEngine.fs" />

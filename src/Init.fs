@@ -9,13 +9,17 @@ let init (projectDir: AbsoluteProjectDir) =
     try
         let projectName = projectDir |> ProjectName.fromProjectDir
 
-        let copyFile = copyFile projectDir
-        let cpSame fileName replace = copyFile fileName fileName replace
-        copyFile [ "PROJECT_NAME.fsproj" ] [ $"%s{ProjectName.asString projectName}.fsproj" ] None
-        cpSame [ "global.json" ] None
-        cpSame [ "index.html" ] None
-        cpSame [ "package.json" ] (Some(fun x -> x.Replace("{{PROJECT_NAME}}", ProjectName.asString projectName)))
-        copyFile [ "dotnet-tools.json" ] [ ".config"; "dotnet-tools.json" ] None
+        let writeResource = writeResource projectDir
+        writeResource "PROJECT_NAME.fsproj" [ $"%s{ProjectName.asString projectName}.fsproj" ] None
+        writeResource "global.json" [ "global.json" ] None
+        writeResource "index.html" [ "index.html" ] None
+
+        writeResource
+            "package.json"
+            [ "package.json" ]
+            (Some(fun x -> x.Replace("{{PROJECT_NAME}}", ProjectName.asString projectName)))
+
+        writeResource "dotnet-tools.json" [ ".config"; "dotnet-tools.json" ] None
 
         let rootModuleName = projectName |> ProjectName.asString |> quoteIfNeeded
 
@@ -36,10 +40,10 @@ let init (projectDir: AbsoluteProjectDir) =
             Routes = [| homeRoute |]
         }
 
-        copyFile [ "Shared.handlebars" ] [ "src"; "Shared.fs" ] (Some(processTemplate routeData))
+        writeResource "Shared.handlebars" [ "src"; "Shared.fs" ] (Some(processTemplate routeData))
 
-        copyFile
-            [ "Page.handlebars" ]
+        writeResource
+            "Page.handlebars"
             [ "src"; "Pages"; "Home"; "Page.fs" ]
             (Some(
                 processTemplate {|
