@@ -12,6 +12,12 @@
         <EmbeddedResource Include="src/templates/package.json">
             <LogicalName>templates.package.json</LogicalName>
         </EmbeddedResource>
+        <EmbeddedResource Include="src/templates/.gitignore">
+            <LogicalName>templates..gitignore</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="src/templates/settings.json">
+            <LogicalName>templates.settings.json</LogicalName>
+        </EmbeddedResource>
         <EmbeddedResource Include="src/templates/PROJECT_NAME.fsproj">
             <LogicalName>templates.PROJECT_NAME.fsproj</LogicalName>
         </EmbeddedResource>
