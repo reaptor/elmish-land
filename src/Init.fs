@@ -10,9 +10,9 @@ let init (projectDir: AbsoluteProjectDir) =
         let log = Log()
         log.Info("Initializing project. {}", AbsoluteProjectDir.asString projectDir)
         let projectName = projectDir |> ProjectName.fromProjectDir
+        
         let writeResource = writeResource projectDir
         writeResource "PROJECT_NAME.fsproj" [ $"%s{ProjectName.asString projectName}.fsproj" ] None
-
         writeResource "global.json" [ "global.json" ] None
         writeResource "index.html" [ "index.html" ] None
         writeResource ".gitignore" [ ".gitignore" ] None
