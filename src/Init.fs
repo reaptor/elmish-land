@@ -13,10 +13,7 @@ let init (projectDir: AbsoluteProjectDir) =
 
         let writeResource = writeResource projectDir
 
-        writeResource
-            "PROJECT_NAME.fsproj"
-            [ $"%s{(ProjectName.asString >> String.asKebabCase) projectName}.fsproj" ]
-            None
+        writeResource "PROJECT_NAME.fsproj" [ $"%s{(ProjectName.asString) projectName}.fsproj" ] None
 
         writeResource "global.json" [ "global.json" ] None
         writeResource "index.html" [ "index.html" ] None
@@ -25,7 +22,7 @@ let init (projectDir: AbsoluteProjectDir) =
         writeResource
             "package.json"
             [ "package.json" ]
-            (Some(fun x -> x.Replace("{{PROJECT_NAME}}", ProjectName.asString projectName)))
+            (Some(fun x -> x.Replace("{{PROJECT_NAME}}" |> String.asKebabCase, ProjectName.asString projectName)))
 
         writeResource "dotnet-tools.json" [ ".config"; "dotnet-tools.json" ] None
         writeResource "settings.json" [ ".vscode"; "settings.json" ] None
