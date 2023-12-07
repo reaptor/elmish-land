@@ -47,6 +47,9 @@ type Log
 module String =
     let asLines (s: string) = s.Split(Environment.NewLine)
 
+    let asKebabCase (s: string) =
+        s.Replace(" ", "-").Replace("_", "-").ToLower()
+
 let appFilePath =
     lazy
         let location = Assembly.GetExecutingAssembly().Location

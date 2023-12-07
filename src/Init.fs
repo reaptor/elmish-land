@@ -15,13 +15,15 @@ let init (projectDir: AbsoluteProjectDir) =
         writeResource "PROJECT_NAME.fsproj" [ $"%s{ProjectName.asString projectName}.fsproj" ] None
         writeResource "global.json" [ "global.json" ] None
         writeResource "index.html" [ "index.html" ] None
+        writeResource ".gitignore" [ ".gitignore" ] None
 
         writeResource
             "package.json"
             [ "package.json" ]
-            (Some(fun x -> x.Replace("{{PROJECT_NAME}}", ProjectName.asString projectName)))
+            (Some(fun x -> x.Replace("{{PROJECT_NAME}}", (ProjectName.asString >> String.asKebabCase) projectName)))
 
         writeResource "dotnet-tools.json" [ ".config"; "dotnet-tools.json" ] None
+        writeResource "settings.json" [ ".vscode"; "settings.json" ] None
 
         let rootModuleName = projectName |> ProjectName.asString |> quoteIfNeeded
 
