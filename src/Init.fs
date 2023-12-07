@@ -12,7 +12,7 @@ let init (projectDir: AbsoluteProjectDir) =
         let projectName = projectDir |> ProjectName.fromProjectDir
 
         let writeResource = writeResource projectDir
-        writeResource "PROJECT_NAME.fsproj" [ $"%s{ProjectName.asString projectName}.fsproj" ] None
+        writeResource "PROJECT_NAME.fsproj" [ $"%s{(ProjectName.asString >> String.asKebabCase) projectName}.fsproj" ] None
         writeResource "global.json" [ "global.json" ] None
         writeResource "index.html" [ "index.html" ] None
 
