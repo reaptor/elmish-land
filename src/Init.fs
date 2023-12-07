@@ -15,6 +15,7 @@ let init (projectDir: AbsoluteProjectDir) =
         writeResource "PROJECT_NAME.fsproj" [ $"%s{(ProjectName.asString >> String.asKebabCase) projectName}.fsproj" ] None
         writeResource "global.json" [ "global.json" ] None
         writeResource "index.html" [ "index.html" ] None
+        writeResource ".gitignore" [ ".gitignore" ] None
 
         writeResource
             "package.json"
