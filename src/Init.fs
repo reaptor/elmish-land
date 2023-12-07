@@ -22,6 +22,7 @@ let init (projectDir: AbsoluteProjectDir) =
             (Some(fun x -> x.Replace("{{PROJECT_NAME}}", ProjectName.asString projectName)))
 
         writeResource "dotnet-tools.json" [ ".config"; "dotnet-tools.json" ] None
+        writeResource "settings.json" [ ".vscode"; "settings.json" ] None
 
         let rootModuleName = projectName |> ProjectName.asString |> quoteIfNeeded
 
