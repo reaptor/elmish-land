@@ -65,9 +65,11 @@ let init (projectDir: AbsoluteProjectDir) =
                 [ "package.json" ]
                 (Some(
                     handlebars {|
-                        ProjectName = ProjectName.asString projectName
+                        ProjectName = projectName |> ProjectName.asString |> String.asKebabCase
                     |}
                 ))
+
+            writeResource "settings.json" [ ".vscode"; "settings.json" ] None
 
             let rootModuleName = projectName |> ProjectName.asString |> quoteIfNeeded
 

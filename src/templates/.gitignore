@@ -3,3 +3,5 @@ fable_modules
 node_modules
 bin
 obj
+
+.fake

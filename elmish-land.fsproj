@@ -16,6 +16,9 @@
         <EmbeddedResource Include="src\templates\package.json.handlebars">
             <LogicalName>templates.package.json.handlebars</LogicalName>
         </EmbeddedResource>
+        <EmbeddedResource Include="src/templates/settings.json">
+            <LogicalName>templates.settings.json</LogicalName>
+        </EmbeddedResource>
         <EmbeddedResource Include="src\templates\Project.fsproj.handlebars">
             <LogicalName>templates.Project.fsproj.handlebars</LogicalName>
         </EmbeddedResource>
