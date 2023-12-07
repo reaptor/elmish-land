@@ -94,17 +94,21 @@ const config = {
       footer: {
         style: 'dark',
         links: [
-          // {
-          //   title: 'Links',
-          //   items: [
-          //     {
-          //       label: 'GitHub',
-          //       href: 'https://github.com/facebook/docusaurus',
-          //     },
-          //   ],
-          // },
+          {
+            title: 'Links',
+            items: [
+              {
+                label: 'GitHub',
+                href: 'https://github.com/reaptor/elmish-land',
+              },
+              {
+                label: 'Discord',
+                href: 'https://discord.gg/jQ26cZH3fU',
+              },
+            ],
+          },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Reaptor`,
+        copyright: `Copyright © ${new Date().getFullYear()} Reaptor. Built with Docusaurus.`,
       },
       prism: {
         theme: prismThemes.github,

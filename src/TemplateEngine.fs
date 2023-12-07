@@ -13,7 +13,7 @@ module String =
     let split (separator: string) (s: string) =
         s.Split(separator, StringSplitOptions.RemoveEmptyEntries)
 
-let handlebars (src: string) model =
+let handlebars model (src: string) =
     let handlebars = Handlebars.Create()
     handlebars.Configuration.ThrowOnUnresolvedBindingExpression <- true
     handlebars.Configuration.NoEscape <- true
@@ -176,9 +176,7 @@ let getRouteData (projectDir: AbsoluteProjectDir) =
         Routes = pageFiles |> Array.map (fileToRoute projectDir)
     }
 
-let processTemplate routeData (src: string) = handlebars src routeData
-
 let generateRoutesAndApp projectDir (routeData: RouteData) =
     let copyFile = writeResource projectDir
-    copyFile "Routes.handlebars" [ "src"; "Routes.fs" ] (Some(processTemplate routeData))
-    copyFile "App.handlebars" [ "src"; "App.fs" ] (Some(processTemplate routeData))
+    copyFile "Routes.handlebars" [ "src"; "Routes.fs" ] (Some(handlebars routeData))
+    copyFile "App.handlebars" [ "src"; "App.fs" ] (Some(handlebars routeData))

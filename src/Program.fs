@@ -9,6 +9,8 @@ let (|NonOption|_|) (x: string) =
 
 [<EntryPoint>]
 let main argv =
+    Console.WriteLine(indent welcomeTitle.Value)
+
     try
         match List.ofArray argv with
         | "init" :: NonOption projectDir :: _ ->
@@ -24,13 +26,7 @@ let main argv =
         | "add" :: "layout" :: url :: _ -> 0
         | "routes" :: _ -> 0
         | _ ->
-            let welcomeTitle = $"Welcome to %s{appTitle.Value}"
-
-            printfn
-                $"""
-        %s{welcomeTitle}
-        %s{String.init welcomeTitle.Length (fun _ -> "-")}
-        %s{help id}"""
+            help id |> indent |> printfn "%s"
 
             0
     with ex ->

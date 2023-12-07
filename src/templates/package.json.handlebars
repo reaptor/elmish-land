@@ -1,17 +1,10 @@
 {
-  "name": "{{PROJECT_NAME}}",
+  "name": "{{ProjectName}}",
   "version": "1.0.0",
   "scripts": {
     "postinstall": "dotnet tool restore; dotnet restore",
     "vite": "vite",
     "elmish-land:start": "dotnet fable --run vite",
     "elmish-land:build": "dotnet fable --noCache --run vite build"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "devDependencies": {
-    "vite": "^5.0.2"
   }
 }

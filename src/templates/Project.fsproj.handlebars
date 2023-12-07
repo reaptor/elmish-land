@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>{{DotNetVersion}}</TargetFramework>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,14 +13,6 @@
         <Content Include="global.json" />
         <Content Include="index.html" />
         <Content Include="package.json" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Fable.Elmish.HMR" Version="7.0.0" />
-        <PackageReference Include="Fable.Elmish.React" Version="4.0.0" />
-        <PackageReference Include="Feliz" Version="2.7.0" />
-        <PackageReference Include="Feliz.Router" Version="4.0.0" />
-        <PackageReference Include="Elmish" Version="4.1.0"/>
     </ItemGroup>
 
 </Project>

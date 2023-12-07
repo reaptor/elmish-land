@@ -7,19 +7,20 @@
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>elmish-land</ToolCommandName>
         <PackageOutputPath>./nupkg</PackageOutputPath>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <ItemGroup>
-        <EmbeddedResource Include="src/templates/package.json">
-            <LogicalName>templates.package.json</LogicalName>
+        <EmbeddedResource Include="src/templates/.gitignore">
+            <LogicalName>templates.gitignore</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="src/templates/PROJECT_NAME.fsproj">
-            <LogicalName>templates.PROJECT_NAME.fsproj</LogicalName>
+        <EmbeddedResource Include="src\templates\package.json.handlebars">
+            <LogicalName>templates.package.json.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="src/templates/global.json">
-            <LogicalName>templates.global.json</LogicalName>
+        <EmbeddedResource Include="src\templates\Project.fsproj.handlebars">
+            <LogicalName>templates.Project.fsproj.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="src/templates/dotnet-tools.json">
-            <LogicalName>templates.dotnet-tools.json</LogicalName>
+        <EmbeddedResource Include="src\templates\global.json.handlebars">
+            <LogicalName>templates.global.json.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="src/templates/index.html">
             <LogicalName>templates.index.html</LogicalName>

@@ -37,17 +37,22 @@ let server (projectDir: AbsoluteProjectDir) =
 
         validate projectDir
         |> Result.bind (fun () ->
-            runProcess projectDir "npm" [| "run"; "elmish-land:start" |] cts.Token (fun output ->
-                let m = Regex.Match(output, "Local:   (http://localhost:\d+)")
+            runProcess
+                (AbsoluteProjectDir.asFilePath projectDir)
+                "npm"
+                [| "run"; "elmish-land:start" |]
+                cts.Token
+                (fun output ->
+                    let m = Regex.Match(output, "Local:   (http://localhost:\d+)")
 
-                if m.Success then
-                    let text = $"%s{appTitle.Value} is ready at %s{m.Groups[1].Value}"
+                    if m.Success then
+                        let text = $"%s{appTitle.Value} is ready at %s{m.Groups[1].Value}"
 
-                    printfn
-                        $"""
+                        printfn
+                            $"""
     %s{text}
     %s{String.init text.Length (fun _ -> "-")}
-    """     ))
+    """         ))
         |> handleAppResult ignore
         |> ignore<int>
 
