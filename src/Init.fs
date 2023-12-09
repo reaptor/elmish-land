@@ -2,54 +2,13 @@ module ElmishLand.Init
 
 open System
 open System.IO
-open System.Text.RegularExpressions
 open System.Threading
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
-open System.Runtime.InteropServices
-
-let checkIfDotnetIsInstalled () =
-    if
-        (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-         && not (File.Exists("C:\\program files\\dotnet\\dotnet.exe")))
-        || (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
-            && not (File.Exists("/usr/local/share/dotnet/dotnet")))
-        || (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-            && not (File.Exists("/home/user/share/dotnet/dotnet")))
-    then
-        Error AppError.DotnetSdkNotFound
-    else
-        Ok()
-
-let getLatestDotnetSdkVersion () =
-    let log = Log()
-
-    result {
-        do! checkIfDotnetIsInstalled ()
-
-        let! output =
-            runProcess
-                (FilePath.fromString Environment.CurrentDirectory)
-                "dotnet"
-                [| "--list-sdks" |]
-                CancellationToken.None
-                ignore
-            |> Result.mapError (fun _ -> AppError.DotnetSdkNotFound)
-
-        return!
-            output.Split(Environment.NewLine)
-            |> Array.choose (fun line ->
-                match DotnetSdkVersion.fromString (Regex.Match(line, "\d.\d.\d{3}").Value) with
-                | Some(DotnetSdkVersion version) when version >= (DotnetSdkVersion.value minimumRequiredDotnetSdk) ->
-                    Some(DotnetSdkVersion version)
-                | _ -> None)
-            |> fun sdkVersions ->
-                if Array.isEmpty sdkVersions then
-                    log.Error("Found no installed dotnet SDKs")
-                    Error DotnetSdkNotFound
-                else
-                    sdkVersions |> Seq.max |> Ok
-    }
+open ElmishLand.Log
+open ElmishLand.DotNetCli
+open ElmishLand.Process
+open ElmishLand.AppError
 
 let getNodeVersion () =
     runProcess (FilePath.fromString Environment.CurrentDirectory) "node" [| "-v" |] CancellationToken.None ignore
@@ -142,21 +101,9 @@ let init (projectDir: AbsoluteProjectDir) =
             do!
                 [
                     "dotnet", [| "new"; "tool-manifest"; "--force" |]
-                    "dotnet", [| "tool"; "install"; "fable"; "--version 4.*" |]
-                    "dotnet",
-                    [|
-                        "tool"
-                        "install"
-                        "elmish-land"
-                        if isPreRelease.Value then "--prerelease" else ()
-                    |]
-                    "dotnet", [| "add"; "package"; "Fable.Elmish.HMR"; "--version 7.*" |]
-                    "dotnet", [| "add"; "package"; "Fable.Elmish.React"; "--version 4.*" |]
-                    "dotnet", [| "add"; "package"; "Feliz"; "--version 2.*" |]
-                    "dotnet", [| "add"; "package"; "Feliz.Router"; "--version 4.*" |]
-                    "dotnet", [| "add"; "package"; "Elmish"; "--version 4.*" |]
-                    "npm", [| "install"; "react@18"; "react-dom@18"; "--save" |]
-                    "npm", [| "install"; "vite@5"; "--save-dev" |]
+                    for name, version in dotnetToolDependencies do
+                        "dotnet", [| "tool"; "install"; name; version |]
+                    yield! dependencyCommands
                 ]
                 |> List.map (fun (cmd, args) ->
                     AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)

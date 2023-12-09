@@ -1,14 +1,10 @@
 module ElmishLand.Base
 
 open System
-open System.ComponentModel
 open System.Diagnostics
 open System.IO
 open System.Reflection
-open System.Threading
-open System.Text
-open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
+open ElmishLand.Log
 
 type DotnetSdkVersion = | DotnetSdkVersion of Version
 
@@ -27,40 +23,6 @@ module DotnetSdkVersion =
 let minimumRequiredDotnetSdk = DotnetSdkVersion(Version(6, 0, 100))
 
 let minimumRequiredNode = Version(18, 0)
-
-type Log
-    (
-        [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string,
-        [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
-        [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
-    ) =
-    let path = path.Replace($"%s{__SOURCE_DIRECTORY__}", "")[1..]
-
-    let writeLine (message: string) args =
-        let formattedMsg =
-            args
-            |> Array.fold
-                (fun (sb: StringBuilder) arg ->
-                    let i = sb.ToString().IndexOf("{}")
-                    sb.Replace("{}", (if arg = null then "null" else $"%A{arg}"), i, 2))
-                (StringBuilder(message))
-
-        let time = DateTime.Now.ToString("HH:mm:ss.fff")
-        Console.WriteLine $"%s{time} %s{path}(%i{line}): %s{memberName}: %s{formattedMsg.ToString()}"
-
-    let isEnabled = Environment.CommandLine.Contains("--verbose")
-
-    member _.Info(message, [<ParamArray>] args: obj array) =
-        if isEnabled then
-            Console.ForegroundColor <- ConsoleColor.Gray
-            writeLine message args
-            Console.ResetColor()
-
-    member _.Error(message, [<ParamArray>] args: obj array) =
-        if isEnabled then
-            Console.ForegroundColor <- ConsoleColor.Red
-            writeLine message args
-            Console.ResetColor()
 
 module String =
     let asLines (s: string) = s.Split(Environment.NewLine)
@@ -176,16 +138,17 @@ let cliName = "dotnet elmish-land"
 let help eachLine =
     $"""Here are the available commands:
 
-%s{cliName} init ... create a new project in the current directory
-%s{cliName} server ........................ run a local dev server
-%s{cliName} build .................. build your app for production
-%s{cliName} add page <url> ........................ add a new page
-%s{cliName} add layout <name> ................... add a new layout
-%s{cliName} routes ................... list all routes in your app
+%s{cliName} init ...... create a new project in the current directory
+%s{cliName} upgrade ....... upgrade project to the latest elmish-land
+%s{cliName} server ........................... run a local dev server
+%s{cliName} build ..................... build your app for production
+%s{cliName} add page <url> ........................... add a new page
+%s{cliName} add layout <name> ...................... add a new layout
+%s{cliName} routes ...................... list all routes in your app
 
 Want to learn more? Visit https://elmish.land
 """
-    |> fun s -> s.Split(Environment.NewLine)
+    |> _.Split(Environment.NewLine)
     |> Array.map eachLine
     |> String.concat Environment.NewLine
 
@@ -204,11 +167,6 @@ let indent (s: string) =
     s.Split('\n')
     |> Array.map (fun line -> $"    %s{line}")
     |> String.concat Environment.NewLine
-
-let private printError (text: string) =
-    Console.ForegroundColor <- ConsoleColor.Red
-    Console.Error.WriteLine(indent text)
-    Console.ResetColor()
 
 let getTemplatesDir =
     Path.Combine(Path.GetDirectoryName(appFilePath.Value), "src", "templates")
@@ -326,40 +284,6 @@ type ProjectName =
 
     static member asString(ProjectName projectName) = projectName
 
-type AppError =
-    | ProcessError of string
-    | FsProjValidationError of string list
-    | DotnetSdkNotFound
-    | NodeNotFound
-
-let handleAppResult onSuccess =
-    function
-    | Ok _ ->
-        onSuccess ()
-        0
-    | Error(ProcessError(error)) ->
-        printError error
-        -1
-    | Error(FsProjValidationError errors) ->
-        for error in errors do
-            printError error
-
-        -1
-    | Error DotnetSdkNotFound ->
-        printError
-            $"""You need to install .NET Core SDK version %s{DotnetSdkVersion.asString minimumRequiredDotnetSdk} or above
-https://dotnet.microsoft.com/
-"""
-
-        -1
-    | Error NodeNotFound ->
-        printError
-            $"""You need to install Node.js version %s{minimumRequiredNode.ToString()} or above
-https://nodejs.org/
-"""
-
-        -1
-
 let writeResource (projectDir: AbsoluteProjectDir) (name: string) dst replace =
     let dstPath = AbsoluteProjectDir.asFilePath projectDir |> FilePath.appendParts dst
 
@@ -386,73 +310,29 @@ let writeResource (projectDir: AbsoluteProjectDir) (name: string) dst replace =
         |> (fun x -> File.WriteAllText(FilePath.asString dstPath, x))
     | None -> ()
 
-let private runProcessInternal
-    (workingDirectory: FilePath)
-    (command: string)
-    (args: string array)
-    (cancellation: CancellationToken)
-    (outputReceived: string -> unit)
-    =
-    let log = Log()
+let dotnetToolDependencies = [
+    "fable", "--version 4.*"
+    "elmish-land", (if isPreRelease.Value then "--prerelease" else "")
+]
 
-    log.Info("Running {} {}", command, args)
+let nugetDependencies = [
+    "Elmish", "--version 4.*"
+    "Fable.Elmish.HMR", "--version 7.*"
+    "Fable.Elmish.React", "--version 4.*"
+    "Feliz", "--version 2.*"
+    "Feliz.Router", "--version 4.*"
+    "Elmish", "--version 4.*"
+]
 
-    try
-        let p =
-            ProcessStartInfo(
-                command,
-                args |> String.concat " ",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                RedirectStandardInput = true,
-                WorkingDirectory = FilePath.asString workingDirectory
-            )
-            |> Process.Start
+let npmDependencies = [ "react", "18"; "react-dom", "18" ]
 
-        let out = StringBuilder()
-        let err = StringBuilder()
+let npmDevDependencies = [ "vite", "5" ]
 
-        p.OutputDataReceived.Add(fun args ->
-            if not (String.IsNullOrEmpty args.Data) then
-                log.Info(args.Data)
-                out.AppendLine(args.Data) |> ignore
-                outputReceived args.Data)
-
-        p.ErrorDataReceived.Add(fun args ->
-            if not (String.IsNullOrEmpty args.Data) then
-                log.Error(args.Data)
-                err.AppendLine(args.Data) |> ignore)
-
-        p.BeginOutputReadLine()
-        p.BeginErrorReadLine()
-
-        while not cancellation.IsCancellationRequested && not p.HasExited do
-            Thread.Sleep(100)
-
-        let errorResult () = err.ToString() |> ProcessError |> Error
-
-        if cancellation.IsCancellationRequested then
-            p.Kill(true)
-            p.Dispose()
-            errorResult ()
-        else
-            p.WaitForExit()
-
-            if p.ExitCode = 0 then
-                Ok(out.ToString())
-            else
-                errorResult ()
-    with ex ->
-        ex.ToString() |> AppError.ProcessError |> Error
-
-let runProcess (workingDirectory: FilePath) (command: string) (args: string array) cancel outputReceived =
-    runProcessInternal workingDirectory command args cancel outputReceived
-
-let runProcesses (processes: (FilePath * string * string array * CancellationToken * (string -> unit)) list) =
-    processes
-    |> List.fold
-        (fun previousResult (workingDirectory, command, args, cancellation, outputReceived) ->
-            previousResult
-            |> Result.bind (fun () -> runProcessInternal workingDirectory command args cancellation outputReceived)
-            |> Result.map ignore)
-        (Ok())
+let dependencyCommands = [
+    for name, version in nugetDependencies do
+        "dotnet", [| "add"; "package"; name; version |]
+    for name, version in npmDependencies do
+        "npm", [| "install"; $"%s{name}@%s{version}"; "--save" |]
+    for name, version in npmDevDependencies do
+        "npm", [| "install"; $"%s{name}@%s{version}"; "--save-dev" |]
+]

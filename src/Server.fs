@@ -2,10 +2,12 @@ module ElmishLand.Server
 
 open System.IO
 open System.Threading
+open System.Text.RegularExpressions
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
 open ElmishLand.FsProj
-open System.Text.RegularExpressions
+open ElmishLand.Process
+open ElmishLand.AppError
 
 let server (projectDir: AbsoluteProjectDir) =
     use watcher =

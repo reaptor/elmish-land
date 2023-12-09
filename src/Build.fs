@@ -4,6 +4,8 @@ open System.Threading
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
 open ElmishLand.FsProj
+open ElmishLand.Process
+open ElmishLand.AppError
 
 let build (projectDir: AbsoluteProjectDir) =
     let routeData = getRouteData projectDir

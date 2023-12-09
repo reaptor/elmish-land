@@ -1,6 +1,7 @@
 ﻿open System
 open ElmishLand.Base
 open ElmishLand.Init
+open ElmishLand.Upgrade
 open ElmishLand.Server
 open ElmishLand.Build
 
@@ -14,6 +15,9 @@ let main argv =
         | "init" :: NonOption projectDir :: _ ->
             init (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
         | "init" :: _ -> init AbsoluteProjectDir.defaultProjectDir
+        | "upgrade" :: NonOption projectDir :: _ ->
+            upgrade (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
+        | "upgrade" :: _ -> init AbsoluteProjectDir.defaultProjectDir
         | "server" :: NonOption projectDir :: _ ->
             server (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
         | "server" :: _ -> server AbsoluteProjectDir.defaultProjectDir
@@ -26,7 +30,7 @@ let main argv =
         | _ ->
             $"""
 %s{welcomeTitle.Value}
-help id
+%s{help id}
 """
             |> indent
             |> printfn "%s"

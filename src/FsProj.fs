@@ -3,6 +3,7 @@ module ElmishLand.FsProj
 open System.IO
 open System.Text.RegularExpressions
 open ElmishLand.Base
+open ElmishLand.AppError
 
 let validate (projectDir: AbsoluteProjectDir) =
     let formatError lineNr (line: string) (FilePath filePath) msg =
