@@ -6,25 +6,58 @@ open System.Text.RegularExpressions
 open System.Threading
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
+open System.Runtime.InteropServices
 
-let getLatestSdkVersion () =
-    let sdkVersions = ResizeArray<DotnetSdkVersion>()
+let checkIfDotnetIsInstalled () =
+    if
+        (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+         && not (File.Exists("C:\\program files\\dotnet\\dotnet.exe")))
+        || (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+            && not (File.Exists("/usr/local/share/dotnet/dotnet")))
+        || (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+            && not (File.Exists("/home/user/share/dotnet/dotnet")))
+    then
+        Error AppError.DotnetSdkNotFound
+    else
+        Ok()
 
-    runProcess
-        (FilePath.fromString Environment.CurrentDirectory)
-        "dotnet"
-        [| "--list-sdks" |]
-        CancellationToken.None
-        (fun line ->
-            match DotnetSdkVersion.fromString (Regex.Match(line, "\d.\d.\d{3}").Value) with
-            | Some(DotnetSdkVersion version) when version >= (DotnetSdkVersion.value minimumRequiredDotnetSdk) ->
-                sdkVersions.Add(DotnetSdkVersion version)
-            | _ -> ())
-    |> Result.bind (fun () ->
-        if Seq.isEmpty sdkVersions then
-            Error DotnetSdkNotFound
-        else
-            sdkVersions |> Seq.max |> Ok)
+let getLatestDotnetSdkVersion () =
+    let log = Log()
+
+    result {
+        do! checkIfDotnetIsInstalled ()
+
+        let! output =
+            runProcess
+                (FilePath.fromString Environment.CurrentDirectory)
+                "dotnet"
+                [| "--list-sdks" |]
+                CancellationToken.None
+                ignore
+            |> Result.mapError (fun _ -> AppError.DotnetSdkNotFound)
+
+        return!
+            output.Split(Environment.NewLine)
+            |> Array.choose (fun line ->
+                match DotnetSdkVersion.fromString (Regex.Match(line, "\d.\d.\d{3}").Value) with
+                | Some(DotnetSdkVersion version) when version >= (DotnetSdkVersion.value minimumRequiredDotnetSdk) ->
+                    Some(DotnetSdkVersion version)
+                | _ -> None)
+            |> fun sdkVersions ->
+                if Array.isEmpty sdkVersions then
+                    log.Error("Found no installed dotnet SDKs")
+                    Error DotnetSdkNotFound
+                else
+                    sdkVersions |> Seq.max |> Ok
+    }
+
+let getNodeVersion () =
+    runProcess (FilePath.fromString Environment.CurrentDirectory) "node" [| "-v" |] CancellationToken.None ignore
+    |> Result.mapError (fun _ -> AppError.NodeNotFound)
+    |> Result.bind (fun output ->
+        match Version.TryParse(output[1..]) with
+        | true, version when version >= minimumRequiredNode -> Ok version
+        | _ -> Error NodeNotFound)
 
 let init (projectDir: AbsoluteProjectDir) =
     try
@@ -32,9 +65,11 @@ let init (projectDir: AbsoluteProjectDir) =
 
         result {
             let log = Log()
-            let! sdkVersion = getLatestSdkVersion ()
+            let! dotnetSdkVersion = getLatestDotnetSdkVersion ()
+            Log().Info("Using .NET SDK: {}", dotnetSdkVersion)
 
-            Log().Info("Using sdkVersion: {}", sdkVersion)
+            let! nodeVersion = getNodeVersion ()
+            Log().Info("Using Node.js: {}", nodeVersion)
 
             log.Info("Initializing project. {}", AbsoluteProjectDir.asString projectDir)
 
@@ -45,7 +80,7 @@ let init (projectDir: AbsoluteProjectDir) =
                 [ $"%s{ProjectName.asString projectName}.fsproj" ]
                 (Some(
                     handlebars {|
-                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion sdkVersion)
+                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
                     |}
                 ))
 
@@ -54,7 +89,7 @@ let init (projectDir: AbsoluteProjectDir) =
                 [ "global.json" ]
                 (Some(
                     handlebars {|
-                        DotNetSdkVersion = (DotnetSdkVersion.asString sdkVersion)
+                        DotNetSdkVersion = (DotnetSdkVersion.asString dotnetSdkVersion)
                     |}
                 ))
 
@@ -120,7 +155,7 @@ let init (projectDir: AbsoluteProjectDir) =
                     "dotnet", [| "add"; "package"; "Feliz"; "--version 2.*" |]
                     "dotnet", [| "add"; "package"; "Feliz.Router"; "--version 4.*" |]
                     "dotnet", [| "add"; "package"; "Elmish"; "--version 4.*" |]
-                    "npm", [| "install"; "react@18 react-dom@18"; "--save" |]
+                    "npm", [| "install"; "react@18"; "react-dom@18"; "--save" |]
                     "npm", [| "install"; "vite@5"; "--save-dev" |]
                 ]
                 |> List.map (fun (cmd, args) ->
