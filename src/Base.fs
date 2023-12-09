@@ -44,7 +44,7 @@ type Log
                     sb.Replace("{}", (if arg = null then "null" else $"%A{arg}"), i, 2))
                 (StringBuilder(message))
 
-        Console.WriteLine $"%s{path}(%i{line}): %s{memberName}: %s{formattedMsg.ToString()}"
+        Console.WriteLine $"%s{DateTime.Now.ToString()}%s{path}(%i{line}): %s{memberName}: %s{formattedMsg.ToString()}"
 
     let isEnabled = Environment.CommandLine.Contains("--verbose")
 
@@ -331,7 +331,7 @@ type AppError =
 
 let handleAppResult onSuccess =
     function
-    | Ok() ->
+    | Ok _ ->
         onSuccess ()
         0
     | Error(ProcessError(error)) ->
@@ -398,11 +398,13 @@ let private runProcessInternal
         )
         |> Process.Start
 
+    let out = StringBuilder()
     let err = StringBuilder()
 
     p.OutputDataReceived.Add(fun args ->
         if not (String.IsNullOrEmpty args.Data) then
             log.Info(args.Data)
+            out.Append(args.Data) |> ignore
             outputReceived args.Data)
 
     p.ErrorDataReceived.Add(fun args ->
@@ -424,7 +426,7 @@ let private runProcessInternal
         p.Dispose()
         errorResult ()
     else if p.ExitCode = 0 then
-        Ok()
+        Ok(out.ToString())
     else
         errorResult ()
 
@@ -437,5 +439,6 @@ let runProcesses (processes: (FilePath * string * string array * CancellationTok
     |> List.fold
         (fun previousResult (workingDirectory, command, args, cancellation, outputReceived) ->
             previousResult
-            |> Result.bind (fun () -> runProcessInternal workingDirectory command args cancellation outputReceived))
+            |> Result.bind (fun () -> runProcessInternal workingDirectory command args cancellation outputReceived)
+            |> Result.map ignore)
         (Ok())

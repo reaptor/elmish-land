@@ -8,23 +8,32 @@ open ElmishLand.Base
 open ElmishLand.TemplateEngine
 
 let getLatestSdkVersion () =
-    let sdkVersions = ResizeArray<DotnetSdkVersion>()
+    let log = Log()
 
     runProcess
         (FilePath.fromString Environment.CurrentDirectory)
         "dotnet"
         [| "--list-sdks" |]
         CancellationToken.None
-        (fun line ->
-            match DotnetSdkVersion.fromString (Regex.Match(line, "\d.\d.\d{3}").Value) with
-            | Some(DotnetSdkVersion version) when version >= (DotnetSdkVersion.value minimumRequiredDotnetSdk) ->
-                sdkVersions.Add(DotnetSdkVersion version)
-            | _ -> ())
-    |> Result.bind (fun () ->
-        if Seq.isEmpty sdkVersions then
-            Error DotnetSdkNotFound
-        else
-            sdkVersions |> Seq.max |> Ok)
+        ignore
+    |> Result.bind (fun output ->
+        log.Info("Output: {}", output)
+
+        (output.Split(Environment.NewLine)
+         |> Array.choose (fun line ->
+             match DotnetSdkVersion.fromString (Regex.Match(line, "\d.\d.\d{3}").Value) with
+             | Some(DotnetSdkVersion version) when version >= (DotnetSdkVersion.value minimumRequiredDotnetSdk) ->
+                 log.Info("Line contains a .NET SDK version: {}", version)
+                 Some(DotnetSdkVersion version)
+             | _ ->
+                 log.Info("Line does not contain a .NET SDK version: {}", line)
+                 None)
+         |> fun sdkVersions ->
+             if Array.isEmpty sdkVersions then
+                 log.Error("Found no installed dotnet SDKs")
+                 Error DotnetSdkNotFound
+             else
+                 sdkVersions |> Seq.max |> Ok))
 
 let init (projectDir: AbsoluteProjectDir) =
     try
