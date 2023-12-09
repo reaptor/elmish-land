@@ -46,13 +46,7 @@ let server (projectDir: AbsoluteProjectDir) =
                     let m = Regex.Match(output, "Local:   (http://localhost:\d+)")
 
                     if m.Success then
-                        let text = $"%s{appTitle.Value} is ready at %s{m.Groups[1].Value}"
-
-                        printfn
-                            $"""
-    %s{text}
-    %s{String.init text.Length (fun _ -> "-")}
-    """         ))
+                        printfn $"""%s{commandHeader $"is ready at %s{m.Groups[1].Value}"}"""))
         |> handleAppResult ignore
         |> ignore<int>
 

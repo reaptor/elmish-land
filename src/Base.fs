@@ -1,6 +1,7 @@
 module ElmishLand.Base
 
 open System
+open System.ComponentModel
 open System.Diagnostics
 open System.IO
 open System.Reflection
@@ -23,7 +24,9 @@ module DotnetSdkVersion =
     let asFrameworkVersion (DotnetSdkVersion version) =
         $"net%i{version.Major}.%i{version.Minor}"
 
-let minimumRequiredDotnetSdk = DotnetSdkVersion(Version(7, 0, 100))
+let minimumRequiredDotnetSdk = DotnetSdkVersion(Version(6, 0, 100))
+
+let minimumRequiredNode = Version(18, 0)
 
 type Log
     (
@@ -31,9 +34,7 @@ type Log
         [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
         [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
     ) =
-
-    let path =
-        path.Replace($"%s{__SOURCE_DIRECTORY__}%s{Path.DirectorySeparatorChar.ToString()}", "")
+    let path = path.Replace($"%s{__SOURCE_DIRECTORY__}", "")[1..]
 
     let writeLine (message: string) args =
         let formattedMsg =
@@ -44,7 +45,8 @@ type Log
                     sb.Replace("{}", (if arg = null then "null" else $"%A{arg}"), i, 2))
                 (StringBuilder(message))
 
-        Console.WriteLine $"%s{DateTime.Now.ToString()}%s{path}(%i{line}): %s{memberName}: %s{formattedMsg.ToString()}"
+        let time = DateTime.Now.ToString("HH:mm:ss.fff")
+        Console.WriteLine $"%s{time} %s{path}(%i{line}): %s{memberName}: %s{formattedMsg.ToString()}"
 
     let isEnabled = Environment.CommandLine.Contains("--verbose")
 
@@ -328,6 +330,7 @@ type AppError =
     | ProcessError of string
     | FsProjValidationError of string list
     | DotnetSdkNotFound
+    | NodeNotFound
 
 let handleAppResult onSuccess =
     function
@@ -345,7 +348,14 @@ let handleAppResult onSuccess =
     | Error DotnetSdkNotFound ->
         printError
             $"""You need to install .NET Core SDK version %s{DotnetSdkVersion.asString minimumRequiredDotnetSdk} or above
-https://dotnet.microsoft.com/en-us/
+https://dotnet.microsoft.com/
+"""
+
+        -1
+    | Error NodeNotFound ->
+        printError
+            $"""You need to install Node.js version %s{minimumRequiredNode.ToString()} or above
+https://nodejs.org/
 """
 
         -1
@@ -387,49 +397,53 @@ let private runProcessInternal
 
     log.Info("Running {} {}", command, args)
 
-    let p =
-        ProcessStartInfo(
-            command,
-            args |> String.concat " ",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            RedirectStandardInput = true,
-            WorkingDirectory = FilePath.asString workingDirectory
-        )
-        |> Process.Start
+    try
+        let p =
+            ProcessStartInfo(
+                command,
+                args |> String.concat " ",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                WorkingDirectory = FilePath.asString workingDirectory
+            )
+            |> Process.Start
 
-    let out = StringBuilder()
-    let err = StringBuilder()
+        let out = StringBuilder()
+        let err = StringBuilder()
 
-    p.OutputDataReceived.Add(fun args ->
-        if not (String.IsNullOrEmpty args.Data) then
-            log.Info(args.Data)
-            out.Append(args.Data) |> ignore
-            outputReceived args.Data)
+        p.OutputDataReceived.Add(fun args ->
+            if not (String.IsNullOrEmpty args.Data) then
+                log.Info(args.Data)
+                out.AppendLine(args.Data) |> ignore
+                outputReceived args.Data)
 
-    p.ErrorDataReceived.Add(fun args ->
-        if not (String.IsNullOrEmpty args.Data) then
-            log.Error(args.Data)
-            err.AppendLine(args.Data) |> ignore)
+        p.ErrorDataReceived.Add(fun args ->
+            if not (String.IsNullOrEmpty args.Data) then
+                log.Error(args.Data)
+                err.AppendLine(args.Data) |> ignore)
 
-    p.BeginOutputReadLine()
-    p.BeginErrorReadLine()
+        p.BeginOutputReadLine()
+        p.BeginErrorReadLine()
 
-    while not cancellation.IsCancellationRequested && not p.HasExited do
-        Thread.Sleep(100)
+        while not cancellation.IsCancellationRequested && not p.HasExited do
+            Thread.Sleep(100)
 
-    let errorResult () =
-        (err.ToString()) |> ProcessError |> Error
+        let errorResult () = err.ToString() |> ProcessError |> Error
 
-    if cancellation.IsCancellationRequested then
-        p.Kill(true)
-        p.Dispose()
-        errorResult ()
-    else if p.ExitCode = 0 then
-        Ok(out.ToString())
-    else
-        errorResult ()
+        if cancellation.IsCancellationRequested then
+            p.Kill(true)
+            p.Dispose()
+            errorResult ()
+        else
+            p.WaitForExit()
 
+            if p.ExitCode = 0 then
+                Ok(out.ToString())
+            else
+                errorResult ()
+    with ex ->
+        ex.ToString() |> AppError.ProcessError |> Error
 
 let runProcess (workingDirectory: FilePath) (command: string) (args: string array) cancel outputReceived =
     runProcessInternal workingDirectory command args cancel outputReceived

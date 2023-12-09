@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 								GitVersion.yml = GitVersion.yml
 								global.json = global.json
 								CONTRIBUTING.md = CONTRIBUTING.md
+		build-single-file.cmd = build-single-file.cmd
+		build-single-file.sh = build-single-file.sh
 	EndProjectSection
 EndProject
 Global
