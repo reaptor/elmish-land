@@ -1,6 +1,5 @@
 ---
 sidebar_position: 3
-draft: true
 ---
 
 # Pages and Routes
@@ -9,7 +8,7 @@ At the heart of Elmish Land is a filesystem-based router. The routes of your app
 
 * `src/Pages/Home` is the root route
 * `src/Pages/About` creates an `/about` route
-* `src/Pages/Blog/[slug]` creates a route with a parameter, slug, that can be used to load data dynamically when a user requests a page like `/blog/hello-world`
+* `src/Pages/Blog/{slug}` creates a route with a parameter, slug, that can be used to load data dynamically when a user requests a page like `/blog/hello-world`
 
 Each page directory contains one page file called `Page.fs`.
 
@@ -23,5 +22,33 @@ src/
     ├── About
     │   └── Page.fs
     └── Blog
-        └── Page.fs
+        └── {slug}
+            └── Page.fs
 ```
+
+## The "About" page ​
+To get started, let's start with a page that is displayed when a user visits the URL /about.
+
+We can create our about page using the `elmish-land add page` command shown below:
+
+```bash
+dotnet elmish-land add page:view /sign-in
+```
+
+```bash
+    Elmish Land added a new page at /about
+    --------------------------------------
+
+    You can edit your new page here:
+    ./src/Pages/About/Page.fs
+
+    Please add the file to the project using an IDE or add the following line to an
+    ItemGroup in the project file './MyProject/MyProject.fsproj':
+    <Compile Include="src/Pages/About/Page.fs" />
+```
+
+:::warning
+
+You need to manually add the new page to your project file.
+
+:::

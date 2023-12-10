@@ -67,7 +67,8 @@ let addPage (url: string) =
 You can edit your new page here:
 ./%s{relativefilePathString}
 
-Please add the file to the project using an IDE or add the following line to a ItemGroup in the project file '%s{projectDir |> FsProjPath.fromProjectDir |> FsProjPath.asString}':
+Please add the file to the project using an IDE or add the following line to an
+ItemGroup in the project file '%s{projectDir |> FsProjPath.fromProjectDir |> FsProjPath.asString}':
 <Compile Include="%s{relativefilePathString}" />
 """
     |> indent
