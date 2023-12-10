@@ -14,7 +14,7 @@ module Route =
     let asUrl =
         function
         {{#each Routes}}
-        | Route.{{Name}} {{#if ArgsDefinition}}({{ArgsDefinition}}){{/if}} -> $"{{Url}}"
+        | Route.{{Name}} {{#if ArgsDefinition}}({{ArgsDefinition}}){{/if}} -> $"#{{Url}}"
         {{/each}}
         | Route.NotFound -> "notFound"
 

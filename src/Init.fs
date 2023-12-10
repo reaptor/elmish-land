@@ -33,7 +33,7 @@ let init (projectDir: AbsoluteProjectDir) =
 
             log.Info("Initializing project. {}", AbsoluteProjectDir.asString projectDir)
 
-            let writeResource = writeResource projectDir
+            let writeResource = writeResource projectDir false
 
             let fsProjPath = FsProjPath.fromProjectDir projectDir
             log.Info("Project path {}", fsProjPath)
@@ -79,6 +79,7 @@ let init (projectDir: AbsoluteProjectDir) =
                 else
                     let homeRoute = {
                         Name = "Home"
+                        MsgName = "HomeMsg"
                         ModuleName = $"%s{rootModuleName}.Pages.Home.Page"
                         ArgsDefinition = ""
                         ArgsUsage = ""

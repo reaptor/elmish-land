@@ -94,9 +94,9 @@ let validate (projectDir: AbsoluteProjectDir) =
 
         for pageFile in pageFilesMissingFromFsProj do
             $"""The page '%s{AbsoluteProjectDir.asString projectDir}/%s{FilePath.asString pageFile}' is missing from the project file. Please add the file to the project using an IDE
-or add the following line to a ItemGroup in the project file '%s{AbsoluteProjectDir.asString projectDir}':
+or add the following line to a ItemGroup in the project file '%s{projectDir |> FsProjPath.fromProjectDir |> FsProjPath.asString}':
 
-   <Compile Include="%s{FilePath.asString pageFile}" />
+<Compile Include="%s{FilePath.asString pageFile}" />
    """
     ]
 

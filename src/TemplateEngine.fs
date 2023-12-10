@@ -25,6 +25,7 @@ let handlebars model (src: string) =
 
 type Route = {
     Name: string
+    MsgName: string
     ModuleName: string
     ArgsDefinition: string
     ArgsUsage: string
@@ -92,7 +93,7 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
                 |> List.map (fun arg -> $"%s{quoteIfNeeded arg}: string")
                 |> String.concat ", "
 
-            if argString.Length = 0 then "" else $"%s{argString}"
+            if argString.Length = 0 then "" else $"(%s{argString})"
 
         let argsDefinition =
             let argString =
@@ -146,6 +147,7 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
 
         {
             Name = quoteIfNeeded name
+            MsgName = quoteIfNeeded $"%s{name}Msg"
             ModuleName =
                 sprintf
                     "%s.Pages.%s.Page"
@@ -177,6 +179,6 @@ let getRouteData (projectDir: AbsoluteProjectDir) =
     }
 
 let generateRoutesAndApp projectDir (routeData: RouteData) =
-    let copyFile = writeResource projectDir
-    copyFile "Routes.handlebars" [ "src"; "Routes.fs" ] (Some(handlebars routeData))
-    copyFile "App.handlebars" [ "src"; "App.fs" ] (Some(handlebars routeData))
+    let writeResource = writeResource projectDir true
+    writeResource "Routes.handlebars" [ "src"; "Routes.fs" ] (Some(handlebars routeData))
+    writeResource "App.handlebars" [ "src"; "App.fs" ] (Some(handlebars routeData))

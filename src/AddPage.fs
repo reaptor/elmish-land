@@ -1,34 +1,76 @@
 module ElmishLand.AddPage
 
-open System.IO
+open System
+open ElmishLand.Base
+open ElmishLand.Log
+open ElmishLand.TemplateEngine
+open ElmishLand.FsProj
+open ElmishLand.AppError
 
-// let files (projectDir) =
-//     Directory.GetFiles(projectDir, "page.fs", EnumerationOptions(RecurseSubdirectories = true))
-//     |> Array.sortBy (fun x -> if x.EndsWith("src\Pages\Page.fs") then "" else x)
-//
-// let routeData (file: string) =
-//     let route =
-//         file[0 .. file.Length - 9]
-//         |> String.replace rootDir ""
-//         |> String.replace "\\" "/"
-//
-//     route[1..]
-//     |> String.split "/"
-//     |> Array.fold
-//         (fun (parts, args) part ->
-//             if part.StartsWith("{") && part.EndsWith("}") then
-//                 $"%s{part[0..0].ToUpper()}{part[1..]}" :: parts,
-//                 RouteArg $"%s{part[1..1].ToLower()}%s{part[2 .. part.Length - 2]}" :: args
-//             else
-//                 $"%s{part[0..0].ToUpper()}{part[1..]}" :: parts, args)
-//         ([], [])
-//     |> fun (parts, args) ->
-//         let duName = String.concat "_" (List.rev parts)
-//
-//         Url(if route = "" then "/" else route),
-//         RouteFsharpTypeName(
-//             if duName.Contains("{") then $"``%s{duName}``"
-//             else if duName = "" then "Home"
-//             else duName
-//         ),
-//         List.rev args
+let addPage (url: string) =
+    let log = Log()
+
+    let args =
+        Environment.GetCommandLineArgs()
+        |> Array.pairwise
+        |> Array.choose (fun (x, y) ->
+            if x.StartsWith("--") && not (y.StartsWith("--")) then
+                Some(x, y)
+            else
+                None)
+        |> Map
+
+    let projectDir =
+        args
+        |> Map.tryFind "--project-dir"
+        |> function
+            | Some projectDir -> projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath
+            | None -> AbsoluteProjectDir.defaultProjectDir
+
+    log.Info("Using projectDir: {}", AbsoluteProjectDir.asString projectDir)
+
+    let routeFileParts =
+        url.Split("/", StringSplitOptions.RemoveEmptyEntries)
+        |> Array.map (fun x -> $"%s{x[0..0].ToUpper()}%s{x[1..]}")
+        |> fun x -> [ "src"; "Pages"; yield! x; "Page.fs" ]
+
+    let routeFilePath =
+        projectDir
+        |> AbsoluteProjectDir.asFilePath
+        |> FilePath.appendParts routeFileParts
+
+    log.Info("routeFilePath: {}", routeFilePath)
+
+    let route = fileToRoute projectDir routeFilePath
+    let projectName = projectDir |> ProjectName.fromProjectDir
+    let rootModuleName = projectName |> ProjectName.asString |> quoteIfNeeded
+
+    writeResource
+        projectDir
+        false
+        "Page.handlebars"
+        routeFileParts
+        (Some(
+            handlebars {|
+                RootModule = rootModuleName
+                Route = route
+            |}
+        ))
+
+    let routeData = getRouteData projectDir
+    log.Info("routeData: {}", routeData)
+    generateRoutesAndApp projectDir routeData
+
+    let relativefilePathString = $"""%s{routeFileParts |> String.concat "/"}"""
+
+    $"""%s{commandHeader $"added a new page at %s{url}"}
+You can edit your new page here:
+./%s{relativefilePathString}
+
+Please add the file to the project using an IDE or add the following line to a ItemGroup in the project file '%s{projectDir |> FsProjPath.fromProjectDir |> FsProjPath.asString}':
+<Compile Include="%s{relativefilePathString}" />
+"""
+    |> indent
+    |> printfn "%s"
+
+    0

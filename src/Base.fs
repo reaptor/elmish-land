@@ -289,10 +289,10 @@ type ProjectName =
 
     static member asString(ProjectName projectName) = projectName
 
-let writeResource (projectDir: AbsoluteProjectDir) (name: string) dst replace =
+let writeResource (projectDir: AbsoluteProjectDir) overwrite (name: string) dst replace =
     let dstPath = AbsoluteProjectDir.asFilePath projectDir |> FilePath.appendParts dst
 
-    if not (File.Exists(FilePath.asString dstPath)) then
+    if overwrite || not (File.Exists(FilePath.asString dstPath)) then
         let dstDir = FilePath.directoryPath dstPath |> FilePath.asString
 
         if not (Directory.Exists dstDir) then

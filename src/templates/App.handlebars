@@ -26,7 +26,7 @@ type Msg =
 | SharedMsg of Shared.Msg
 | RouteChanged of Route
 {{#each Routes}}
-| {{Name}}Msg of {{ModuleName}}.Msg
+| {{MsgName}} of {{ModuleName}}.Msg
 {{/each}}
 
 let init () =
@@ -51,8 +51,8 @@ let init () =
 
     match initialUrl with
     {{#each Routes}}
-    | Route.{{Name}} {{#if ArgsPattern}}{{ArgsPattern}}{{/if}}->
-        initPage {{ModuleName}}.init ({{ArgsUsage}}) Page.{{Name}} {{Name}}Msg
+    | Route.{{Name}} {{#if ArgsPattern}}{{ArgsPattern}} {{/if}}->
+        initPage {{ModuleName}}.init ({{ArgsUsage}}) Page.{{Name}} {{MsgName}}
     {{/each}}
     | Route.NotFound ->
         {
@@ -86,7 +86,7 @@ let update (msg: Msg) (model: Model) =
         match nextRoute with
         {{#each Routes}}
         | Route.{{Name}} {{#if ArgsDefinition}}({{ArgsDefinition}}){{/if}} ->
-            changeRoute {{ModuleName}}.init ({{#if ArgsUsage}}({{ArgsUsage}}){{/if}}) Page.{{Name}} {{Name}}Msg
+            changeRoute {{ModuleName}}.init ({{#if ArgsUsage}}({{ArgsUsage}}){{/if}}) Page.{{Name}} {{MsgName}}
         {{/each}}
         | Route.NotFound ->
             {
@@ -96,8 +96,8 @@ let update (msg: Msg) (model: Model) =
             },
             Cmd.none
     {{#each Routes}}
-    | {{Name}}Msg msg', Page.{{Name}} model' ->
-        updatePage {{ModuleName}}.update msg' model' Page.{{Name}} {{Name}}Msg
+    | {{MsgName}} msg', Page.{{Name}} model' ->
+        updatePage {{ModuleName}}.update msg' model' Page.{{Name}} {{MsgName}}
     {{/each}}
     | msg', model' ->
         printfn $"Unhandled App.Msg and CurrentPage.Model. Got\nMsg:\n%A{msg'}\nCurrentPage.Model:\n%A{model'}"
@@ -107,7 +107,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
     let currentPageView =
         match model.CurrentPage with
         {{#each Routes}}
-        | Page.{{Name}} m -> {{ModuleName}}.view m ({{Name}}Msg >> dispatch)
+        | Page.{{Name}} m -> {{ModuleName}}.view m ({{MsgName}} >> dispatch)
         {{/each}}
         | Page.NotFound -> Html.h1 "Page not found"
 
@@ -121,7 +121,7 @@ let subscribe model =
         Sub.map "Shared_App" SharedMsg [ Shared.subscribeShared id ]
         match model.CurrentPage with
         {{#each Routes}}
-        | Page.{{Name}} m -> Sub.map "{{Name}}" {{Name}}Msg ({{ModuleName}}.subscribe m)
+        | Page.{{Name}} m -> Sub.map "{{Name}}" {{MsgName}} ({{ModuleName}}.subscribe m)
         {{/each}}
         | Page.NotFound -> Sub.none
     ]

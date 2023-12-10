@@ -4,6 +4,7 @@ open ElmishLand.Init
 open ElmishLand.Upgrade
 open ElmishLand.Server
 open ElmishLand.Build
+open ElmishLand.AddPage
 
 let (|NotFlag|_|) (x: string) =
     if x.StartsWith("--") then None else Some x
@@ -24,7 +25,7 @@ let main argv =
         | "build" :: NotFlag projectDir :: _ ->
             build (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
         | "build" :: _ -> build AbsoluteProjectDir.defaultProjectDir
-        | "add" :: "page" :: url :: _ -> 0
+        | "add" :: "page" :: NotFlag url :: _ -> addPage url
         | "add" :: "layout" :: url :: _ -> 0
         | "routes" :: _ -> 0
         | _ ->
