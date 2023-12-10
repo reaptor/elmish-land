@@ -42,11 +42,11 @@ let upgrade (projectDir: AbsoluteProjectDir) =
                 AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
             |> runProcesses
     }
-    |> handleAppResult (fun () ->
-        printfn
-            $"""
-    %s{commandHeader $"upgraded the project in ./%s{ProjectName.asString projectName}"}
-    Run the following command to start the development server:
+    |> handleAppResult projectDir (fun () ->
+        $"""%s{commandHeader $"upgraded the project in ./%s{ProjectName.asString projectName}"}
+Run the following command to start the development server:
 
-    dotnet elmish-land server
-    """)
+dotnet elmish-land server
+    """
+        |> indent
+        |> printfn "%s")

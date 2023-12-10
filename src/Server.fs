@@ -37,19 +37,31 @@ let server (projectDir: AbsoluteProjectDir) =
         generateRoutesAndApp projectDir routeData
         watcher.EnableRaisingEvents <- true
 
-        validate projectDir
-        |> Result.bind (fun () ->
-            runProcess
-                (AbsoluteProjectDir.asFilePath projectDir)
-                "npm"
-                [| "run"; "elmish-land:start" |]
-                cts.Token
-                (fun output ->
+        let workingDir = AbsoluteProjectDir.asFilePath projectDir
+
+        result {
+            do! validate projectDir
+
+            do!
+                [
+                    "dotnet", [| "tool"; "restore" |]
+                    "dotnet", [| "restore" |]
+                    "npm", [| "install" |]
+                ]
+                |> List.map (fun (cmd, args) -> workingDir, cmd, args, cts.Token, ignore)
+                |> runProcesses
+
+            do!
+                runProcess workingDir "dotnet" [| "fable"; "--run"; "vite" |] cts.Token (fun output ->
                     let m = Regex.Match(output, "Local:   (http://localhost:\d+)")
 
                     if m.Success then
-                        printfn $"""%s{commandHeader $"is ready at %s{m.Groups[1].Value}"}"""))
-        |> handleAppResult ignore
+                        $"""%s{commandHeader $"is ready at %s{m.Groups[1].Value}"}"""
+                        |> indent
+                        |> printfn "%s")
+                |> Result.map ignore<string>
+        }
+        |> handleAppResult projectDir ignore
         |> ignore<int>
 
         resetEvt.WaitOne() |> ignore

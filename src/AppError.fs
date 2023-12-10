@@ -1,6 +1,7 @@
 module ElmishLand.AppError
 
 open System
+open System.IO
 open ElmishLand.Base
 
 type AppError =
@@ -14,30 +15,34 @@ let private printError (text: string) =
     Console.Error.WriteLine(indent text)
     Console.ResetColor()
 
-let handleAppResult onSuccess =
+let handleAppResult (projectDir: AbsoluteProjectDir) onSuccess =
     function
     | Ok _ ->
         onSuccess ()
         0
-    | Error(ProcessError(error)) ->
-        printError error
-        -1
-    | Error(FsProjValidationError errors) ->
-        for error in errors do
-            printError error
+    | Error e ->
+        Console.WriteLine(indent welcomeTitle.Value)
 
-        -1
-    | Error DotnetSdkNotFound ->
-        printError
-            $"""You need to install .NET Core SDK version %s{DotnetSdkVersion.asString minimumRequiredDotnetSdk} or above
+        match e with
+        | ProcessError(error) ->
+            printError error
+            -1
+        | FsProjValidationError errors ->
+            for error in errors do
+                printError error
+
+            -1
+        | DotnetSdkNotFound ->
+            printError
+                $"""You need to install .NET Core SDK version %s{DotnetSdkVersion.asString minimumRequiredDotnetSdk} or above
 https://dotnet.microsoft.com/
 """
 
-        -1
-    | Error NodeNotFound ->
-        printError
-            $"""You need to install Node.js version %s{minimumRequiredNode.ToString()} or above
+            -1
+        | NodeNotFound ->
+            printError
+                $"""You need to install Node.js version %s{minimumRequiredNode.ToString()} or above
 https://nodejs.org/
 """
 
-        -1
+            -1

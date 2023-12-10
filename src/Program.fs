@@ -5,23 +5,23 @@ open ElmishLand.Upgrade
 open ElmishLand.Server
 open ElmishLand.Build
 
-let (|NonOption|_|) (x: string) =
+let (|NotFlag|_|) (x: string) =
     if x.StartsWith("--") then None else Some x
 
 [<EntryPoint>]
 let main argv =
     try
         match List.ofArray argv with
-        | "init" :: NonOption projectDir :: _ ->
+        | "init" :: NotFlag projectDir :: _ ->
             init (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
         | "init" :: _ -> init AbsoluteProjectDir.defaultProjectDir
-        | "upgrade" :: NonOption projectDir :: _ ->
+        | "upgrade" :: NotFlag projectDir :: _ ->
             upgrade (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
         | "upgrade" :: _ -> init AbsoluteProjectDir.defaultProjectDir
-        | "server" :: NonOption projectDir :: _ ->
+        | "server" :: NotFlag projectDir :: _ ->
             server (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
         | "server" :: _ -> server AbsoluteProjectDir.defaultProjectDir
-        | "build" :: NonOption projectDir :: _ ->
+        | "build" :: NotFlag projectDir :: _ ->
             build (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
         | "build" :: _ -> build AbsoluteProjectDir.defaultProjectDir
         | "add" :: "page" :: url :: _ -> 0

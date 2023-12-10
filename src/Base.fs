@@ -104,12 +104,6 @@ let private fileVersionInfo =
         Log().Info("{}", fvi)
         fvi
 
-let version =
-    lazy
-        match fileVersionInfo.Value with
-        | Some fvi -> $"%i{fvi.FileMajorPart}.%i{fvi.FileMinorPart}.%i{fvi.FileBuildPart}"
-        | None -> "unknown"
-
 let isPreRelease =
     lazy
         match fileVersionInfo.Value with
@@ -120,9 +114,17 @@ let isPreRelease =
             || fvi.ProductVersion.Contains("+Branch.")
         | None -> true
 
-let prereleseText = lazy if isPreRelease.Value then " preview" else ""
+let version =
+    lazy
+        match fileVersionInfo.Value with
+        | Some fvi ->
+            if fvi.ProductVersion.Contains("+") then
+                fvi.ProductVersion[0 .. fvi.ProductVersion.IndexOf("+") - 1]
+            else
+                fvi.ProductVersion
+        | None -> "unknown"
 
-let appTitle = lazy $"Elmish Land (v%s{version.Value}%s{prereleseText.Value})"
+let appTitle = lazy $"Elmish Land (v%s{version.Value})"
 
 let welcomeTitle =
     lazy
@@ -186,8 +188,8 @@ let commandHeader s =
     let header = $"%s{appTitle.Value} %s{s}"
 
     $"""
-    %s{header}
-    %s{String.init header.Length (fun _ -> "-")}
+%s{header}
+%s{String.init header.Length (fun _ -> "-")}
 """
 
 let canonicalizePath (path: string) = path.Replace("\\", "/")
@@ -227,6 +229,9 @@ module FilePath =
 
     let endsWithParts parts (FilePath path) =
         path.EndsWith(parts |> String.concat "/")
+
+    let exists (AbsoluteProjectDir projectDir) parts =
+        File.Exists(projectDir |> appendParts parts |> asString)
 
 module AbsoluteProjectDir =
     let private currentDirectory =
@@ -287,28 +292,29 @@ type ProjectName =
 let writeResource (projectDir: AbsoluteProjectDir) (name: string) dst replace =
     let dstPath = AbsoluteProjectDir.asFilePath projectDir |> FilePath.appendParts dst
 
-    let dstDir = FilePath.directoryPath dstPath |> FilePath.asString
+    if not (File.Exists(FilePath.asString dstPath)) then
+        let dstDir = FilePath.directoryPath dstPath |> FilePath.asString
 
-    if not (Directory.Exists dstDir) then
-        Directory.CreateDirectory(dstDir) |> ignore
+        if not (Directory.Exists dstDir) then
+            Directory.CreateDirectory(dstDir) |> ignore
 
-    let assembly = Assembly.GetExecutingAssembly()
-    let resourceName = $"templates.%s{name}"
+        let assembly = Assembly.GetExecutingAssembly()
+        let resourceName = $"templates.%s{name}"
 
-    Log()
-        .Info("Writing resource '{}' to '{}'", resourceName, FilePath.asString dstPath)
+        Log()
+            .Info("Writing resource '{}' to '{}'", resourceName, FilePath.asString dstPath)
 
-    use stream = assembly.GetManifestResourceStream($"templates.%s{name}")
-    use reader = new StreamReader(stream)
-    let fileContents = reader.ReadToEnd()
-    File.WriteAllText(FilePath.asString dstPath, fileContents)
+        use stream = assembly.GetManifestResourceStream($"templates.%s{name}")
+        use reader = new StreamReader(stream)
+        let fileContents = reader.ReadToEnd()
+        File.WriteAllText(FilePath.asString dstPath, fileContents)
 
-    match replace with
-    | Some f ->
-        File.ReadAllText(FilePath.asString dstPath)
-        |> f
-        |> (fun x -> File.WriteAllText(FilePath.asString dstPath, x))
-    | None -> ()
+        match replace with
+        | Some f ->
+            File.ReadAllText(FilePath.asString dstPath)
+            |> f
+            |> (fun x -> File.WriteAllText(FilePath.asString dstPath, x))
+        | None -> ()
 
 let dotnetToolDependencies = [
     "fable", "--version 4.*"

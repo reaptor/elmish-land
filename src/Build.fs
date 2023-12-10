@@ -11,12 +11,24 @@ let build (projectDir: AbsoluteProjectDir) =
     let routeData = getRouteData projectDir
     generateRoutesAndApp projectDir routeData
 
-    validate projectDir
-    |> Result.bind (fun () ->
-        let projectDirAsFilePath = AbsoluteProjectDir.asFilePath projectDir
+    let workingDir = AbsoluteProjectDir.asFilePath projectDir
 
-        runProcesses [
-            projectDirAsFilePath, "npm", [| "install" |], CancellationToken.None, ignore
-            projectDirAsFilePath, "npm", [| "run"; "elmish-land:build" |], CancellationToken.None, ignore
-        ])
-    |> handleAppResult (fun () -> printfn "%s" (commandHeader "build was successful."))
+    result {
+        do! validate projectDir
+
+        do!
+            [
+                "dotnet", [| "tool"; "restore" |]
+                "dotnet", [| "restore" |]
+                "npm", [| "install" |]
+                "dotnet", [| "fable"; "--noCache"; "--run"; "vite"; "build" |]
+            ]
+            |> List.map (fun (cmd, args) -> workingDir, cmd, args, CancellationToken.None, ignore)
+            |> runProcesses
+    }
+    |> handleAppResult projectDir (fun () ->
+        $"""%s{commandHeader "build was successful."}
+Your app was saved in the 'dist' directory.
+"""
+        |> indent
+        |> printfn "%s")
