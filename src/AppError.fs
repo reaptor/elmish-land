@@ -1,7 +1,6 @@
 module ElmishLand.AppError
 
 open System
-open System.IO
 open ElmishLand.Base
 
 type AppError =

@@ -4,8 +4,6 @@ open System
 open ElmishLand.Base
 open ElmishLand.Log
 open ElmishLand.TemplateEngine
-open ElmishLand.FsProj
-open ElmishLand.AppError
 
 let addPage (url: string) =
     let log = Log()
