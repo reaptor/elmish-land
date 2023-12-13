@@ -52,6 +52,7 @@
         <Compile Include="src/Server.fs" />
         <Compile Include="src/Build.fs" />
         <Compile Include="src/AddPage.fs" />
+        <Compile Include="src/AddLayout.fs" />
         <Compile Include="src/Program.fs" />
 
         <Content Include="README.md" Pack="true" PackagePath="\" />
