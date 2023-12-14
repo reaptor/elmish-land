@@ -7,6 +7,28 @@ open System.Text
 open ElmishLand.Log
 open ElmishLand.Base
 open ElmishLand.AppError
+open System.IO
+
+let private getFullPathOrDefault command =
+    System.Environment
+        .GetEnvironmentVariable("PATH")
+        .Split(";", StringSplitOptions.RemoveEmptyEntries)
+    |> Array.tryPick (fun x ->
+        let fullPath = Path.Combine(x, command)
+
+        let rec inner =
+            function
+            | [] -> None
+            | extension :: rest ->
+                let filePathWithExtension = Path.ChangeExtension(fullPath, extension)
+
+                if File.Exists(filePathWithExtension) then
+                    Some filePathWithExtension
+                else
+                    inner rest
+
+        inner [ "exe"; "cmd"; "bat"; "sh"; "" ])
+    |> Option.defaultValue command
 
 let private runProcessInternal
     (workingDirectory: FilePath)
@@ -16,6 +38,8 @@ let private runProcessInternal
     (outputReceived: string -> unit)
     =
     let log = Log()
+
+    let command = getFullPathOrDefault command
 
     log.Info("Running {} {}", command, args)
 
