@@ -41,7 +41,7 @@ let private runProcessInternal
 
     let command = getFullPathOrDefault command
 
-    log.Info("Running {} {}", command, args)
+    log.Debug("Running {} {}", command, args)
 
     try
         let p =
@@ -60,7 +60,7 @@ let private runProcessInternal
 
         p.OutputDataReceived.Add(fun args ->
             if not (String.IsNullOrEmpty args.Data) then
-                log.Info(args.Data)
+                log.Debug(args.Data)
                 out.AppendLine(args.Data) |> ignore
                 outputReceived args.Data)
 

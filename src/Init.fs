@@ -20,23 +20,25 @@ let getNodeVersion () =
         | _ -> Error NodeNotFound)
 
 let init (projectDir: AbsoluteProjectDir) =
+    let log = Log()
+
     try
         let projectName = projectDir |> ProjectName.fromProjectDir
 
         result {
             let log = Log()
             let! dotnetSdkVersion = getLatestDotnetSdkVersion ()
-            Log().Info("Using .NET SDK: {}", dotnetSdkVersion)
+            Log().Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
             let! nodeVersion = getNodeVersion ()
-            Log().Info("Using Node.js: {}", nodeVersion)
+            Log().Debug("Using Node.js: {}", nodeVersion)
 
-            log.Info("Initializing project. {}", AbsoluteProjectDir.asString projectDir)
+            log.Debug("Initializing project. {}", AbsoluteProjectDir.asString projectDir)
 
             let writeResource = writeResource projectDir false
 
             let fsProjPath = FsProjPath.fromProjectDir projectDir
-            log.Info("Project path {}", fsProjPath)
+            log.Debug("Project path {}", fsProjPath)
 
             let fsProjExists = File.Exists(FsProjPath.asString fsProjPath)
 
@@ -107,7 +109,7 @@ let init (projectDir: AbsoluteProjectDir) =
 
                     routeData
 
-            log.Info("Using route data {}", routeData)
+            log.Debug("Using route data {}", routeData)
 
             writeResource "Shared.handlebars" [ "src"; "Shared.fs" ] (Some(handlebars routeData))
 
@@ -133,9 +135,8 @@ Run the following command to start the development server:
 
 dotnet elmish-land server
 """
-            |> indent
-            |> printfn "%s")
+            |> log.Info)
 
     with :? IOException as ex ->
-        printfn $"%s{ex.Message}"
+        log.Error ex.Message
         -1

@@ -13,6 +13,13 @@ type Log
     ) =
     let path = path.Replace($"%s{__SOURCE_DIRECTORY__}", "")[1..]
 
+    let isVerbose = Environment.CommandLine.Contains("--verbose")
+
+    let indent (s: string) =
+        s.Split('\n')
+        |> Array.map (fun line -> $"  %s{line}")
+        |> String.concat Environment.NewLine
+
     let writeLine (message: string) args =
         let formattedMsg =
             args
@@ -22,19 +29,26 @@ type Log
                     sb.Replace("{}", (if arg = null then "null" else $"%A{arg}"), i, 2))
                 (StringBuilder(message))
 
-        let time = DateTime.Now.ToString("HH:mm:ss.fff")
-        Console.WriteLine $"%s{time} %s{path}(%i{line}): %s{memberName}: %s{formattedMsg.ToString()}"
+        if isVerbose then
+            let time = DateTime.Now.ToString("HH:mm:ss.fff")
+            $"%s{time} %s{path}(%i{line}): %s{memberName}: %s{formattedMsg.ToString()}"
+        else
+            $"%s{formattedMsg.ToString()}"
+        |> indent
+        |> Console.WriteLine
 
-    let isEnabled = Environment.CommandLine.Contains("--verbose")
-
-    member _.Info(message, [<ParamArray>] args: obj array) =
-        if isEnabled then
+    member _.Debug(message, [<ParamArray>] args: obj array) =
+        if isVerbose then
             Console.ForegroundColor <- ConsoleColor.Gray
             writeLine message args
             Console.ResetColor()
 
+    member _.Info(message, [<ParamArray>] args: obj array) =
+        Console.ForegroundColor <- ConsoleColor.Gray
+        writeLine message args
+        Console.ResetColor()
+
     member _.Error(message, [<ParamArray>] args: obj array) =
-        if isEnabled then
-            Console.ForegroundColor <- ConsoleColor.Red
-            writeLine message args
-            Console.ResetColor()
+        Console.ForegroundColor <- ConsoleColor.Red
+        writeLine message args
+        Console.ResetColor()

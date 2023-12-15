@@ -3,6 +3,7 @@ module ElmishLand.AppError
 open System
 open System.IO
 open ElmishLand.Base
+open ElmishLand.Log
 
 type AppError =
     | ProcessError of string
@@ -10,37 +11,34 @@ type AppError =
     | DotnetSdkNotFound
     | NodeNotFound
 
-let private printError (text: string) =
-    Console.ForegroundColor <- ConsoleColor.Red
-    Console.Error.WriteLine(indent text)
-    Console.ResetColor()
-
 let handleAppResult (projectDir: AbsoluteProjectDir) onSuccess =
+    let log = Log()
+
     function
     | Ok _ ->
         onSuccess ()
         0
     | Error e ->
-        Console.WriteLine(indent welcomeTitle.Value)
+        log.Info(welcomeTitle.Value)
 
         match e with
         | ProcessError(error) ->
-            printError error
+            log.Error error
             -1
         | FsProjValidationError errors ->
             for error in errors do
-                printError error
+                log.Error error
 
             -1
         | DotnetSdkNotFound ->
-            printError
+            log.Error
                 $"""You need to install .NET Core SDK version %s{DotnetSdkVersion.asString minimumRequiredDotnetSdk} or above
 https://dotnet.microsoft.com/
 """
 
             -1
         | NodeNotFound ->
-            printError
+            log.Error
                 $"""You need to install Node.js version %s{minimumRequiredNode.ToString()} or above
 https://nodejs.org/
 """

@@ -27,7 +27,7 @@ let addPage (url: string) =
             | Some projectDir -> projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath
             | None -> AbsoluteProjectDir.defaultProjectDir
 
-    log.Info("Using projectDir: {}", AbsoluteProjectDir.asString projectDir)
+    log.Debug("Using projectDir: {}", AbsoluteProjectDir.asString projectDir)
 
     let routeFileParts =
         url.Split("/", StringSplitOptions.RemoveEmptyEntries)
@@ -39,7 +39,7 @@ let addPage (url: string) =
         |> AbsoluteProjectDir.asFilePath
         |> FilePath.appendParts routeFileParts
 
-    log.Info("routeFilePath: {}", routeFilePath)
+    log.Debug("routeFilePath: {}", routeFilePath)
 
     let route = fileToRoute projectDir routeFilePath
     let projectName = projectDir |> ProjectName.fromProjectDir
@@ -58,12 +58,12 @@ let addPage (url: string) =
         ))
 
     let routeData = getRouteData projectDir
-    log.Info("routeData: {}", routeData)
+    log.Debug("routeData: {}", routeData)
     generateRoutesAndApp projectDir routeData
 
     let relativefilePathString = $"""%s{routeFileParts |> String.concat "/"}"""
 
-    $"""%s{commandHeader $"added a new page at %s{url}"}
+    $"""%s{appTitle.Value} added a new page at %s{url}
 You can edit your new page here:
 ./%s{relativefilePathString}
 
@@ -71,7 +71,6 @@ Please add the file to the project using an IDE or add the following line to an
 ItemGroup in the project file '%s{projectDir |> FsProjPath.fromProjectDir |> FsProjPath.asString}':
 <Compile Include="%s{relativefilePathString}" />
 """
-    |> indent
-    |> printfn "%s"
+    |> log.Info
 
     0

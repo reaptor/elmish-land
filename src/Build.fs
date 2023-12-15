@@ -2,6 +2,7 @@ module ElmishLand.Build
 
 open System.Threading
 open ElmishLand.Base
+open ElmishLand.Log
 open ElmishLand.TemplateEngine
 open ElmishLand.FsProj
 open ElmishLand.Process
@@ -17,18 +18,17 @@ let build (projectDir: AbsoluteProjectDir) =
         do! validate projectDir
 
         do!
-            [
-                "dotnet", [| "tool"; "restore" |]
-                "dotnet", [| "restore" |]
-                "npm", [| "install" |]
-                "dotnet", [| "fable"; "--noCache"; "--run"; "vite"; "build" |]
-            ]
-            |> List.map (fun (cmd, args) -> workingDir, cmd, args, CancellationToken.None, ignore)
-            |> runProcesses
+            runProcess
+                workingDir
+                "dotnet"
+                [| "fable"; "--noCache"; "--run"; "vite"; "build" |]
+                CancellationToken.None
+                ignore
+            |> Result.map ignore<string>
+
     }
     |> handleAppResult projectDir (fun () ->
         $"""%s{commandHeader "build was successful."}
 Your app was saved in the 'dist' directory.
 """
-        |> indent
-        |> printfn "%s")
+        |> Log().Info)

@@ -1,6 +1,8 @@
 ﻿open System
+open ElmishLand
 open ElmishLand.Base
 open ElmishLand.Init
+open ElmishLand.Log
 open ElmishLand.Upgrade
 open ElmishLand.Server
 open ElmishLand.Build
@@ -11,6 +13,8 @@ let (|NotFlag|_|) (x: string) =
 
 [<EntryPoint>]
 let main argv =
+    let log = Log()
+
     try
         match List.ofArray argv with
         | "init" :: NotFlag projectDir :: _ ->
@@ -29,16 +33,14 @@ let main argv =
         | "add" :: "layout" :: url :: _ -> 0
         | "routes" :: _ -> 0
         | _ ->
+
             $"""
 %s{welcomeTitle.Value}
 %s{help id}
 """
-            |> indent
-            |> printfn "%s"
+            |> log.Info
 
             0
     with ex ->
-        Console.ForegroundColor <- ConsoleColor.Red
-        Console.WriteLine(ex.ToString())
-        Console.ResetColor()
+        Log().Error(ex.ToString())
         -1
