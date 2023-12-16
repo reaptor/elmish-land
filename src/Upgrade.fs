@@ -5,6 +5,7 @@ open System.Text.RegularExpressions
 open System.Threading
 open ElmishLand.Base
 open ElmishLand.DotNetCli
+open ElmishLand.Log
 open ElmishLand.Process
 open ElmishLand.AppError
 
@@ -47,5 +48,4 @@ Run the following command to start the development server:
 
 dotnet elmish-land server
     """
-        |> indent
-        |> printfn "%s")
+        |> Log().Info)
