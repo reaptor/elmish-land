@@ -53,20 +53,26 @@ let runEff (e: Effect<_, unit, _>) =
         return result, logOutput
     }
 
+let getFolder () =
+    $"""Proj_{Guid.NewGuid().ToString().Replace("-", "")}"""
+
 type Init(output: ITestOutputHelper) =
     [<Fact>]
     member _.``Generates project``() =
         task {
             let cts = new CancellationTokenSource()
             cts.CancelAfter(TimeSpan.FromSeconds 30)
-            let folder = Guid.NewGuid().ToString()
+            let folder = getFolder ()
 
             try
                 let! result, logs = ElmishLand.Program.run [| "init"; folder; "--verbose" |] |> runEff
                 LogOutput.writeAll output logs
                 Expects.ok result
                 let projectDir = folder |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath
-                Expects.equals $"%s{ElmishLand.Init.successMessage projectDir}\n" (logs.Info.ToString())
+
+                Expects.equals
+                    $"%s{ElmishLand.Init.successMessage projectDir}{Environment.NewLine}"
+                    (logs.Info.ToString())
             finally
                 if Directory.Exists(folder) then
                     Directory.Delete(folder, true)
@@ -78,7 +84,7 @@ type Build(output: ITestOutputHelper) =
         task {
             let cts = new CancellationTokenSource()
             cts.CancelAfter(TimeSpan.FromSeconds 30)
-            let folder = $"""Proj_{Guid.NewGuid().ToString().Replace("-", "")}"""
+            let folder = getFolder ()
 
             try
                 let! _ = ElmishLand.Program.run [| "init"; folder |] |> runEff
@@ -88,7 +94,7 @@ type Build(output: ITestOutputHelper) =
                 LogOutput.writeAll output logs
                 Expects.ok result
 
-                Expects.equals $"%s{ElmishLand.Build.successMessage}\n" (logs.Info.ToString())
+                Expects.equals $"%s{ElmishLand.Build.successMessage}{Environment.NewLine}" (logs.Info.ToString())
             finally
                 if Directory.Exists(folder) then
                     Directory.Delete(folder, true)
