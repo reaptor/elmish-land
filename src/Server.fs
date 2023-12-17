@@ -9,13 +9,14 @@ open ElmishLand.TemplateEngine
 open ElmishLand.FsProj
 open ElmishLand.Process
 open ElmishLand.AppError
+open Orsak
 
 let server (projectDir: AbsoluteProjectDir) =
-    let log = Log()
-    let routeData = getRouteData projectDir
-    generateRoutesAndApp projectDir routeData
+    eff {
+        let! log = Effect.getLogger ()
+        let routeData = getRouteData projectDir
+        do! generateRoutesAndApp projectDir routeData
 
-    result {
         do! validate projectDir
 
         let workingDir = AbsoluteProjectDir.asFilePath projectDir
@@ -29,7 +30,7 @@ let server (projectDir: AbsoluteProjectDir) =
 
                 if m.Success then
                     isViteRunning <- true
-                    $"""%s{commandHeader $"is ready at %s{m.Groups[1].Value}"}""" |> log.Info
+                    $"""%s{getCommandHeader $"is ready at %s{m.Groups[1].Value}"}""" |> log.Info
 
                 if isViteRunning then
                     let m = Regex.Match(output, "Started Fable compilation")
@@ -49,6 +50,6 @@ let server (projectDir: AbsoluteProjectDir) =
                     if isParsing && Regex.IsMatch(output, "Watching") then
                         isParsing <- false
                         log.Info "done")
-            |> Result.map ignore<string>
+            |> Effect.map ignore<string>
     }
-    |> handleAppResult projectDir ignore
+// |> handleAppResult projectDir ignore

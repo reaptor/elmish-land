@@ -2,53 +2,25 @@ module ElmishLand.Log
 
 open System
 open System.Text
-open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
+open Orsak
 
-type Log
-    (
-        [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string,
-        [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
-        [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
-    ) =
-    let path = path.Replace($"%s{__SOURCE_DIRECTORY__}", "")[1..]
+let formatMessage (message: string) args =
+    args
+    |> Array.fold
+        (fun (sb: StringBuilder) arg ->
+            let i = sb.ToString().IndexOf("{}")
+            sb.Replace("{}", (if arg = null then "null" else $"%A{arg}"), i, 2))
+        (StringBuilder(message))
+    |> _.ToString()
 
-    let isVerbose = Environment.CommandLine.Contains("--verbose")
+type ILog =
+    abstract member Debug: message: string * [<ParamArray>] args: obj array -> unit
+    abstract member Info: message: string * [<ParamArray>] args: obj array -> unit
+    abstract member Error: message: string * [<ParamArray>] args: obj array -> unit
 
-    let indent (s: string) =
-        s.Split('\n')
-        |> Array.map (fun line -> $"  %s{line}")
-        |> String.concat Environment.NewLine
+type ILogProvider =
+    abstract member GetLogger: unit -> ILog
 
-    let writeLine (message: string) args =
-        let formattedMsg =
-            args
-            |> Array.fold
-                (fun (sb: StringBuilder) arg ->
-                    let i = sb.ToString().IndexOf("{}")
-                    sb.Replace("{}", (if arg = null then "null" else $"%A{arg}"), i, 2))
-                (StringBuilder(message))
-
-        if isVerbose then
-            let time = DateTime.Now.ToString("HH:mm:ss.fff")
-            $"%s{time} %s{path}(%i{line}): %s{memberName}: %s{formattedMsg.ToString()}"
-        else
-            $"%s{formattedMsg.ToString()}"
-        |> indent
-        |> Console.WriteLine
-
-    member _.Debug(message, [<ParamArray>] args: obj array) =
-        if isVerbose then
-            Console.ForegroundColor <- ConsoleColor.Gray
-            writeLine message args
-            Console.ResetColor()
-
-    member _.Info(message, [<ParamArray>] args: obj array) =
-        Console.ForegroundColor <- ConsoleColor.Gray
-        writeLine message args
-        Console.ResetColor()
-
-    member _.Error(message, [<ParamArray>] args: obj array) =
-        Console.ForegroundColor <- ConsoleColor.Red
-        writeLine message args
-        Console.ResetColor()
+module Effect =
+    let getLogger () =
+        Effect.Create(fun (provider: #ILogProvider) -> provider.GetLogger())

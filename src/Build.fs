@@ -6,15 +6,20 @@ open ElmishLand.Log
 open ElmishLand.TemplateEngine
 open ElmishLand.FsProj
 open ElmishLand.Process
-open ElmishLand.AppError
+open Orsak
+
+let successMessage =
+    $"""%s{getCommandHeader "build was successful."}
+Your app was saved in the 'dist' directory.
+"""
 
 let build (projectDir: AbsoluteProjectDir) =
-    let routeData = getRouteData projectDir
-    generateRoutesAndApp projectDir routeData
+    eff {
+        let! log = Effect.getLogger ()
+        let routeData = getRouteData projectDir
+        do! generateRoutesAndApp projectDir routeData
 
-    let workingDir = AbsoluteProjectDir.asFilePath projectDir
-
-    result {
+        let workingDir = AbsoluteProjectDir.asFilePath projectDir
         do! validate projectDir
 
         do!
@@ -24,11 +29,7 @@ let build (projectDir: AbsoluteProjectDir) =
                 [| "fable"; "--noCache"; "--run"; "vite"; "build" |]
                 CancellationToken.None
                 ignore
-            |> Result.map ignore<string>
+            |> Effect.map ignore<string>
 
+        log.Info successMessage
     }
-    |> handleAppResult projectDir (fun () ->
-        $"""%s{commandHeader "build was successful."}
-Your app was saved in the 'dist' directory.
-"""
-        |> Log().Info)

@@ -11,16 +11,12 @@ type AppError =
     | DotnetSdkNotFound
     | NodeNotFound
 
-let handleAppResult (projectDir: AbsoluteProjectDir) onSuccess =
-    let log = Log()
-
+let handleAppResult (log: ILog) onSuccess =
     function
     | Ok _ ->
         onSuccess ()
         0
     | Error e ->
-        log.Info(welcomeTitle.Value)
-
         match e with
         | ProcessError(error) ->
             log.Error error

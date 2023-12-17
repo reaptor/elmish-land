@@ -10,52 +10,52 @@
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <ItemGroup>
-        <EmbeddedResource Include="src/templates/.gitignore">
+        <EmbeddedResource Include="templates/.gitignore">
             <LogicalName>templates.gitignore</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="src\templates\package.json.handlebars">
+        <EmbeddedResource Include="templates\package.json.handlebars">
             <LogicalName>templates.package.json.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="src/templates/settings.json">
+        <EmbeddedResource Include="templates/settings.json">
             <LogicalName>templates.settings.json</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="src\templates\Project.fsproj.handlebars">
+        <EmbeddedResource Include="templates\Project.fsproj.handlebars">
             <LogicalName>templates.Project.fsproj.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="src\templates\global.json.handlebars">
+        <EmbeddedResource Include="templates\global.json.handlebars">
             <LogicalName>templates.global.json.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="src/templates/index.html">
+        <EmbeddedResource Include="templates/index.html">
             <LogicalName>templates.index.html</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="src/templates/Routes.handlebars">
+        <EmbeddedResource Include="templates/Routes.handlebars">
             <LogicalName>templates.Routes.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="src/templates/Shared.handlebars">
+        <EmbeddedResource Include="templates/Shared.handlebars">
             <LogicalName>templates.Shared.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="src/templates/Page.handlebars">
+        <EmbeddedResource Include="templates/Page.handlebars">
             <LogicalName>templates.Page.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="src/templates/App.handlebars">
+        <EmbeddedResource Include="templates/App.handlebars">
             <LogicalName>templates.App.handlebars</LogicalName>
         </EmbeddedResource>
-        <Compile Include="src\Log.fs" />
-        <Compile Include="src/Base.fs" />
-        <Compile Include="src\AppError.fs" />
-        <Compile Include="src\Process.fs" />
-        <Compile Include="src\DotNetCli.fs" />
-        <Compile Include="src/FsProj.fs" />
-        <Compile Include="src/TemplateEngine.fs" />
-        <Compile Include="src/Init.fs" />
-        <Compile Include="src\Upgrade.fs" />
-        <Compile Include="src/Server.fs" />
-        <Compile Include="src/Build.fs" />
-        <Compile Include="src/AddPage.fs" />
-        <Compile Include="src/Program.fs" />
+        <Compile Include="Log.fs" />
+        <Compile Include="Base.fs" />
+        <Compile Include="AppError.fs" />
+        <Compile Include="Process.fs" />
+        <Compile Include="DotNetCli.fs" />
+        <Compile Include="FsProj.fs" />
+        <Compile Include="TemplateEngine.fs" />
+        <Compile Include="Init.fs" />
+        <Compile Include="Upgrade.fs" />
+        <Compile Include="Server.fs" />
+        <Compile Include="Build.fs" />
+        <Compile Include="AddPage.fs" />
+        <Compile Include="Program.fs" />
 
-        <Content Include="README.md" Pack="true" PackagePath="\" />
-        <Content Include="LICENSE" Pack="true" PackagePath="\" />
+        <Content Include="../README.md" Pack="true" PackagePath="\" />
+        <Content Include="../LICENSE" Pack="true" PackagePath="\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -64,6 +64,7 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Handlebars.Net" Version="2.1.4" />
+        <PackageReference Include="Orsak" Version="0.4.2" />
     </ItemGroup>
 
 </Project>

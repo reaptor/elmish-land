@@ -9,6 +9,7 @@ open ElmishLand.Base
 open ElmishLand.Process
 open ElmishLand.Log
 open ElmishLand.AppError
+open Orsak
 
 let checkIfDotnetIsInstalled () =
     if
@@ -24,9 +25,9 @@ let checkIfDotnetIsInstalled () =
         Ok()
 
 let getLatestDotnetSdkVersion () =
-    let log = Log()
+    eff {
+        let! log = Effect.getLogger ()
 
-    result {
         do! checkIfDotnetIsInstalled ()
 
         let! output =
@@ -36,7 +37,7 @@ let getLatestDotnetSdkVersion () =
                 [| "--list-sdks" |]
                 CancellationToken.None
                 ignore
-            |> Result.mapError (fun _ -> AppError.DotnetSdkNotFound)
+            |> Effect.changeError (fun _ -> AppError.DotnetSdkNotFound)
 
         return!
             output.Split(Environment.NewLine)
@@ -51,4 +52,5 @@ let getLatestDotnetSdkVersion () =
                     Error DotnetSdkNotFound
                 else
                     sdkVersions |> Seq.max |> Ok
+
     }

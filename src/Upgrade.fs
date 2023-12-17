@@ -1,14 +1,13 @@
 module ElmishLand.Upgrade
 
-open System
 open System.IO
 open System.Text.RegularExpressions
 open System.Threading
 open ElmishLand.Base
 open ElmishLand.DotNetCli
-open ElmishLand.Log
 open ElmishLand.Process
-open ElmishLand.AppError
+open ElmishLand.Log
+open Orsak
 
 let private replaceFile (FilePath filePath) pattern (evaluator: Match -> string) =
     File.ReadAllText(filePath)
@@ -16,9 +15,11 @@ let private replaceFile (FilePath filePath) pattern (evaluator: Match -> string)
     |> fun x -> File.WriteAllText(filePath, x)
 
 let upgrade (projectDir: AbsoluteProjectDir) =
-    let projectName = projectDir |> ProjectName.fromProjectDir
+    eff {
+        let! log = Effect.getLogger ()
 
-    result {
+        let projectName = projectDir |> ProjectName.fromProjectDir
+
         let fsProjPath = FsProjPath.fromProjectDir projectDir |> FsProjPath.asFilePath
 
         let! dotnetSdkVersion = getLatestDotnetSdkVersion ()
@@ -33,20 +34,20 @@ let upgrade (projectDir: AbsoluteProjectDir) =
             "(\"version\":\s+\")([^\"]+)(\")"
             (fun m -> $"%s{m.Groups[1].Value}%s{DotnetSdkVersion.asString dotnetSdkVersion}%s{m.Groups[3].Value}")
 
-        return!
+        do!
             [
-                for name, version in dotnetToolDependencies do
+                for name, version in getDotnetToolDependencies () do
                     "dotnet", [| "tool"; "update"; name; version |]
                 yield! dependencyCommands
             ]
             |> List.map (fun (cmd, args) ->
                 AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
             |> runProcesses
-    }
-    |> handleAppResult projectDir (fun () ->
-        $"""%s{commandHeader $"upgraded the project in ./%s{ProjectName.asString projectName}"}
+
+        log.Info
+            $"""%s{getCommandHeader $"upgraded the project in ./%s{ProjectName.asString projectName}"}
 Run the following command to start the development server:
 
 dotnet elmish-land server
-    """
-        |> Log().Info)
+"""
+    }
