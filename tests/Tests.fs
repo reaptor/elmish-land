@@ -8,21 +8,8 @@ open ElmishLand.Base
 open ElmishLand.Log
 open Xunit
 open Orsak
-open Xunit.Abstractions
 
-type LogOutput = {
-    Info: StringBuilder
-    Debug: StringBuilder
-    Error: StringBuilder
-}
-
-module LogOutput =
-    let writeAll (output: ITestOutputHelper) (logs: LogOutput) =
-        output.WriteLine(logs.Debug.ToString())
-        output.WriteLine(logs.Info.ToString())
-        output.WriteLine(logs.Error.ToString())
-
-let env (logOutput: LogOutput) =
+let env (logOutput: Expects.LogOutput) =
     { new ILogProvider with
         member _.GetLogger() =
             { new ILog with
@@ -42,7 +29,7 @@ let env (logOutput: LogOutput) =
     }
 
 let runEff (e: Effect<_, unit, _>) =
-    let logOutput = {
+    let logOutput: Expects.LogOutput = {
         Info = StringBuilder()
         Debug = StringBuilder()
         Error = StringBuilder()
@@ -56,46 +43,43 @@ let runEff (e: Effect<_, unit, _>) =
 let getFolder () =
     $"""Proj_{Guid.NewGuid().ToString().Replace("-", "")}"""
 
-type Init(output: ITestOutputHelper) =
-    [<Fact>]
-    member _.``Generates project``() =
-        task {
-            let cts = new CancellationTokenSource()
-            cts.CancelAfter(TimeSpan.FromSeconds 30)
-            let folder = getFolder ()
+[<Fact>]
+let ``Init, generates project`` () =
+    task {
+        let cts = new CancellationTokenSource()
+        cts.CancelAfter(TimeSpan.FromSeconds 30)
+        let folder = getFolder ()
 
-            try
-                let! result, logs = ElmishLand.Program.run [| "init"; folder; "--verbose" |] |> runEff
-                LogOutput.writeAll output logs
-                Expects.ok result
-                let projectDir = folder |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath
+        try
+            let! result, logs = ElmishLand.Program.run [| "init"; folder; "--verbose" |] |> runEff
+            Expects.ok logs result
+            let projectDir = folder |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath
 
-                Expects.equals
-                    $"%s{ElmishLand.Init.successMessage projectDir}{Environment.NewLine}"
-                    (logs.Info.ToString())
-            finally
-                if Directory.Exists(folder) then
-                    Directory.Delete(folder, true)
-        }
+            Expects.equals
+                logs
+                $"%s{ElmishLand.Init.successMessage projectDir}{Environment.NewLine}"
+                (logs.Info.ToString())
+        finally
+            if Directory.Exists(folder) then
+                Directory.Delete(folder, true)
+    }
 
-type Build(output: ITestOutputHelper) =
-    [<Fact>]
-    member _.``Build project``() =
-        task {
-            let cts = new CancellationTokenSource()
-            cts.CancelAfter(TimeSpan.FromSeconds 30)
-            let folder = getFolder ()
 
-            try
-                let! _ = ElmishLand.Program.run [| "init"; folder |] |> runEff
+[<Fact>]
+let ``Build, builds project`` () =
+    task {
+        let cts = new CancellationTokenSource()
+        cts.CancelAfter(TimeSpan.FromSeconds 30)
+        let folder = getFolder ()
 
-                let! result, logs = ElmishLand.Program.run [| "build"; folder; "--verbose" |] |> runEff
+        try
+            let! _ = ElmishLand.Program.run [| "init"; folder |] |> runEff
 
-                LogOutput.writeAll output logs
-                Expects.ok result
+            let! result, logs = ElmishLand.Program.run [| "build"; folder; "--verbose" |] |> runEff
 
-                Expects.equals $"%s{ElmishLand.Build.successMessage}{Environment.NewLine}" (logs.Info.ToString())
-            finally
-                if Directory.Exists(folder) then
-                    Directory.Delete(folder, true)
-        }
+            Expects.ok logs result
+            Expects.equals logs $"%s{ElmishLand.Build.successMessage}{Environment.NewLine}" (logs.Info.ToString())
+        finally
+            if Directory.Exists(folder) then
+                Directory.Delete(folder, true)
+    }
