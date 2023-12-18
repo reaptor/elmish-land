@@ -1,34 +1,17 @@
 module ElmishLand.DotNetCli
 
 open System
-open System.IO
 open System.Threading
 open System.Text.RegularExpressions
-open System.Runtime.InteropServices
 open ElmishLand.Base
 open ElmishLand.Process
 open ElmishLand.Log
 open ElmishLand.AppError
 open Orsak
 
-let checkIfDotnetIsInstalled () =
-    if
-        (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-         && not (File.Exists("C:\\program files\\dotnet\\dotnet.exe")))
-        || (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
-            && not (File.Exists("/usr/local/share/dotnet/dotnet")))
-        || (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-            && not (File.Exists("/home/user/share/dotnet/dotnet")))
-    then
-        Error AppError.DotnetSdkNotFound
-    else
-        Ok()
-
 let getLatestDotnetSdkVersion () =
     eff {
         let! log = Effect.getLogger ()
-
-        do! checkIfDotnetIsInstalled ()
 
         let! output =
             runProcess
