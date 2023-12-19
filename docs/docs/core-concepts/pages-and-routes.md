@@ -32,7 +32,7 @@ To get started, let's start with a page that is displayed when a user visits the
 We can create our about page using the `elmish-land add page` command shown below:
 
 ```bash
-dotnet elmish-land add page:view /sign-in
+dotnet elmish-land add page /about
 ```
 
 ```bash
