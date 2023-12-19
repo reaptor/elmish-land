@@ -11,20 +11,23 @@ open Orsak
 
 let env (logOutput: Expects.LogOutput) =
     { new ILogProvider with
-        member _.GetLogger() =
+        member _.GetLogger(memberName, path, line) =
+            let logger = Logger(memberName, path, line)
+
+            let unindent (s: string) =
+                s.Split(Environment.NewLine)
+                |> Array.map _.TrimStart()
+                |> String.concat Environment.NewLine
+
             { new ILog with
                 member _.Debug(message, [<ParamArray>] args: obj array) =
-                    formatMessage message args
-                    |> logOutput.Debug.AppendLine
-                    |> ignore<StringBuilder>
+                    logger.WriteLine (unindent >> logOutput.Debug.AppendLine >> ignore) message args
 
                 member _.Info(message, [<ParamArray>] args: obj array) =
-                    formatMessage message args |> logOutput.Info.AppendLine |> ignore<StringBuilder>
+                    logger.WriteLine (unindent >> logOutput.Info.AppendLine >> ignore) message args
 
                 member _.Error(message, [<ParamArray>] args: obj array) =
-                    formatMessage message args
-                    |> logOutput.Error.AppendLine
-                    |> ignore<StringBuilder>
+                    logger.WriteLine (unindent >> logOutput.Error.AppendLine >> ignore) message args
             }
     }
 

@@ -6,6 +6,7 @@ open ElmishLand.Log
 open ElmishLand.TemplateEngine
 open ElmishLand.FsProj
 open ElmishLand.Process
+open ElmishLand.Generate
 open Orsak
 
 let successMessage =
@@ -15,18 +16,21 @@ Your app was saved in the 'dist' directory.
 
 let build (projectDir: AbsoluteProjectDir) =
     eff {
-        let! log = Effect.getLogger ()
-        let routeData = getRouteData projectDir
-        do! generateRoutesAndApp projectDir routeData
+        let! log = Log().Get()
 
-        let workingDir = AbsoluteProjectDir.asFilePath projectDir
+        do! generate projectDir
+
         do! validate projectDir
+
+        let workingDir =
+            AbsoluteProjectDir.asFilePath projectDir
+            |> FilePath.appendParts [ ".elmish-land" ]
 
         do!
             runProcess
                 workingDir
                 "dotnet"
-                [| "fable"; "--noCache"; "--run"; "vite"; "build" |]
+                [| "fable"; "App.fsproj"; "--noCache"; "--run"; "vite"; "build" |]
                 CancellationToken.None
                 ignore
             |> Effect.map ignore<string>

@@ -39,7 +39,7 @@ let private runProcessInternal
     (outputReceived: string -> unit)
     =
     eff {
-        let! log = Effect.getLogger ()
+        let! log = Log().Get()
 
         let command = getFullPathOrDefault command
 

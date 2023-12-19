@@ -11,7 +11,7 @@ open Orsak
 
 let getLatestDotnetSdkVersion () =
     eff {
-        let! log = Effect.getLogger ()
+        let! log = Log().Get()
 
         let! output =
             runProcess

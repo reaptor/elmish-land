@@ -10,7 +10,7 @@ open ElmishLand.AppError
 
 let addPage (url: string) =
     eff {
-        let! log = Effect.getLogger ()
+        let! log = Log().Get()
 
         let args =
             Environment.GetCommandLineArgs()

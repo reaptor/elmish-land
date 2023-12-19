@@ -16,54 +16,9 @@ open Orsak
 let (|NotFlag|_|) (x: string) =
     if x.StartsWith("--") then None else Some x
 
-type private Log
-    (
-        [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string,
-        [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
-        [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
-    ) =
-    let path = path.Replace($"%s{__SOURCE_DIRECTORY__}", "")[1..]
-
-    let isVerbose = Environment.CommandLine.Contains("--verbose")
-
-    let indent (s: string) =
-        s.Split('\n')
-        |> Array.map (fun line -> $"  %s{line}")
-        |> String.concat Environment.NewLine
-
-    let writeLine (message: string) args =
-        let formattedMsg = formatMessage message args
-
-        if isVerbose then
-            let time = DateTime.Now.ToString("HH:mm:ss.fff")
-            $"%s{time} %s{path}(%i{line}): %s{memberName}: %s{formattedMsg}"
-        else
-            $"%s{formattedMsg}"
-        |> indent
-        |> Console.Out.WriteLine
-
-    static member val Out = Console.Out with get, set
-
-    interface ILog with
-        member _.Debug(message, [<ParamArray>] args: obj array) =
-            if isVerbose then
-                Console.ForegroundColor <- ConsoleColor.Gray
-                writeLine message args
-                Console.ResetColor()
-
-        member _.Info(message, [<ParamArray>] args: obj array) =
-            Console.ForegroundColor <- ConsoleColor.Gray
-            writeLine message args
-            Console.ResetColor()
-
-        member _.Error(message, [<ParamArray>] args: obj array) =
-            Console.ForegroundColor <- ConsoleColor.Red
-            writeLine message args
-            Console.ResetColor()
-
 let run argv =
     eff {
-        let! log = Effect.getLogger ()
+        let! log = Log().Get()
 
         return!
             match List.ofArray argv with
@@ -93,6 +48,27 @@ let run argv =
 
     }
 
+type ConsoleLogger(memberName, path, line) =
+    let logger = Logger(memberName, path, line)
+
+    interface ILog with
+        member _.Debug(message, [<ParamArray>] args: obj array) =
+            if logger.IsVerbose then
+                Console.ForegroundColor <- ConsoleColor.Gray
+                logger.WriteLine Console.Out.WriteLine message args
+                Console.ResetColor()
+
+        member _.Info(message, [<ParamArray>] args: obj array) =
+            Console.ForegroundColor <- ConsoleColor.Gray
+            logger.WriteLine Console.Out.WriteLine message args
+            Console.ResetColor()
+
+        member _.Error(message, [<ParamArray>] args: obj array) =
+            Console.ForegroundColor <- ConsoleColor.Red
+            logger.WriteLine Console.Error.WriteLine message args
+            Console.ResetColor()
+
+
 [<EntryPoint>]
 let main argv =
     (task {
@@ -100,9 +76,9 @@ let main argv =
             run argv
             |> Effect.run
                 { new ILogProvider with
-                    member _.GetLogger() = Log()
+                    member _.GetLogger(memberName, path, line) = ConsoleLogger(memberName, path, line)
                 }
 
-        return handleAppResult (Log()) ignore result
+        return handleAppResult (ConsoleLogger("", "", 0)) ignore result
     })
         .Result

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html{{#if Lang}} lang="{{Lang}}"{{/if}}>
+    <head>
+        {{#each Meta}}
+        {{this}}
+        {{/each}}
+        <title>{{Title}}</title>
+        {{#each Link}}
+        {{this}}
+        {{/each}}
+    </head>
+    <body>
+        <div id="app"></div>
+        {{#each Script}}
+        {{this}}
+        {{/each}}
+        <script type="module" src="/App.fs.js"></script>
+    </body>
+</html>

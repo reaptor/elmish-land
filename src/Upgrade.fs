@@ -16,7 +16,7 @@ let private replaceFile (FilePath filePath) pattern (evaluator: Match -> string)
 
 let upgrade (projectDir: AbsoluteProjectDir) =
     eff {
-        let! log = Effect.getLogger ()
+        let! log = Log().Get()
 
         let projectName = projectDir |> ProjectName.fromProjectDir
 

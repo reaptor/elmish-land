@@ -1,9 +1,11 @@
 module ElmishLand.Base
 
 open System
+open System.Text
 open System.Diagnostics
 open System.IO
 open System.Reflection
+open System.Text.Json
 open ElmishLand.Log
 open Orsak
 
@@ -292,9 +294,9 @@ type ProjectName =
 
     static member asString(ProjectName projectName) = projectName
 
-let writeResource (projectDir: AbsoluteProjectDir) overwrite (name: string) dst replace =
+let writeResource (projectDir: AbsoluteProjectDir) overwrite (resourceName: string) dst replace =
     eff {
-        let! log = Effect.getLogger ()
+        let! log = Log().Get()
         let dstPath = AbsoluteProjectDir.asFilePath projectDir |> FilePath.appendParts dst
 
         if overwrite || not (File.Exists(FilePath.asString dstPath)) then
@@ -304,11 +306,14 @@ let writeResource (projectDir: AbsoluteProjectDir) overwrite (name: string) dst 
                 Directory.CreateDirectory(dstDir) |> ignore
 
             let assembly = Assembly.GetExecutingAssembly()
-            let resourceName = $"templates.%s{name}"
 
             log.Debug("Writing resource '{}' to '{}'", resourceName, FilePath.asString dstPath)
 
-            use stream = assembly.GetManifestResourceStream($"templates.%s{name}")
+            use stream = assembly.GetManifestResourceStream(resourceName)
+
+            if stream = null then
+                failwith $"'%s{resourceName}' not found in assembly"
+
             use reader = new StreamReader(stream)
             let fileContents = reader.ReadToEnd()
             File.WriteAllText(FilePath.asString dstPath, fileContents)
@@ -344,9 +349,40 @@ let npmDevDependencies = [ "vite", "5" ]
 
 let dependencyCommands = [
     for name, version in nugetDependencies do
-        "dotnet", [| "add"; "package"; name; version |]
+        "dotnet", [| "add"; "Base.fsproj"; "package"; name; version |]
     for name, version in npmDependencies do
         "npm", [| "install"; $"%s{name}@%s{version}"; "--save" |]
     for name, version in npmDevDependencies do
         "npm", [| "install"; $"%s{name}@%s{version}"; "--save-dev" |]
 ]
+
+type Settings = {
+    App: {|
+        Env: string list
+        Html:
+            {|
+                Lang: string
+                Title: string
+                Meta: JsonElement array
+                Link: JsonElement array
+                Script: JsonElement array
+            |}
+    |}
+    NpmScripts: JsonElement
+    NpmDependencies: JsonElement
+    NpmDevDependencies: JsonElement
+}
+
+module Settings =
+    let load (projectDir: AbsoluteProjectDir) =
+        let json =
+            projectDir
+            |> AbsoluteProjectDir.asFilePath
+            |> FilePath.appendParts [ "elmish-land.json" ]
+            |> FilePath.asString
+            |> File.ReadAllText
+
+        JsonSerializer.Deserialize<Settings>(
+            json,
+            JsonSerializerOptions(PropertyNamingPolicy = JsonNamingPolicy.CamelCase)
+        )

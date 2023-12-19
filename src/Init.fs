@@ -11,6 +11,7 @@ open ElmishLand.Process
 open ElmishLand.AppError
 open ElmishLand.FsProj
 open Orsak
+open System.Reflection
 
 let getNodeVersion () =
     runProcess (FilePath.fromString Environment.CurrentDirectory) "node" [| "-v" |] CancellationToken.None ignore
@@ -32,7 +33,7 @@ dotnet elmish-land server
 
 let init (projectDir: AbsoluteProjectDir) =
     eff {
-        let! log = Effect.getLogger ()
+        let! log = Log().Get()
 
         let projectName = projectDir |> ProjectName.fromProjectDir
 
@@ -44,12 +45,41 @@ let init (projectDir: AbsoluteProjectDir) =
 
         log.Debug("Initializing project. {}", AbsoluteProjectDir.asString projectDir)
 
+        let assembly = Assembly.GetExecutingAssembly()
+
+        log.Debug("Resources in assembly:")
+
+        for resource in assembly.GetManifestResourceNames() do
+            log.Debug(resource)
+
         let writeResource = writeResource projectDir false
 
         let fsProjPath = FsProjPath.fromProjectDir projectDir
         log.Debug("Project path {}", fsProjPath)
 
         let fsProjExists = File.Exists(FsProjPath.asString fsProjPath)
+
+        do!
+            writeResource
+                "elmish-land.json.handlebars"
+                [ "elmish-land.json" ]
+                (Some(
+                    handlebars {|
+                        ProjectName = ProjectName.asString projectName
+                    |}
+                ))
+
+        do! writeResource "vite.config.js" [ ".elmish-land"; "vite.config.js" ] None
+
+        do!
+            writeResource
+                "Base.fsproj.handlebars"
+                [ ".elmish-land"; "Base.fsproj" ]
+                (Some(
+                    handlebars {|
+                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
+                    |}
+                ))
 
         do!
             writeResource
@@ -63,6 +93,18 @@ let init (projectDir: AbsoluteProjectDir) =
 
         do!
             writeResource
+                "App.fsproj.handlebars"
+                [ ".elmish-land/App.fsproj" ]
+                (Some(
+                    handlebars {|
+                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
+                        ProjectReference =
+                            $"""<ProjectReference Include="../%s{ProjectName.asString projectName}.fsproj" />"""
+                    |}
+                ))
+
+        do!
+            writeResource
                 "global.json.handlebars"
                 [ "global.json" ]
                 (Some(
@@ -71,12 +113,10 @@ let init (projectDir: AbsoluteProjectDir) =
                     |}
                 ))
 
-        do! writeResource "index.html" [ "index.html" ] None
-
         do!
             writeResource
                 "package.json.handlebars"
-                [ "package.json" ]
+                [ ".elmish-land/package.json" ]
                 (Some(
                     handlebars {|
                         ProjectName = projectName |> ProjectName.asString |> String.asKebabCase
@@ -138,11 +178,22 @@ let init (projectDir: AbsoluteProjectDir) =
                     "dotnet", [| "new"; "tool-manifest"; "--force" |]
                 for name, version in getDotnetToolDependencies () do
                     "dotnet", [| "tool"; "install"; name; version |]
-                yield! dependencyCommands
             ]
             |> List.map (fun (cmd, args) ->
                 AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
             |> runProcesses
+
+        do!
+            dependencyCommands
+            |> List.map (fun (cmd, args) ->
+                AbsoluteProjectDir.asFilePath projectDir
+                |> FilePath.appendParts [ ".elmish-land" ],
+                cmd,
+                args,
+                CancellationToken.None,
+                ignore)
+            |> runProcesses
+
 
         log.Info(successMessage projectDir)
     }

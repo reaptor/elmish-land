@@ -10,35 +10,47 @@
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <ItemGroup>
+        <EmbeddedResource Include="templates/elmish-land.json.handlebars">
+            <LogicalName>elmish-land.json.handlebars</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="templates/vite.config.js">
+            <LogicalName>vite.config.js</LogicalName>
+        </EmbeddedResource>
         <EmbeddedResource Include="templates/.gitignore">
-            <LogicalName>templates.gitignore</LogicalName>
+            <LogicalName>gitignore</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates\package.json.handlebars">
-            <LogicalName>templates.package.json.handlebars</LogicalName>
+            <LogicalName>package.json.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates/settings.json">
-            <LogicalName>templates.settings.json</LogicalName>
+            <LogicalName>settings.json</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="templates\Base.fsproj.handlebars">
+            <LogicalName>Base.fsproj.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates\Project.fsproj.handlebars">
-            <LogicalName>templates.Project.fsproj.handlebars</LogicalName>
+            <LogicalName>Project.fsproj.handlebars</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="templates\App.fsproj.handlebars">
+            <LogicalName>App.fsproj.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates\global.json.handlebars">
-            <LogicalName>templates.global.json.handlebars</LogicalName>
+            <LogicalName>global.json.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates/index.html">
-            <LogicalName>templates.index.html</LogicalName>
+        <EmbeddedResource Include="templates/index.html.handlebars">
+            <LogicalName>index.html.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates/Routes.handlebars">
-            <LogicalName>templates.Routes.handlebars</LogicalName>
+            <LogicalName>Routes.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates/Shared.handlebars">
-            <LogicalName>templates.Shared.handlebars</LogicalName>
+            <LogicalName>Shared.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates/Page.handlebars">
-            <LogicalName>templates.Page.handlebars</LogicalName>
+            <LogicalName>Page.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates/App.handlebars">
-            <LogicalName>templates.App.handlebars</LogicalName>
+            <LogicalName>App.handlebars</LogicalName>
         </EmbeddedResource>
         <Compile Include="Log.fs" />
         <Compile Include="Base.fs" />
@@ -49,6 +61,7 @@
         <Compile Include="TemplateEngine.fs" />
         <Compile Include="Init.fs" />
         <Compile Include="Upgrade.fs" />
+        <Compile Include="Generate.fs" />
         <Compile Include="Server.fs" />
         <Compile Include="Build.fs" />
         <Compile Include="AddPage.fs" />
@@ -65,6 +78,7 @@
         </PackageReference>
         <PackageReference Include="Handlebars.Net" Version="2.1.4" />
         <PackageReference Include="Orsak" Version="0.4.2" />
+        <PackageReference Include="Thoth.Json" Version="10.2.0" />
     </ItemGroup>
 
 </Project>
