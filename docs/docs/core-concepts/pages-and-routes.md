@@ -43,7 +43,7 @@ dotnet elmish-land add page /about
     ./src/Pages/About/Page.fs
 
     Please add the file to the project using an IDE or add the following line to an
-    ItemGroup in the project file './MyProject/MyProject.fsproj':
+    ItemGroup in the project file './MyProject.fsproj':
     <Compile Include="src/Pages/About/Page.fs" />
 ```
 
