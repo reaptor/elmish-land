@@ -1,17 +1,12 @@
 module ElmishLand.Generate
 
-open System.IO
-open System.Threading
+open System.Text
 open System.Text.Json
-open System.Text.RegularExpressions
+open Orsak
 open ElmishLand.Base
 open ElmishLand.Log
 open ElmishLand.TemplateEngine
-open ElmishLand.FsProj
-open ElmishLand.Process
-open ElmishLand.AppError
-open Orsak
-open System.Text
+open ElmishLand.Resource
 
 let settingsArrayToHtmlElements (name: string) close (arr: JsonElement array) =
     arr

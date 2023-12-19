@@ -15,9 +15,7 @@ let env (logOutput: Expects.LogOutput) =
             let logger = Logger(memberName, path, line)
 
             let unindent (s: string) =
-                s.Split(Environment.NewLine)
-                |> Array.map _.TrimStart()
-                |> String.concat Environment.NewLine
+                s.Split("\n") |> Array.map _.TrimStart() |> String.concat "\n"
 
             { new ILog with
                 member _.Debug(message, [<ParamArray>] args: obj array) =
@@ -58,9 +56,9 @@ let ``Init, generates project`` () =
             Expects.ok logs result
             let projectDir = folder |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath
 
-            Expects.equals
+            Expects.equalsIgnoringWhitespace
                 logs
-                $"%s{ElmishLand.Init.successMessage projectDir}{Environment.NewLine}"
+                $"%s{ElmishLand.Init.successMessage projectDir}\n"
                 (logs.Info.ToString())
         finally
             if Directory.Exists(folder) then
@@ -81,7 +79,7 @@ let ``Build, builds project`` () =
             let! result, logs = ElmishLand.Program.run [| "build"; folder; "--verbose" |] |> runEff
 
             Expects.ok logs result
-            Expects.equals logs $"%s{ElmishLand.Build.successMessage}{Environment.NewLine}" (logs.Info.ToString())
+            Expects.equalsIgnoringWhitespace logs $"%s{ElmishLand.Build.successMessage}\n" (logs.Info.ToString())
         finally
             if Directory.Exists(folder) then
                 Directory.Delete(folder, true)

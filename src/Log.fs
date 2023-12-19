@@ -5,6 +5,7 @@ open System.Text
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open Orsak
+open ElmishLand.Base
 
 let private formatMessage (message: string) args =
     args
@@ -36,9 +37,7 @@ type Logger(memberName: string, path: string, line: int) =
     let path = path.Replace($"%s{__SOURCE_DIRECTORY__}", "")[1..]
 
     let indent (s: string) =
-        s.Split('\n')
-        |> Array.map (fun line -> $"  %s{line}")
-        |> String.concat Environment.NewLine
+        String.asLines s |> Array.map (fun line -> $"  %s{line}") |> String.concat "\n"
 
     member _.IsVerbose = Environment.CommandLine.Contains("--verbose")
 

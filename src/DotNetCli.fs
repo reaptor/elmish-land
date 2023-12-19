@@ -23,7 +23,8 @@ let getLatestDotnetSdkVersion () =
             |> Effect.changeError (fun _ -> AppError.DotnetSdkNotFound)
 
         return!
-            output.Split(Environment.NewLine)
+            output
+            |> String.asLines
             |> Array.choose (fun line ->
                 match DotnetSdkVersion.fromString (Regex.Match(line, "\d.\d.\d{3}").Value) with
                 | Some(DotnetSdkVersion version) when version >= (DotnetSdkVersion.value minimumRequiredDotnetSdk) ->

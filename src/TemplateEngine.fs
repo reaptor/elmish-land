@@ -7,12 +7,7 @@ open HandlebarsDotNet
 open ElmishLand.Base
 open Microsoft.FSharp.Collections
 open Orsak
-
-module String =
-    let replace (oldValue: string) (newValue: string) (s: string) = s.Replace(oldValue, newValue)
-
-    let split (separator: string) (s: string) =
-        s.Split(separator, StringSplitOptions.RemoveEmptyEntries)
+open ElmishLand.Resource
 
 let handlebars model (src: string) =
     let handlebars = Handlebars.Create()

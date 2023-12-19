@@ -11,9 +11,8 @@ open System.IO
 open Orsak
 
 let private getFullPathOrDefault command =
-    System.Environment
-        .GetEnvironmentVariable("PATH")
-        .Split(";", StringSplitOptions.RemoveEmptyEntries)
+    Environment.GetEnvironmentVariable("PATH")
+    |> String.split ";"
     |> Array.tryPick (fun x ->
         let fullPath = Path.Combine(x, command)
 

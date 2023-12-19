@@ -1,12 +1,11 @@
 module ElmishLand.AddPage
 
 open System
+open Orsak
 open ElmishLand.Base
 open ElmishLand.Log
-open Orsak
 open ElmishLand.TemplateEngine
-open ElmishLand.FsProj
-open ElmishLand.AppError
+open ElmishLand.Resource
 
 let addPage (url: string) =
     eff {
@@ -32,7 +31,8 @@ let addPage (url: string) =
         log.Debug("Using projectDir: {}", AbsoluteProjectDir.asString projectDir)
 
         let routeFileParts =
-            url.Split("/", StringSplitOptions.RemoveEmptyEntries)
+            url
+            |> String.split "/"
             |> Array.map (fun x -> $"%s{x[0..0].ToUpper()}%s{x[1..]}")
             |> fun x -> [ "src"; "Pages"; yield! x; "Page.fs" ]
 

@@ -2,7 +2,9 @@ module ElmishLand.Init
 
 open System
 open System.IO
+open System.Reflection
 open System.Threading
+open Orsak
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
 open ElmishLand.Log
@@ -10,8 +12,7 @@ open ElmishLand.DotNetCli
 open ElmishLand.Process
 open ElmishLand.AppError
 open ElmishLand.FsProj
-open Orsak
-open System.Reflection
+open ElmishLand.Resource
 
 let getNodeVersion () =
     runProcess (FilePath.fromString Environment.CurrentDirectory) "node" [| "-v" |] CancellationToken.None ignore

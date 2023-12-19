@@ -40,8 +40,8 @@ let run argv =
             | _ ->
                 $"""
     %s{getWelcomeTitle ()}
-    %s{help id}
-    """
+%s{help id}
+"""
                 |> log.Info
 
                 eff { return () }

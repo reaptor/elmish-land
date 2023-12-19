@@ -52,8 +52,9 @@
         <EmbeddedResource Include="templates/App.handlebars">
             <LogicalName>App.handlebars</LogicalName>
         </EmbeddedResource>
-        <Compile Include="Log.fs" />
         <Compile Include="Base.fs" />
+        <Compile Include="Log.fs" />
+        <Compile Include="Resource.fs" />
         <Compile Include="AppError.fs" />
         <Compile Include="Process.fs" />
         <Compile Include="DotNetCli.fs" />
