@@ -30,7 +30,7 @@ let build (projectDir: AbsoluteProjectDir) =
             runProcess
                 workingDir
                 "dotnet"
-                [| "fable"; "App.fsproj"; "--noCache"; "--run"; "vite"; "build" |]
+                [| "fable"; "App/App.fsproj"; "--noCache"; "--run"; "vite"; "build" |]
                 CancellationToken.None
                 ignore
             |> Effect.map ignore<string>

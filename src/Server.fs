@@ -50,7 +50,7 @@ let server (projectDir: AbsoluteProjectDir) =
             runProcess
                 workingDir
                 "dotnet"
-                [| "fable"; "watch"; "App.fsproj"; "--run"; "vite" |]
+                [| "fable"; "watch"; "App/App.fsproj"; "--run"; "vite" |]
                 CancellationToken.None
                 (fun output ->
                     let m = Regex.Match(output, "(http[s]?://[^:]+:\d+)")

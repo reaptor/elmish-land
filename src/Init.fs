@@ -75,7 +75,7 @@ let init (projectDir: AbsoluteProjectDir) =
         do!
             writeResource
                 "Base.fsproj.handlebars"
-                [ ".elmish-land"; "Base.fsproj" ]
+                [ ".elmish-land"; "Base"; "Base.fsproj" ]
                 (Some(
                     handlebars {|
                         DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
@@ -95,12 +95,12 @@ let init (projectDir: AbsoluteProjectDir) =
         do!
             writeResource
                 "App.fsproj.handlebars"
-                [ ".elmish-land/App.fsproj" ]
+                [ ".elmish-land"; "App"; "App.fsproj" ]
                 (Some(
                     handlebars {|
                         DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
                         ProjectReference =
-                            $"""<ProjectReference Include="../%s{ProjectName.asString projectName}.fsproj" />"""
+                            $"""<ProjectReference Include="../../%s{ProjectName.asString projectName}.fsproj" />"""
                     |}
                 ))
 
@@ -179,6 +179,10 @@ let init (projectDir: AbsoluteProjectDir) =
                     "dotnet", [| "new"; "tool-manifest"; "--force" |]
                 for name, version in getDotnetToolDependencies () do
                     "dotnet", [| "tool"; "install"; name; version |]
+                "dotnet", [| "new"; "sln" |]
+                "dotnet", [| "sln"; "add"; ".elmish-land/Base/Base.fsproj" |]
+                "dotnet", [| "sln"; "add"; $"%s{ProjectName.asString projectName}.fsproj" |]
+                "dotnet", [| "sln"; "add"; ".elmish-land/App/App.fsproj" |]
             ]
             |> List.map (fun (cmd, args) ->
                 AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
@@ -195,6 +199,9 @@ let init (projectDir: AbsoluteProjectDir) =
                 ignore)
             |> runProcesses
 
+        do!
+            runProcess (AbsoluteProjectDir.asFilePath projectDir) "dotnet" [| "restore" |] CancellationToken.None ignore
+            |> Effect.map ignore<string>
 
         log.Info(successMessage projectDir)
     }

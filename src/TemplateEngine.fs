@@ -178,6 +178,6 @@ let generateRoutesAndApp projectDir (routeData: RouteData) =
     let writeResource = writeResource projectDir true
 
     eff {
-        do! writeResource "Routes.handlebars" [ ".elmish-land"; "Routes.fs" ] (Some(handlebars routeData))
-        do! writeResource "App.handlebars" [ ".elmish-land"; "App.fs" ] (Some(handlebars routeData))
+        do! writeResource "Routes.handlebars" [ ".elmish-land"; "Base"; "Routes.fs" ] (Some(handlebars routeData))
+        do! writeResource "App.handlebars" [ ".elmish-land"; "App"; "App.fs" ] (Some(handlebars routeData))
     }

@@ -325,7 +325,7 @@ let npmDevDependencies = [ "vite", "5" ]
 
 let dependencyCommands = [
     for name, version in nugetDependencies do
-        "dotnet", [| "add"; "Base.fsproj"; "package"; name; version |]
+        "dotnet", [| "add"; "./Base/Base.fsproj"; "package"; name; version |]
     for name, version in npmDependencies do
         "npm", [| "install"; $"%s{name}@%s{version}"; "--save" |]
     for name, version in npmDevDependencies do
