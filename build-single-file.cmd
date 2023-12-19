@@ -1,1 +1,0 @@
-dotnet publish .\elmish-land.fsproj -p:PublishSingleFile=true --self-contained true -r win-x64 -c Debug --framework net8.0
