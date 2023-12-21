@@ -312,6 +312,7 @@ let getDotnetToolDependencies () =
 
 let nugetDependencies = [
     "Elmish", "--version 4.*"
+    "Fable.Promise", "--version 3.*"
     "Fable.Elmish.HMR", "--version 7.*"
     "Fable.Elmish.React", "--version 4.*"
     "Feliz", "--version 2.*"

@@ -125,6 +125,7 @@ let init (projectDir: AbsoluteProjectDir) =
                 ))
 
         do! writeResource "settings.json" [ ".vscode"; "settings.json" ] None
+        do! writeResource "CmdEx.fs.handlebars" [ ".elmish-land"; "Base"; "CmdEx.fs" ] None
 
         let rootModuleName = projectName |> ProjectName.asString |> quoteIfNeeded
 

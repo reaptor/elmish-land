@@ -1,0 +1,39 @@
+﻿namespace Elmish
+
+open Elmish
+
+type CmdEx<'msg, 'sharedMsg> private =
+    | None
+    | Batch of CmdEx<'msg, 'sharedMsg> list
+    | Cmd of Cmd<'msg>
+    | SharedMsg of 'sharedMsg
+
+module CmdEx =
+    let none = None
+
+    let ofPromise p arg ofSuccess = Cmd.OfPromise.perform p arg ofSuccess |> Cmd
+
+    let tryOfPromise p arg ofSuccess ofError = Cmd.OfPromise.either p arg ofSuccess ofError |> Cmd
+
+    let ofCmd (cmd: Cmd<'msg>) = Cmd(cmd)
+
+    let ofMsg (msg: 'msg) =
+        Cmd(Cmd.ofMsg msg)
+
+    let batch cmds = Batch cmds
+
+    let ofShared msg = SharedMsg msg
+
+    let rec map f cmdEx =
+        match cmdEx with
+        | None -> None
+        | Batch cmds -> Batch (cmds |> List.map (map f))
+        | Cmd cmd -> Cmd (Cmd.map f cmd)
+        | SharedMsg msg -> SharedMsg msg
+
+    let rec toCmd fromSharedMsg cmdEx =
+        match cmdEx with
+        | None -> Cmd.none
+        | Batch cmds -> Cmd.batch (List.map (toCmd fromSharedMsg) cmds)
+        | Cmd cmd -> cmd
+        | SharedMsg msg -> Cmd.ofMsg (fromSharedMsg msg)

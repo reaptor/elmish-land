@@ -7,7 +7,7 @@ open Elmish.HMR
 open Feliz
 open Feliz.Router
 open {{RootModule}}.Routes
-open {{RootModule}}.Pages
+open {{RootModule}}.Shared
 
 [<RequireQualifiedAccess>]
 type Page =
@@ -17,13 +17,13 @@ type Page =
     | NotFound
 
 type Model = {
-    Shared: Shared.Model
+    Shared: SharedModel
     CurrentRoute: Route
     CurrentPage: Page
 }
 
 type Msg =
-| SharedMsg of Shared.Msg
+| SharedMsg of SharedMsg
 | RouteChanged of Route
 {{#each Routes}}
 | {{MsgName}} of {{ModuleName}}.Msg
@@ -47,7 +47,7 @@ let init () =
             defaultModel with
                 CurrentPage = nextPage
         },
-        Cmd.batch [ sharedCmd; Cmd.map msg nextCmd ]
+        CmdEx.batch [ sharedCmd; CmdEx.map msg nextCmd ] |> CmdEx.toCmd SharedMsg
 
     match initialUrl with
     {{#each Routes}}
@@ -69,11 +69,11 @@ let update (msg: Msg) (model: Model) =
             model with
                 CurrentPage = page model''
         },
-        Cmd.map msg cmd
+        CmdEx.map msg cmd |> CmdEx.toCmd SharedMsg
     match msg, model.CurrentPage with
     | SharedMsg msg', _ ->
         let model'', cmd = Shared.update msg' model.Shared
-        { model with Shared = model'' }, Cmd.map SharedMsg cmd
+        { model with Shared = model'' }, CmdEx.map SharedMsg cmd |> CmdEx.toCmd SharedMsg
     | RouteChanged nextRoute, _ ->
         let changeRoute init initArgs page msg =
             let model', msg' = init model.Shared initArgs
@@ -82,7 +82,7 @@ let update (msg: Msg) (model: Model) =
                     CurrentPage = page model'
                     CurrentRoute = nextRoute
             },
-            Cmd.map msg msg'
+            CmdEx.map msg msg' |> CmdEx.toCmd SharedMsg
         match nextRoute with
         {{#each Routes}}
         | Route.{{Name}} {{#if ArgsDefinition}}({{ArgsDefinition}}){{/if}} ->
