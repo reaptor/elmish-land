@@ -2,13 +2,13 @@
 
 open Elmish
 
-type CmdEx<'msg, 'sharedMsg> private =
+type Command<'msg, 'sharedMsg> private =
     | None
-    | Batch of CmdEx<'msg, 'sharedMsg> list
+    | Batch of Command<'msg, 'sharedMsg> list
     | Cmd of Cmd<'msg>
     | SharedMsg of 'sharedMsg
 
-module CmdEx =
+module Command =
     let none = None
 
     let ofPromise p arg ofSuccess = Cmd.OfPromise.perform p arg ofSuccess |> Cmd
@@ -24,15 +24,15 @@ module CmdEx =
 
     let ofShared msg = SharedMsg msg
 
-    let rec map f cmdEx =
-        match cmdEx with
+    let rec map f command =
+        match command with
         | None -> None
         | Batch cmds -> Batch (cmds |> List.map (map f))
         | Cmd cmd -> Cmd (Cmd.map f cmd)
         | SharedMsg msg -> SharedMsg msg
 
-    let rec toCmd fromSharedMsg cmdEx =
-        match cmdEx with
+    let rec toCmd fromSharedMsg command =
+        match command with
         | None -> Cmd.none
         | Batch cmds -> Cmd.batch (List.map (toCmd fromSharedMsg) cmds)
         | Cmd cmd -> cmd

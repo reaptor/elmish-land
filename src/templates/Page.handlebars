@@ -10,13 +10,13 @@ type Model = unit
 
 type Msg = | NoOp
 
-let init (shared: SharedModel) ({{Route.ArgsDefinition}}): Model * CmdEx<Msg, SharedMsg> =
+let init (shared: SharedModel) ({{Route.ArgsDefinition}}): Model * Command<Msg, SharedMsg> =
     (),
-    CmdEx.none
+    Command.none
 
-let update (shared: SharedModel) (msg: Msg) (model: Model): Model * CmdEx<Msg, SharedMsg> =
+let update (shared: SharedModel) (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
     match msg with
-    | NoOp -> model, CmdEx.none
+    | NoOp -> model, Command.none
 
 let view (shared: SharedModel) (model: Model) (dispatch: Msg -> unit): ReactElement =
     Html.text "{{Route.Name}}"

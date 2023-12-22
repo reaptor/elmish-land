@@ -47,7 +47,7 @@ let init () =
             defaultModel with
                 CurrentPage = nextPage
         },
-        CmdEx.batch [ sharedCmd; CmdEx.map msg nextCmd ] |> CmdEx.toCmd SharedMsg
+        Command.batch [ sharedCmd; Command.map msg nextCmd ] |> Command.toCmd SharedMsg
 
     match initialUrl with
     {{#each Routes}}
@@ -69,11 +69,11 @@ let update (msg: Msg) (model: Model) =
             model with
                 CurrentPage = page model''
         },
-        CmdEx.map msg cmd |> CmdEx.toCmd SharedMsg
+        Command.map msg cmd |> Command.toCmd SharedMsg
     match msg, model.CurrentPage with
     | SharedMsg msg', _ ->
         let model'', cmd = Shared.update msg' model.Shared
-        { model with Shared = model'' }, CmdEx.map SharedMsg cmd |> CmdEx.toCmd SharedMsg
+        { model with Shared = model'' }, Command.map SharedMsg cmd |> Command.toCmd SharedMsg
     | RouteChanged nextRoute, _ ->
         let changeRoute init initArgs page msg =
             let model', msg' = init model.Shared initArgs
@@ -82,7 +82,7 @@ let update (msg: Msg) (model: Model) =
                     CurrentPage = page model'
                     CurrentRoute = nextRoute
             },
-            CmdEx.map msg msg' |> CmdEx.toCmd SharedMsg
+            Command.map msg msg' |> Command.toCmd SharedMsg
         match nextRoute with
         {{#each Routes}}
         | Route.{{Name}} {{#if ArgsDefinition}}({{ArgsDefinition}}){{/if}} ->

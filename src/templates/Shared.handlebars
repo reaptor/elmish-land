@@ -9,9 +9,9 @@ type SharedModel = unit
 
 type SharedMsg = | NoOp
 
-let init (): SharedModel * CmdEx<'msg, SharedMsg> =
-    (), CmdEx.none
+let init (): SharedModel * Command<'msg, SharedMsg> =
+    (), Command.none
 
-let update (msg: SharedMsg) (model: SharedModel): SharedModel * CmdEx<'msg, SharedMsg> =
+let update (msg: SharedMsg) (model: SharedModel): SharedModel * Command<'msg, SharedMsg> =
     match msg with
-    | NoOp -> model, CmdEx.none
+    | NoOp -> model, Command.none

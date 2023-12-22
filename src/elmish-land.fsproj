@@ -43,8 +43,8 @@
         <EmbeddedResource Include="templates/Routes.handlebars">
             <LogicalName>Routes.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\CmdEx.fs.handlebars">
-            <LogicalName>CmdEx.fs.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\Command.fs.handlebars">
+            <LogicalName>Command.fs.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates\Shared.handlebars">
             <LogicalName>Shared.handlebars</LogicalName>
