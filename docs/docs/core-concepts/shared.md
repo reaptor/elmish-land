@@ -24,7 +24,7 @@ Every Elmish Land application has these two fields:
 * CurrentPage - stores data for the current page
 
 ### A quick example
-For example, if we had an application with a Dashboard, Settings, and SignIn page, this would be the generated Pages.Model type:
+For example, if we had an application with a Dashboard, Settings, and SignIn page, this would be the generated Page type:
 
 ```fsharp
 type Page =
@@ -34,7 +34,7 @@ type Page =
     | NotFound
 ```
 
-When a user visits a URL like /dashboard, Elmish Land calls the Pages.Dashboard.init function to determine the initial state of Pages.Dashboard.Page.Model. Each time the user navigates to a different page, the model.CurrentPage field is cleared out, and replaced with the Model for the new page.
+When a user visits a URL like /dashboard, Elmish Land calls the Pages.Dashboard.Page.init function to determine the initial state of Pages.Dashboard.Page.Model. Each time the user navigates to a different page, the model.CurrentPage field is cleared out, and replaced with the Model for the new page.
 
 #### 1. The user visits `/dashboard` (`Pages.Dashboard.Page.init` is called)
 ```fsharp
@@ -71,7 +71,7 @@ In order to create data that should be available across pages, we'll want to cus
 ## SharedModel
 The `SharedModel` type in `src/Shared.fs` defines what data is available on every page.
 
-For example, you might add two fields to track:
+For example, you might add a field to track:
 
 ```fsharp
 // Shared.fs
@@ -123,7 +123,7 @@ let update (msg: SharedMsg) (model: SharedModel): SharedModel * Command<'msg, Sh
 ```
 
 ## Reading Shared data from pages
-Often you need to read data from Shared from pages. Every page's `init`, `update` and `view` function first argument is the `SharedModel`.
+Often you need to read data from Shared from pages. Every page's `init`, `update` and `view` functions first argument is the `SharedModel`.
 
 ```fsharp
 // A Page.fs file
@@ -135,7 +135,7 @@ let view (shared: SharedModel) ...
 ```
 
 ## Sending message from pages to Shared
-When you need to send messages from pages to Shared you will use the Command.ofShared command. 
+When you need to send messages from pages to Shared you will use the Command.ofShared function. 
 
 ```fsharp
 // A Page.fs file
