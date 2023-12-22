@@ -23,7 +23,7 @@ Send a msg as a Command.
 Send a SharedMsg from a page or layout.
 
 ## Command.ofPromise
-Run a promise that will tigger the specified message when completed. Throws exception if it fails.
+Run a promise that will send the specified message when completed. Throws exception if it fails.
 
 ## Command.tryOfPromise
-Run a promise that will tigger the specified messages when succeeds or fails. Does not throw exceptions.
+Run a promise that will send the specified messages when succeeds or fails. Does not throw exceptions.
