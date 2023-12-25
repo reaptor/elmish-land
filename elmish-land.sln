@@ -3,22 +3,24 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "elmish-land", "elmish-land.fsproj", "{1584F023-F49E-46B1-B1E7-BD10AA44735D}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "elmish-land", "src/elmish-land.fsproj", "{1584F023-F49E-46B1-B1E7-BD10AA44735D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FB12D07E-8F84-4DA5-AB7A-AC3C0E3F4A0E}"
 	ProjectSection(SolutionItems) = preProject
 		Directory.Build.props = Directory.Build.props
 		dotnet-tools.json = .config/dotnet-tools.json
-								dotnet.yml = .github/workflows/dotnet.yml
-								docs.yml = .github/workflows/docs.yml
-								.editorconfig = .editorconfig
-								.gitignore = .gitignore
-								GitVersion.yml = GitVersion.yml
-								global.json = global.json
-								CONTRIBUTING.md = CONTRIBUTING.md
+		dotnet.yml = .github/workflows/dotnet.yml
+		docs.yml = .github/workflows/docs.yml
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		GitVersion.yml = GitVersion.yml
+		global.json = global.json
+		CONTRIBUTING.md = CONTRIBUTING.md
 		build-single-file.cmd = build-single-file.cmd
 		build-single-file.sh = build-single-file.sh
 	EndProjectSection
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "tests", "tests/tests.fsproj", "{89C4CE56-C515-4011-80E7-F60FE3452B2E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,5 +35,9 @@ Global
 		{1584F023-F49E-46B1-B1E7-BD10AA44735D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1584F023-F49E-46B1-B1E7-BD10AA44735D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1584F023-F49E-46B1-B1E7-BD10AA44735D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89C4CE56-C515-4011-80E7-F60FE3452B2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89C4CE56-C515-4011-80E7-F60FE3452B2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89C4CE56-C515-4011-80E7-F60FE3452B2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89C4CE56-C515-4011-80E7-F60FE3452B2E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

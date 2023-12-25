@@ -43,15 +43,6 @@ let validate (projectDir: AbsoluteProjectDir) =
     let pageFilesMissingFromFsProj = Set.difference actualPageFiles includedPageFiles
 
     let errors: string list = [
-        match includedFSharpFileInfo with
-        | (lineNr, line, filePath) :: _ when (FilePath.asString filePath) <> "src/Routes.fs" ->
-            formatError
-                lineNr
-                line
-                filePath
-                $"'%s{AbsoluteProjectDir.asString projectDir}/src/Routes.fs' must be the first file in the project"
-        | _ -> ()
-
         yield!
             includedFSharpFileInfo
             |> List.fold
@@ -82,15 +73,6 @@ let validate (projectDir: AbsoluteProjectDir) =
                 ([], [])
             |> snd
             |> List.rev
-
-        match List.tryLast includedFSharpFileInfo with
-        | Some(lineNr, line, filePath) when "src/App.fs" |> FilePath.fromString |> FilePath.equals filePath |> not ->
-            formatError
-                lineNr
-                line
-                filePath
-                $"'%s{AbsoluteProjectDir.asString projectDir}/src/App.fs' must be the last file in the project"
-        | _ -> ()
 
         for pageFile in pageFilesMissingFromFsProj do
             $"""The page '%s{AbsoluteProjectDir.asString projectDir}/%s{FilePath.asString pageFile}' is missing from the project file. Please add the file to the project using an IDE

@@ -2,7 +2,9 @@ module ElmishLand.Init
 
 open System
 open System.IO
+open System.Reflection
 open System.Threading
+open Orsak
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
 open ElmishLand.Log
@@ -10,38 +12,77 @@ open ElmishLand.DotNetCli
 open ElmishLand.Process
 open ElmishLand.AppError
 open ElmishLand.FsProj
+open ElmishLand.Resource
 
 let getNodeVersion () =
     runProcess (FilePath.fromString Environment.CurrentDirectory) "node" [| "-v" |] CancellationToken.None ignore
-    |> Result.mapError (fun _ -> AppError.NodeNotFound)
-    |> Result.bind (fun output ->
+    |> Effect.changeError (fun _ -> AppError.NodeNotFound)
+    |> Effect.map (fun output ->
         match Version.TryParse(output[1..]) with
         | true, version when version >= minimumRequiredNode -> Ok version
         | _ -> Error NodeNotFound)
+    |> Effect.joinResult
+
+let successMessage projectDir =
+    let projectName = projectDir |> ProjectName.fromProjectDir
+
+    $"""%s{getCommandHeader $"created a new project in ./%s{ProjectName.asString projectName}"}
+Run the following command to start the development server:
+
+dotnet elmish-land server
+"""
 
 let init (projectDir: AbsoluteProjectDir) =
-    let log = Log()
+    eff {
+        let! log = Log().Get()
 
-    try
         let projectName = projectDir |> ProjectName.fromProjectDir
 
-        result {
-            let log = Log()
-            let! dotnetSdkVersion = getLatestDotnetSdkVersion ()
-            Log().Debug("Using .NET SDK: {}", dotnetSdkVersion)
+        let! dotnetSdkVersion = getLatestDotnetSdkVersion ()
+        log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
-            let! nodeVersion = getNodeVersion ()
-            Log().Debug("Using Node.js: {}", nodeVersion)
+        let! nodeVersion = getNodeVersion ()
+        log.Debug("Using Node.js: {}", nodeVersion)
 
-            log.Debug("Initializing project. {}", AbsoluteProjectDir.asString projectDir)
+        log.Debug("Initializing project. {}", AbsoluteProjectDir.asString projectDir)
 
-            let writeResource = writeResource projectDir false
+        let assembly = Assembly.GetExecutingAssembly()
 
-            let fsProjPath = FsProjPath.fromProjectDir projectDir
-            log.Debug("Project path {}", fsProjPath)
+        log.Debug("Resources in assembly:")
 
-            let fsProjExists = File.Exists(FsProjPath.asString fsProjPath)
+        for resource in assembly.GetManifestResourceNames() do
+            log.Debug(resource)
 
+        let writeResource = writeResource projectDir false
+
+        let fsProjPath = FsProjPath.fromProjectDir projectDir
+        log.Debug("Project path {}", fsProjPath)
+
+        let fsProjExists = File.Exists(FsProjPath.asString fsProjPath)
+
+        do!
+            writeResource
+                "elmish-land.json.handlebars"
+                [ "elmish-land.json" ]
+                (Some(
+                    handlebars {|
+                        ProjectName = ProjectName.asString projectName
+                    |}
+                ))
+
+        do! writeResource "vite.config.js" [ ".elmish-land"; "vite.config.js" ] None
+
+        do!
+            writeResource
+                "Base.fsproj.handlebars"
+                [ ".elmish-land"; "Base"; "Base.fsproj" ]
+                (Some(
+                    handlebars {|
+                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
+                    |}
+                ))
+
+        do!
             writeResource
                 "Project.fsproj.handlebars"
                 [ $"%s{ProjectName.asString projectName}.fsproj" ]
@@ -51,6 +92,19 @@ let init (projectDir: AbsoluteProjectDir) =
                     |}
                 ))
 
+        do!
+            writeResource
+                "App.fsproj.handlebars"
+                [ ".elmish-land"; "App"; "App.fsproj" ]
+                (Some(
+                    handlebars {|
+                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
+                        ProjectReference =
+                            $"""<ProjectReference Include="../../%s{ProjectName.asString projectName}.fsproj" />"""
+                    |}
+                ))
+
+        do!
             writeResource
                 "global.json.handlebars"
                 [ "global.json" ]
@@ -60,83 +114,95 @@ let init (projectDir: AbsoluteProjectDir) =
                     |}
                 ))
 
-            writeResource "index.html" [ "index.html" ] None
-
+        do!
             writeResource
                 "package.json.handlebars"
-                [ "package.json" ]
+                [ ".elmish-land/package.json" ]
                 (Some(
                     handlebars {|
                         ProjectName = projectName |> ProjectName.asString |> String.asKebabCase
                     |}
                 ))
 
-            writeResource "settings.json" [ ".vscode"; "settings.json" ] None
+        do! writeResource "settings.json" [ ".vscode"; "settings.json" ] None
+        do! writeResource "Command.fs.handlebars" [ ".elmish-land"; "Base"; "Command.fs" ] None
 
-            let rootModuleName = projectName |> ProjectName.asString |> quoteIfNeeded
+        let rootModuleName = projectName |> ProjectName.asString |> quoteIfNeeded
 
-            let routeData =
-                if fsProjExists then
-                    getRouteData projectDir
-                else
-                    let homeRoute = {
-                        Name = "Home"
-                        MsgName = "HomeMsg"
-                        ModuleName = $"%s{rootModuleName}.Pages.Home.Page"
-                        ArgsDefinition = ""
-                        ArgsUsage = ""
-                        ArgsPattern = ""
-                        Url = "/"
-                        UrlPattern = "[]"
-                        UrlPatternWithQuery = "[]"
-                    }
+        let! routeData =
+            if fsProjExists then
+                eff { return getRouteData projectDir }
+            else
+                let homeRoute = {
+                    Name = "Home"
+                    MsgName = "HomeMsg"
+                    ModuleName = $"%s{rootModuleName}.Pages.Home.Page"
+                    ArgsDefinition = ""
+                    ArgsUsage = ""
+                    ArgsPattern = ""
+                    Url = "/"
+                    UrlPattern = "[]"
+                    UrlPatternWithQuery = "[]"
+                }
 
-                    let routeData = {
-                        Autogenerated = autogenerated.Value
-                        RootModule = rootModuleName
-                        Routes = [| homeRoute |]
-                    }
+                let routeData = {
+                    Autogenerated = getAutogenerated ()
+                    RootModule = rootModuleName
+                    Routes = [| homeRoute |]
+                }
 
-                    writeResource
-                        "Page.handlebars"
-                        [ "src"; "Pages"; "Home"; "Page.fs" ]
-                        (Some(
-                            handlebars {|
-                                RootModule = rootModuleName
-                                Route = homeRoute
-                            |}
-                        ))
+                eff {
+                    do!
+                        writeResource
+                            "Page.handlebars"
+                            [ "src"; "Pages"; "Home"; "Page.fs" ]
+                            (Some(
+                                handlebars {|
+                                    RootModule = rootModuleName
+                                    Route = homeRoute
+                                |}
+                            ))
 
-                    routeData
+                    return routeData
+                }
 
-            log.Debug("Using route data {}", routeData)
+        log.Debug("Using route data {}", routeData)
 
-            writeResource "Shared.handlebars" [ "src"; "Shared.fs" ] (Some(handlebars routeData))
+        do! writeResource "Shared.handlebars" [ "src"; "Shared.fs" ] (Some(handlebars routeData))
 
-            generateRoutesAndApp projectDir routeData
+        do! generateRoutesAndApp projectDir routeData
 
-            do! validate projectDir
+        do! validate projectDir
 
-            do!
-                [
-                    if not (FilePath.exists projectDir [ ".config"; "dotnet-tools.json" ]) then
-                        "dotnet", [| "new"; "tool-manifest"; "--force" |]
-                    for name, version in dotnetToolDependencies do
-                        "dotnet", [| "tool"; "install"; name; version |]
-                    yield! dependencyCommands
-                ]
-                |> List.map (fun (cmd, args) ->
-                    AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
-                |> runProcesses
-        }
-        |> handleAppResult projectDir (fun () ->
-            $"""%s{commandHeader $"created a new project in ./%s{ProjectName.asString projectName}"}
-Run the following command to start the development server:
+        do!
+            [
+                if not (FilePath.exists projectDir [ ".config"; "dotnet-tools.json" ]) then
+                    "dotnet", [| "new"; "tool-manifest"; "--force" |]
+                for name, version in getDotnetToolDependencies () do
+                    "dotnet", [| "tool"; "install"; name; version |]
+                "dotnet", [| "new"; "sln" |]
+                "dotnet", [| "sln"; "add"; ".elmish-land/Base/Base.fsproj" |]
+                "dotnet", [| "sln"; "add"; $"%s{ProjectName.asString projectName}.fsproj" |]
+                "dotnet", [| "sln"; "add"; ".elmish-land/App/App.fsproj" |]
+            ]
+            |> List.map (fun (cmd, args) ->
+                AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
+            |> runProcesses
 
-dotnet elmish-land server
-"""
-            |> log.Info)
+        do!
+            dependencyCommands
+            |> List.map (fun (cmd, args) ->
+                AbsoluteProjectDir.asFilePath projectDir
+                |> FilePath.appendParts [ ".elmish-land" ],
+                cmd,
+                args,
+                CancellationToken.None,
+                ignore)
+            |> runProcesses
 
-    with :? IOException as ex ->
-        log.Error ex.Message
-        -1
+        do!
+            runProcess (AbsoluteProjectDir.asFilePath projectDir) "dotnet" [| "restore" |] CancellationToken.None ignore
+            |> Effect.map ignore<string>
+
+        log.Info(successMessage projectDir)
+    }

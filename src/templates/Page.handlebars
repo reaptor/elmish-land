@@ -3,20 +3,22 @@
 open System
 open Feliz
 open Elmish
+open {{RootModule}}
+open {{RootModule}}.Shared
 
 type Model = unit
 
 type Msg = | NoOp
 
-let init ({{Route.ArgsDefinition}}): Model * Cmd<Msg> =
+let init (shared: SharedModel) ({{Route.ArgsDefinition}}): Model * Command<Msg, SharedMsg> =
     (),
-    Cmd.none
+    Command.none
 
-let update (msg: Msg) (model: Model): Model * Cmd<Msg> =
+let update (shared: SharedModel) (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
     match msg with
-    | NoOp -> model, Cmd.none
+    | NoOp -> model, Command.none
 
-let view (model: Model) (dispatch: Msg -> unit): ReactElement =
+let view (shared: SharedModel) (model: Model) (dispatch: Msg -> unit): ReactElement =
     Html.text "{{Route.Name}}"
 
 let subscribe (model: Model) : (string list * ((Msg -> unit) -> IDisposable)) list = []

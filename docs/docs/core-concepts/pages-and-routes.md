@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 1
 ---
 
 # Pages and Routes
@@ -32,7 +32,7 @@ To get started, let's start with a page that is displayed when a user visits the
 We can create our about page using the `elmish-land add page` command shown below:
 
 ```bash
-dotnet elmish-land add page:view /sign-in
+dotnet elmish-land add page /about
 ```
 
 ```bash
@@ -43,7 +43,7 @@ dotnet elmish-land add page:view /sign-in
     ./src/Pages/About/Page.fs
 
     Please add the file to the project using an IDE or add the following line to an
-    ItemGroup in the project file './MyProject/MyProject.fsproj':
+    ItemGroup in the project file './MyProject.fsproj':
     <Compile Include="src/Pages/About/Page.fs" />
 ```
 

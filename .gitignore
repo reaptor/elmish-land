@@ -10,3 +10,4 @@ github-pages
 /docs/build/
 /MyProject
 .vscode
+.elmish-land

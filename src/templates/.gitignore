@@ -3,6 +3,6 @@ fable_modules
 node_modules
 bin
 obj
-
+.elmish-land
 .fake
 .vscode
