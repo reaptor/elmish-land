@@ -68,6 +68,7 @@
         <Compile Include="Generate.fs" />
         <Compile Include="Server.fs" />
         <Compile Include="Build.fs" />
+        <Compile Include="AddLayout.fs" />
         <Compile Include="AddPage.fs" />
         <Compile Include="Program.fs" />
 
