@@ -246,6 +246,8 @@ module FilePath =
     let exists (AbsoluteProjectDir projectDir) parts =
         File.Exists(projectDir |> appendParts parts |> asString)
 
+    let parts (FilePath path) = String.split "/" path
+
 module AbsoluteProjectDir =
     let private getCurrentDirectory () =
         canonicalizePath Environment.CurrentDirectory

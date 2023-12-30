@@ -39,8 +39,18 @@ let init () =
         CurrentPage = Page.NotFound
     }
 
-    let initPage init initArgs page msg =
-        let nextModel, nextCmd = init sharedModel initArgs
+    let initPageWithArgs init initArgs query page msg =
+        let nextModel, nextCmd = init sharedModel initArgs query
+        let nextPage = page nextModel
+
+        {
+            defaultModel with
+                CurrentPage = nextPage
+        },
+        Command.batch [ sharedCmd; Command.map msg nextCmd ] |> Command.toCmd SharedMsg
+
+    let initPageWithoutArgs init query page msg =
+        let nextModel, nextCmd = init sharedModel query
         let nextPage = page nextModel
 
         {
@@ -51,8 +61,12 @@ let init () =
 
     match initialUrl with
     {{#each Routes}}
-    | Route.{{Name}} {{#if ArgsPattern}}{{ArgsPattern}} {{/if}}->
-        initPage {{ModuleName}}.init ({{ArgsUsage}}) Page.{{Name}} {{MsgName}}
+    | Route.{{Name}} ({{#if ArgsPattern}}{{ArgsPattern}}, {{/if}}query) ->
+        {{#if ArgsUsage}}
+        initPageWithArgs {{ModuleName}}.init ({{ArgsUsage}}) query Page.{{Name}} {{MsgName}}
+        {{else}}
+        initPageWithoutArgs {{ModuleName}}.init query Page.{{Name}} {{MsgName}}
+        {{/if}}
     {{/each}}
     | Route.NotFound ->
         {
@@ -75,8 +89,16 @@ let update (msg: Msg) (model: Model) =
         let model'', cmd = Shared.update msg' model.Shared
         { model with Shared = model'' }, Command.map SharedMsg cmd |> Command.toCmd SharedMsg
     | RouteChanged nextRoute, _ ->
-        let changeRoute init initArgs page msg =
-            let model', msg' = init model.Shared initArgs
+        let changeRouteWithArgs init initArgs query page msg =
+            let model', msg' = init model.Shared initArgs query
+            {
+                model with
+                    CurrentPage = page model'
+                    CurrentRoute = nextRoute
+            },
+            Command.map msg msg' |> Command.toCmd SharedMsg
+        let changeRouteWithoutArgs init query page msg =
+            let model', msg' = init model.Shared query
             {
                 model with
                     CurrentPage = page model'
@@ -85,8 +107,12 @@ let update (msg: Msg) (model: Model) =
             Command.map msg msg' |> Command.toCmd SharedMsg
         match nextRoute with
         {{#each Routes}}
-        | Route.{{Name}} {{#if ArgsDefinition}}({{ArgsDefinition}}){{/if}} ->
-            changeRoute {{ModuleName}}.init ({{#if ArgsUsage}}({{ArgsUsage}}){{/if}}) Page.{{Name}} {{MsgName}}
+        | Route.{{Name}} ({{#if ArgsDefinition}}{{ArgsDefinition}}, {{/if}}query) ->
+            {{#if ArgsUsage}}
+            changeRouteWithArgs {{ModuleName}}.init ({{ArgsUsage}}) query Page.{{Name}} {{MsgName}}
+            {{else}}
+            changeRouteWithoutArgs {{ModuleName}}.init query Page.{{Name}} {{MsgName}}
+            {{/if}}
         {{/each}}
         | Route.NotFound ->
             {

@@ -10,3 +10,4 @@ github-pages
 /docs/build/
 /MyProject
 .elmish-land
+*.DotSettings.user

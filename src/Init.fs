@@ -127,7 +127,7 @@ let init (projectDir: AbsoluteProjectDir) =
         do! writeResource "settings.json" [ ".vscode"; "settings.json" ] None
         do! writeResource "Command.fs.handlebars" [ ".elmish-land"; "Base"; "Command.fs" ] None
 
-        let rootModuleName = projectName |> ProjectName.asString |> quoteIfNeeded
+        let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
 
         let! routeData =
             if fsProjExists then

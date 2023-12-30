@@ -45,7 +45,7 @@ let addPage (url: string) =
 
         let route = fileToRoute projectDir routeFilePath
         let projectName = projectDir |> ProjectName.fromProjectDir
-        let rootModuleName = projectName |> ProjectName.asString |> quoteIfNeeded
+        let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
 
         do!
             writeResource

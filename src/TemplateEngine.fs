@@ -44,17 +44,20 @@ let getSortedPageFiles (projectDir: AbsoluteProjectDir) =
         EnumerationOptions(RecurseSubdirectories = true)
     )
     |> Array.map FilePath.fromString
-    |> Array.sortBy (fun x ->
-        if x |> FilePath.endsWithParts [ "src"; "Pages"; "Page.fs" ] then
-            ""
+    |> Array.sortByDescending (fun x ->
+        if x |> FilePath.endsWithParts [ "src"; "Pages"; "Home"; "Page.fs" ] then
+            0
         else
-            FilePath.asString x)
+            x |> FilePath.parts |> Array.length)
 
-let quoteIfNeeded (s: string) =
-    if Regex.IsMatch(s, "^[0-9a-zA-Z_]+$") then
+let wrapWithTicksIfNeeded (s: string) =
+    if Regex.IsMatch(s, "^[0-9a-zA-Z_]+$") && s <> "id" then
         s
     else
         $"``%s{s}``"
+
+let toPascalCase (s: string) = $"%s{s[0..0].ToUpper()}{s[1..]}"
+let toCamelCase (s: string) = $"%s{s[0..0].ToLower()}%s{s[1..]}"
 
 let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
     let route =
@@ -70,11 +73,10 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
     |> String.split "/"
     |> Array.fold
         (fun (parts, args) part ->
-            if part.StartsWith("{") && part.EndsWith("}") then
-                $"%s{part[0..0].ToUpper()}{part[1..]}" :: parts,
-                $"%s{part[1..1].ToLower()}%s{part[2 .. part.Length - 2]}" :: args
+            if part.EndsWith("_") then
+                (toPascalCase part).TrimEnd('_') :: parts, (toCamelCase part).TrimEnd('_') :: args
             else
-                $"%s{part[0..0].ToUpper()}{part[1..]}" :: parts, args)
+                toPascalCase part :: parts, args)
         ([], [])
     |> fun (parts, args) ->
         let args = List.rev args
@@ -86,22 +88,24 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
         let argsPattern =
             let argString =
                 args
-                |> List.map (fun arg -> $"%s{quoteIfNeeded arg}: string")
+                |> List.map (fun arg -> $"%s{wrapWithTicksIfNeeded arg}: string")
                 |> String.concat ", "
 
-            if argString.Length = 0 then "" else $"(%s{argString})"
+            if argString.Length = 0 then "" else $"%s{argString}"
 
         let argsDefinition =
             let argString =
                 args
-                |> List.map (fun arg -> $"%s{quoteIfNeeded arg}: string")
+                |> List.map (fun arg -> $"%s{wrapWithTicksIfNeeded arg}: string")
                 |> String.concat " * "
 
             if argString.Length = 0 then "" else $"%s{argString}"
 
         let argsUsage =
             let argString =
-                args |> List.map (fun arg -> $"%s{quoteIfNeeded arg}") |> String.concat ", "
+                args
+                |> List.map (fun arg -> $"%s{wrapWithTicksIfNeeded arg}")
+                |> String.concat ", "
 
             if argString.Length = 0 then "" else $"%s{argString}"
 
@@ -110,8 +114,8 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
             |> List.fold
                 (fun (url: string) arg ->
                     url.Replace(
-                        $"{{{arg}}}",
-                        $"%%s{{%s{quoteIfNeeded arg}}}",
+                        $"%s{arg}_",
+                        $"%%s{{%s{arg |> wrapWithTicksIfNeeded}}}",
                         StringComparison.InvariantCultureIgnoreCase
                     ))
                 (if route = "/Home" then "/" else route)
@@ -121,37 +125,30 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
         let urlPattern includeQuery =
             (if route = "/Home" then "/" else route)
             |> String.split "/"
-            |> Array.map (fun x ->
-                if x.StartsWith "{" && x.EndsWith "}" then
-                    x[1 .. x.Length - 2] // Remove leading { and trailing }
-                else
-                    x)
+            |> Array.map (fun x -> if x.EndsWith "_" then x.TrimEnd('_') else x)
             |> Array.map (fun arg -> arg.ToLowerInvariant())
             |> Array.map (fun arg ->
                 if List.contains arg lowerCaseArgs then
-                    quoteIfNeeded arg
+                    wrapWithTicksIfNeeded arg
                 else
                     $"\"%s{arg}\"")
             |> String.concat "; "
             |> fun pattern ->
-                let query = if includeQuery then "; Route.Query _" else ""
-
                 if pattern.Length > 0 then
+                    let query = if includeQuery then "; Route.Query query" else ""
                     $"[ %s{pattern}{query} ]"
                 else
-                    "[]"
+                    let query = if includeQuery then "Route.Query query" else ""
+                    $"[ %s{query} ]"
 
         {
-            Name = quoteIfNeeded name
-            MsgName = quoteIfNeeded $"%s{name}Msg"
+            Name = wrapWithTicksIfNeeded name
+            MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
             ModuleName =
-                sprintf
-                    "%s.Pages.%s.Page"
-                    (projectDir
+                $"%s{projectDir
                      |> AbsoluteProjectDir.asFilePath
                      |> FileName.fromFilePath
-                     |> FileName.asString)
-                    (name |> String.split "_" |> Array.map quoteIfNeeded |> String.concat ".")
+                     |> FileName.asString}.Pages.%s{wrapWithTicksIfNeeded name}.Page"
             ArgsDefinition = argsDefinition
             ArgsUsage = argsUsage
             ArgsPattern = argsPattern
@@ -170,7 +167,7 @@ let getRouteData (projectDir: AbsoluteProjectDir) =
             |> AbsoluteProjectDir.asFilePath
             |> FileName.fromFilePath
             |> FileName.asString
-            |> quoteIfNeeded
+            |> wrapWithTicksIfNeeded
         Routes = pageFiles |> Array.map (fileToRoute projectDir)
     }
 

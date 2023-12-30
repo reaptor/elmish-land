@@ -3,10 +3,22 @@ module {{RootModule}}.Routes
 
 open Feliz.Router
 
+let private queryToString (query: list<string * string>) =
+    let rec queryToString' query' =
+        match query' with
+        | [] -> ""
+        | (i, (name, value)) :: xs ->
+            let separator = if i = 0 then "?" else "&"
+            $"%s{separator}%s{name}=%s{value}%s{queryToString' xs}"
+
+    query
+    |> List.mapi (fun i x -> i, x)
+    |> queryToString'
+
 [<RequireQualifiedAccess>]
 type Route =
     {{#each Routes}}
-    | {{Name}}{{#if ArgsDefinition}} of {{ArgsDefinition}}{{/if}}
+    | {{Name}} of {{#if ArgsDefinition}}{{ArgsDefinition}} * {{/if}}query: list<string * string>
     {{/each}}
     | NotFound
 
@@ -14,15 +26,17 @@ module Route =
     let asUrl =
         function
         {{#each Routes}}
-        | Route.{{Name}} {{#if ArgsDefinition}}({{ArgsDefinition}}){{/if}} -> $"#{{Url}}"
+        | Route.{{Name}} ({{#if ArgsDefinition}}{{ArgsDefinition}}, {{/if}}query) -> $"#{{Url}}%s{queryToString query}"
         {{/each}}
         | Route.NotFound -> "notFound"
 
     let parse (xs: string list) =
         match xs |> List.map (fun x -> x.ToLowerInvariant ()) with
         {{#each Routes}}
-        | {{UrlPattern}}
-        | {{UrlPatternWithQuery}} -> Route.{{Name}} {{#if ArgsUsage}}({{ArgsUsage}}){{/if}}
+        | {{UrlPatternWithQuery}} -> Route.{{Name}} ({{#if ArgsUsage}}{{ArgsUsage}}, {{/if}}query)
+        {{/each}}
+        {{#each Routes}}
+        | {{UrlPattern}} -> Route.{{Name}} ({{#if ArgsUsage}}{{ArgsUsage}}, {{/if}}[])
         {{/each}}
         | other ->
             printfn "Route not found: '%A'" other

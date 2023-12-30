@@ -10,7 +10,7 @@ type Model = unit
 
 type Msg = | NoOp
 
-let init (shared: SharedModel) ({{Route.ArgsDefinition}}): Model * Command<Msg, SharedMsg> =
+let init (shared: SharedModel) {{#if Route.ArgsDefinition}}({{Route.ArgsDefinition}}) {{/if}}(query: list<string * string>): Model * Command<Msg, SharedMsg> =
     (),
     Command.none
 
