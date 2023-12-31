@@ -8,7 +8,7 @@ At the heart of Elmish Land is a filesystem-based router. The routes of your app
 
 * `src/Pages/Home` is the root route
 * `src/Pages/About` creates an `/about` route
-* `src/Pages/Blog/{slug}` creates a route with a parameter, slug, that can be used to load data dynamically when a user requests a page like `/blog/hello-world`
+* `src/Pages/Blog/slug_` creates a route with a parameter, slug, that can be used to load data dynamically when a user requests a page like `/blog/hello-world`
 
 Each page directory contains one page file called `Page.fs`.
 
@@ -22,7 +22,7 @@ src/
     ├── About
     │   └── Page.fs
     └── Blog
-        └── {slug}
+        └── slug_
             └── Page.fs
 ```
 
