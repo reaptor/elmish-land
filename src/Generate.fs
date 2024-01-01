@@ -52,5 +52,5 @@ let generate (projectDir: AbsoluteProjectDir) =
                 ))
 
         let routeData = getRouteData projectDir
-        do! generateRoutesAndApp projectDir routeData
+        do! generateFiles projectDir routeData
     }

@@ -62,7 +62,7 @@ let addPage (url: string) =
 
         let routeData = getRouteData projectDir
         log.Debug("routeData: {}", routeData)
-        do! generateRoutesAndApp projectDir routeData
+        do! generateFiles projectDir routeData
 
         let relativefilePathString = $"""%s{routeFileParts |> String.concat "/"}"""
 

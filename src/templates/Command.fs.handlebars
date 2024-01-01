@@ -1,6 +1,8 @@
 ﻿namespace Elmish
 
 open Elmish
+open Feliz
+open {{RootModule}}.Routes
 
 type Command<'msg, 'sharedMsg> private =
     | None
@@ -23,6 +25,14 @@ module Command =
     let batch cmds = Batch cmds
 
     let ofShared msg = SharedMsg msg
+
+    let navigate route =
+        match route with
+        {{#each Routes}}
+        | Route.{{Name}} ({{#if ArgsPattern}}{{ArgsPattern}}, {{/if}}query) -> Router.Cmd.navigate({{#if UrlUsage}}{{UrlUsage}}{{else}}""{{/if}}, query)
+        {{/each}}
+        | Route.NotFound -> Router.Cmd.navigate("notFound")
+        |> ofCmd
 
     let rec map f command =
         match command with

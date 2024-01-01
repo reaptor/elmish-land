@@ -3,18 +3,6 @@ module {{RootModule}}.Routes
 
 open Feliz.Router
 
-let private queryToString (query: list<string * string>) =
-    let rec queryToString' query' =
-        match query' with
-        | [] -> ""
-        | (i, (name, value)) :: xs ->
-            let separator = if i = 0 then "?" else "&"
-            $"%s{separator}%s{name}=%s{value}%s{queryToString' xs}"
-
-    query
-    |> List.mapi (fun i x -> i, x)
-    |> queryToString'
-
 [<RequireQualifiedAccess>]
 type Route =
     {{#each Routes}}
@@ -23,10 +11,10 @@ type Route =
     | NotFound
 
 module Route =
-    let asUrl =
+    let format =
         function
         {{#each Routes}}
-        | Route.{{Name}} ({{#if ArgsDefinition}}{{ArgsDefinition}}, {{/if}}query) -> $"#{{Url}}%s{queryToString query}"
+        | Route.{{Name}} ({{#if ArgsPattern}}{{ArgsPattern}}, {{/if}}query) -> Router.format({{#if UrlUsage}}{{UrlUsage}}{{else}}""{{/if}}, query)
         {{/each}}
         | Route.NotFound -> "notFound"
 

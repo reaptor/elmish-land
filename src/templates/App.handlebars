@@ -107,7 +107,7 @@ let update (msg: Msg) (model: Model) =
             Command.map msg msg' |> Command.toCmd SharedMsg
         match nextRoute with
         {{#each Routes}}
-        | Route.{{Name}} ({{#if ArgsDefinition}}{{ArgsDefinition}}, {{/if}}query) ->
+        | Route.{{Name}} ({{#if ArgsPattern}}{{ArgsPattern}}, {{/if}}query) ->
             {{#if ArgsUsage}}
             changeRouteWithArgs {{ModuleName}}.init ({{ArgsUsage}}) query Page.{{Name}} {{MsgName}}
             {{else}}

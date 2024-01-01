@@ -26,7 +26,7 @@ type Route = {
     ArgsDefinition: string
     ArgsUsage: string
     ArgsPattern: string
-    Url: string
+    UrlUsage: string
     UrlPattern: string
     UrlPatternWithQuery: string
 }
@@ -73,8 +73,8 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
     |> String.split "/"
     |> Array.fold
         (fun (parts, args) part ->
-            if part.EndsWith("_") then
-                (toPascalCase part).TrimEnd('_') :: parts, (toCamelCase part).TrimEnd('_') :: args
+            if part.StartsWith("_") then
+                (toPascalCase part).TrimStart('_') :: parts, (toCamelCase part).TrimStart('_') :: args
             else
                 toPascalCase part :: parts, args)
         ([], [])
@@ -109,23 +109,18 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
 
             if argString.Length = 0 then "" else $"%s{argString}"
 
-        let url =
-            args
-            |> List.fold
-                (fun (url: string) arg ->
-                    url.Replace(
-                        $"%s{arg}_",
-                        $"%%s{{%s{arg |> wrapWithTicksIfNeeded}}}",
-                        StringComparison.InvariantCultureIgnoreCase
-                    ))
-                (if route = "/Home" then "/" else route)
+        let urlUsage =
+            if route = "/Home" then "/" else route
+            |> String.split "/"
+            |> Array.map (fun x -> if x.StartsWith("_") then x.TrimStart('_') else $"\"%s{x}\"")
+            |> String.concat ", "
 
         let lowerCaseArgs = args |> List.map (fun x -> x.ToLowerInvariant())
 
         let urlPattern includeQuery =
             (if route = "/Home" then "/" else route)
             |> String.split "/"
-            |> Array.map (fun x -> if x.EndsWith "_" then x.TrimEnd('_') else x)
+            |> Array.map (fun x -> if x.StartsWith "_" then x.TrimStart('_') else x)
             |> Array.map (fun arg -> arg.ToLowerInvariant())
             |> Array.map (fun arg ->
                 if List.contains arg lowerCaseArgs then
@@ -152,7 +147,7 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
             ArgsDefinition = argsDefinition
             ArgsUsage = argsUsage
             ArgsPattern = argsPattern
-            Url = url
+            UrlUsage = urlUsage
             UrlPattern = urlPattern false
             UrlPatternWithQuery = urlPattern true
         }
@@ -171,10 +166,11 @@ let getRouteData (projectDir: AbsoluteProjectDir) =
         Routes = pageFiles |> Array.map (fileToRoute projectDir)
     }
 
-let generateRoutesAndApp projectDir (routeData: RouteData) =
+let generateFiles projectDir (routeData: RouteData) =
     let writeResource = writeResource projectDir true
 
     eff {
         do! writeResource "Routes.handlebars" [ ".elmish-land"; "Base"; "Routes.fs" ] (Some(handlebars routeData))
+        do! writeResource "Command.fs.handlebars" [ ".elmish-land"; "Base"; "Command.fs" ] (Some(handlebars routeData))
         do! writeResource "App.handlebars" [ ".elmish-land"; "App"; "App.fs" ] (Some(handlebars routeData))
     }

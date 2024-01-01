@@ -1,8 +1,8 @@
 ---
-sidebar_position: 3
+sidebar_position: 6
 ---
 
-# Command
+# Commands
 
 ## Overview
 The `Command<'msg, 'sharedMsg>` msg type in Elmish Land is an abstraction built on top of [Elmish's standard Cmd\<'msg\> type](https://elmish.github.io/elmish/#commands). The `Command` module contians convenience functions for using Elmish Cmd:s and functions to allow communication from pages to the Shared module.

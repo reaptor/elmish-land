@@ -125,7 +125,6 @@ let init (projectDir: AbsoluteProjectDir) =
                 ))
 
         do! writeResource "settings.json" [ ".vscode"; "settings.json" ] None
-        do! writeResource "Command.fs.handlebars" [ ".elmish-land"; "Base"; "Command.fs" ] None
 
         let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
 
@@ -140,9 +139,9 @@ let init (projectDir: AbsoluteProjectDir) =
                     ArgsDefinition = ""
                     ArgsUsage = ""
                     ArgsPattern = ""
-                    Url = "/"
+                    UrlUsage = "\"\""
                     UrlPattern = "[]"
-                    UrlPatternWithQuery = "[]"
+                    UrlPatternWithQuery = "[ Route.Query query ]"
                 }
 
                 let routeData = {
@@ -170,7 +169,7 @@ let init (projectDir: AbsoluteProjectDir) =
 
         do! writeResource "Shared.handlebars" [ "src"; "Shared.fs" ] (Some(handlebars routeData))
 
-        do! generateRoutesAndApp projectDir routeData
+        do! generateFiles projectDir routeData
 
         do! validate projectDir
 

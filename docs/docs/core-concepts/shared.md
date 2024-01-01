@@ -1,11 +1,11 @@
 ---
-sidebar_position: 2
+sidebar_position: 5
 ---
 
-# Shared
+# Shared state
 
 ## Overview 
-The Shared module is designed to enable us to share data between pages. To understand why it exists, it might first be helpful to understand how Elmish Land stores information. Under the hood, Elmish Land generates a bit of code for making a standard F#/Elmish application.
+The Shared module is designed to enable us to share state between pages. To understand why it exists, it might first be helpful to understand how Elmish Land stores information. Under the hood, Elmish Land generates a bit of code for making a standard F#/Elmish application.
 
 Normally, Elmish applications have a single, top-level Model that represents the entire state of our application. Elmish Land is no different, except it generates that Model for us. This allows you to focus on creating smaller models for each page.
 
@@ -24,7 +24,7 @@ Every Elmish Land application has these two fields:
 * CurrentPage - stores data for the current page
 
 ### A quick example
-For example, if we had an application with a Dashboard, Settings, and SignIn page, this would be the generated Page type:
+For example, if we have an application with a Dashboard, Settings, and SignIn page, this would be the generated Page type:
 
 ```fsharp
 type Page =
@@ -65,13 +65,13 @@ model =
 
 The important thing to understand is that as the user changes the URL, the entire model.CurrentPage field is replaced with a new one. This behavior helps make Elmish Land pages easier to understand, but introduces a new challenge: "How do we share information like a signed-in user across pages?"
 
-## Customizing the `Shared` module
-In order to create data that should be available across pages, we'll want to customize our `SharedModel` so it can store whatever information is important for our specific app.
+## Adding custom state to `SharedModel`
+In order to create state that should be available across pages, we'll want to customize our `SharedModel` so it can store whatever information is important for our specific app.
 
 ## SharedModel
 The `SharedModel` type in `src/Shared.fs` defines what data is available on every page.
 
-For example, you might add a field to track:
+For example, you might add a field to track the username of the current user:
 
 ```fsharp
 // Shared.fs
