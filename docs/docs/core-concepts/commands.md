@@ -22,6 +22,9 @@ Send a msg as a Command.
 ## Command.ofShared
 Send a SharedMsg from a page or layout.
 
+## Command.navigate
+Navigates to the specified route. [Read more](/docs/core-concepts/linking-and-navigating#command).
+
 ## Command.ofPromise
 Run a promise that will send the specified message when completed. Throws exception if it fails.
 

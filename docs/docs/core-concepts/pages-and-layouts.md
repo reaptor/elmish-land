@@ -34,7 +34,7 @@ You need to manually add the new page to your project file.
 
 ### Query parameters
 
-Every page's ``init`` function has a ``(query: list<string * string>)`` parameter. This parameter contains the query parameters for the current URL. The following url:
+Every page's ``init`` function has a ``(query: list<string * string>)`` parameter. This parameter contains the query parameters for the current URL. The following URL:
 
 `/Blog?username=john`
 

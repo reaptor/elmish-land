@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Dynamic routes
 
-Some page directories have a trailing underscore, (like _Id or _User). These are called "dynamic pages", because this page can handle multiple URLs matching the same pattern. Here are some examples:
+Some page folders have a leading underscore, (like _Id or _User). These are called "dynamic pages" because they can handle multiple URLs matching the same pattern. Here are some examples:
 
 | Page filename                      | URL              | Example URLs                                             |
 |------------------------------------| ---------------- | -------------------------------------------------------- |
@@ -12,7 +12,7 @@ Some page directories have a trailing underscore, (like _Id or _User). These are
 | src/Pages/Users/_Username/Page.fs  | /users/:username | /users/ryan, /users/2, /users/bob, ...                   |
 | src/Pages/Settings/_Tab/Page.fs    | /settings/:tab   | /settings/account, /settings/general, /settings/api, ... |
 
-The name of the directory (_Id, _User or _Tab) will determine the names of the parameters passed into your page's init function:
+The name of the folder (_Id, _User or _Tab) will determine the names of the parameters passed into your page's init function:
 
 ```fsharp
 -- /blog/123
@@ -25,7 +25,7 @@ let init ... (username) = ... // username = "ryan"
 let init ... (tab) = ... // tab = "account"
 ```
 
-For example, if we renamed Settings/_Tab/Page.fs to Settings/_Foo/Page.fs, we'd access the dynamic route parameter via foo instead!
+For example, if we renamed `Settings/_Tab/Page.fs` to `Settings/_Foo/Page.fs`, we'd access the dynamic route parameter via `foo` instead.
 
 :::info
 

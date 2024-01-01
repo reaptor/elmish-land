@@ -13,12 +13,12 @@ This page will go through how to use `Route.format` and `Command.navigate`, and 
 
 ## Routes
 
-Elmish Land generates a discriminated union called `<MyProject>.Routes.Route` with all the routes in your project.
+Elmish Land generates a discriminated union called `<MyProject>.Routes.Route` with all the routes for your project.
 
 The file `src/Pages/Foo/_bar/_baz/Page.fs` will generate the route entry:
 
 ```fsharp
-| Foo_bar_baz of bar: string * baz: string * query: list<string * string>`
+Foo_bar_baz of bar: string * baz: string * query: list<string * string>
 ```
 
 You can refer to routes by using the relevant route entry:
@@ -31,7 +31,7 @@ will point to the URL: `#/Foo/bar/baz?name=John`
 
 ## Anchor element (\<a\>)
 
-The `Route.format` function is used to get the URL for a specified route. 
+The `Route.format` function is used to get the URL for a specific route. 
 ```fsharp
 Html.a [
     prop.text "Click me"
@@ -44,7 +44,7 @@ Html.a [
 The `Elmish.Command.navigate` function creates a command that navigates to a specified route.
 
 ```fsharp
-let init (shared: SharedModel) (bar: string, baz: string) (query: list<string * string>): Model * Command<Msg, SharedMsg> =
+let init (shared: SharedModel) (query: list<string * string>): Model * Command<Msg, SharedMsg> =
     (),
     Command.navigate(Route.Foo_bar_baz ("bar", "baz", ["name", "John"]))
 ```
