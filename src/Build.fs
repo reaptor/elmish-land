@@ -28,6 +28,7 @@ let build (projectDir: AbsoluteProjectDir) =
 
         do!
             runProcess
+                true
                 workingDir
                 "dotnet"
                 [| "fable"; "App/App.fsproj"; "--noCache"; "--run"; "vite"; "build" |]

@@ -31,6 +31,7 @@ let private getFullPathOrDefault command =
     |> Option.defaultValue command
 
 let private runProcessInternal
+    (printOutput: bool)
     (workingDirectory: FilePath)
     (command: string)
     (args: string array)
@@ -61,13 +62,21 @@ let private runProcessInternal
 
             p.OutputDataReceived.Add(fun args ->
                 if not (String.IsNullOrEmpty args.Data) then
-                    log.Debug(args.Data)
+                    if printOutput then
+                        Console.WriteLine(args.Data)
+                    else
+                        log.Debug(args.Data)
+
                     out.AppendLine(args.Data) |> ignore
                     outputReceived args.Data)
 
             p.ErrorDataReceived.Add(fun args ->
                 if not (String.IsNullOrEmpty args.Data) then
-                    log.Error(args.Data)
+                    if printOutput then
+                        Console.Error.WriteLine(args.Data)
+                    else
+                        log.Error(args.Data)
+
                     err.AppendLine(args.Data) |> ignore)
 
             p.BeginOutputReadLine()
@@ -94,18 +103,18 @@ let private runProcessInternal
 
     }
 
-let runProcess (workingDirectory: FilePath) (command: string) (args: string array) cancel outputReceived =
-    runProcessInternal workingDirectory command args cancel outputReceived
+let runProcess printOutput (workingDirectory: FilePath) (command: string) (args: string array) cancel outputReceived =
+    runProcessInternal printOutput workingDirectory command args cancel outputReceived
 
-let runProcesses (processes: (FilePath * string * string array * CancellationToken * (string -> unit)) list) =
+let runProcesses (processes: (bool * FilePath * string * string array * CancellationToken * (string -> unit)) list) =
     eff {
         return!
             processes
             |> List.fold
-                (fun previousResult (workingDirectory, command, args, cancellation, outputReceived) ->
+                (fun previousResult (printOutput, workingDirectory, command, args, cancellation, outputReceived) ->
                     previousResult
                     |> Effect.bind (fun () ->
-                        runProcessInternal workingDirectory command args cancellation outputReceived)
+                        runProcessInternal printOutput workingDirectory command args cancellation outputReceived)
                     |> Effect.map ignore)
                 (eff { return! Ok() })
     }

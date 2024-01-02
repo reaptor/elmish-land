@@ -44,8 +44,10 @@ will yield the following value for the `query` parameter:
 [ "username", "john" ]
 ```
 
-You can get a query parameter by using `List.tryFind`:
+You can get a query parameter by using the `tryGetQueryParam` function:
 
 ```fsharp
-let username = query |> List.tryFind (fun x -> x = "username")
+open MyProject.Routes
+
+let username = query |> tryGetQueryParam "username"
 ```

@@ -15,6 +15,7 @@ let getLatestDotnetSdkVersion () =
 
         let! output =
             runProcess
+                false
                 (FilePath.fromString Environment.CurrentDirectory)
                 "dotnet"
                 [| "--list-sdks" |]

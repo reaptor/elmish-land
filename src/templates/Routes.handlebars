@@ -29,3 +29,12 @@ module Route =
         | other ->
             printfn "Route not found: '%A'" other
             Route.NotFound
+
+let tryGetQueryParam (name: string) (query: list<string * string>): string option =
+    query
+    |> List.tryPick (fun (name', value') ->
+        if name = name' then
+            (Some value')
+        else
+            None
+    )

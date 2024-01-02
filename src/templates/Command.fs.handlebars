@@ -4,6 +4,7 @@ open Elmish
 open Feliz
 open {{RootModule}}.Routes
 
+[<RequireQualifiedAccess>]
 type Command<'msg, 'sharedMsg> private =
     | None
     | Batch of Command<'msg, 'sharedMsg> list
@@ -11,20 +12,20 @@ type Command<'msg, 'sharedMsg> private =
     | SharedMsg of 'sharedMsg
 
 module Command =
-    let none = None
+    let none = Command.None
 
-    let ofPromise p arg ofSuccess = Cmd.OfPromise.perform p arg ofSuccess |> Cmd
+    let ofPromise p arg ofSuccess = Cmd.OfPromise.perform p arg ofSuccess |> Command.Cmd
 
-    let tryOfPromise p arg ofSuccess ofError = Cmd.OfPromise.either p arg ofSuccess ofError |> Cmd
+    let tryOfPromise p arg ofSuccess ofError = Cmd.OfPromise.either p arg ofSuccess ofError |> Command.Cmd
 
-    let ofCmd (cmd: Cmd<'msg>) = Cmd(cmd)
+    let ofCmd (cmd: Cmd<'msg>) = Command.Cmd(cmd)
 
     let ofMsg (msg: 'msg) =
-        Cmd(Cmd.ofMsg msg)
+        Command.Cmd(Cmd.ofMsg msg)
 
-    let batch cmds = Batch cmds
+    let batch cmds = Command.Batch cmds
 
-    let ofShared msg = SharedMsg msg
+    let ofShared msg = Command.SharedMsg msg
 
     let navigate route =
         match route with
@@ -36,14 +37,14 @@ module Command =
 
     let rec map f command =
         match command with
-        | None -> None
-        | Batch cmds -> Batch (cmds |> List.map (map f))
-        | Cmd cmd -> Cmd (Cmd.map f cmd)
-        | SharedMsg msg -> SharedMsg msg
+        | Command.None -> Command.None
+        | Command.Batch cmds -> Command.Batch (cmds |> List.map (map f))
+        | Command.Cmd cmd -> Command.Cmd (Cmd.map f cmd)
+        | Command.SharedMsg msg -> Command.SharedMsg msg
 
     let rec toCmd fromSharedMsg command =
         match command with
-        | None -> Cmd.none
-        | Batch cmds -> Cmd.batch (List.map (toCmd fromSharedMsg) cmds)
-        | Cmd cmd -> cmd
-        | SharedMsg msg -> Cmd.ofMsg (fromSharedMsg msg)
+        | Command.None -> Cmd.none
+        | Command.Batch cmds -> Cmd.batch (List.map (toCmd fromSharedMsg) cmds)
+        | Command.Cmd cmd -> cmd
+        | Command.SharedMsg msg -> Cmd.ofMsg (fromSharedMsg msg)

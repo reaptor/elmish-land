@@ -15,7 +15,7 @@ open ElmishLand.FsProj
 open ElmishLand.Resource
 
 let getNodeVersion () =
-    runProcess (FilePath.fromString Environment.CurrentDirectory) "node" [| "-v" |] CancellationToken.None ignore
+    runProcess false (FilePath.fromString Environment.CurrentDirectory) "node" [| "-v" |] CancellationToken.None ignore
     |> Effect.changeError (fun _ -> AppError.NodeNotFound)
     |> Effect.map (fun output ->
         match Version.TryParse(output[1..]) with
@@ -185,12 +185,13 @@ let init (projectDir: AbsoluteProjectDir) =
                 "dotnet", [| "sln"; "add"; ".elmish-land/App/App.fsproj" |]
             ]
             |> List.map (fun (cmd, args) ->
-                AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
+                true, AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
             |> runProcesses
 
         do!
             dependencyCommands
             |> List.map (fun (cmd, args) ->
+                true,
                 AbsoluteProjectDir.asFilePath projectDir
                 |> FilePath.appendParts [ ".elmish-land" ],
                 cmd,
@@ -200,7 +201,13 @@ let init (projectDir: AbsoluteProjectDir) =
             |> runProcesses
 
         do!
-            runProcess (AbsoluteProjectDir.asFilePath projectDir) "dotnet" [| "restore" |] CancellationToken.None ignore
+            runProcess
+                true
+                (AbsoluteProjectDir.asFilePath projectDir)
+                "dotnet"
+                [| "restore" |]
+                CancellationToken.None
+                ignore
             |> Effect.map ignore<string>
 
         log.Info(successMessage projectDir)

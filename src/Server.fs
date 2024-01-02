@@ -48,6 +48,7 @@ let server (projectDir: AbsoluteProjectDir) =
 
         do!
             runProcess
+                true
                 workingDir
                 "dotnet"
                 [| "fable"; "watch"; "App/App.fsproj"; "--run"; "vite" |]

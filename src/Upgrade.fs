@@ -41,7 +41,7 @@ let upgrade (projectDir: AbsoluteProjectDir) =
                 yield! dependencyCommands
             ]
             |> List.map (fun (cmd, args) ->
-                AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
+                true, AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
             |> runProcesses
 
         log.Info
