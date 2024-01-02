@@ -47,5 +47,5 @@ will yield the following value for the `query` parameter:
 You can get a query parameter by using `List.tryFind`:
 
 ```fsharp
-let username = query |> List.tryFind (fun x -> x = "username")
+let username = query |> List.tryFind (fun (name, _) -> name = "username")
 ```
