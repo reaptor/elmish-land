@@ -120,7 +120,7 @@ let init (projectDir: AbsoluteProjectDir) =
                     ArgsPattern = ""
                     UrlUsage = "\"\""
                     UrlPattern = "[]"
-                    UrlPatternWithQuery = "[ Route.Query query ]"
+                    UrlPatternWithQuery = "[ Route.Query _ ]"
                 }
 
                 let routeData = {

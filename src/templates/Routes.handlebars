@@ -18,10 +18,20 @@ module Route =
         {{/each}}
         | Route.NotFound -> "notFound"
 
+    let private getQuery (xs: string list) =
+        xs
+        |> List.tryPick (
+            fun x ->
+                match x.StartsWith("?"), x with
+                | true, Route.Query query -> Some query
+                | _ -> None
+        )
+        |> Option.defaultValue []
+
     let parse (xs: string list) =
         match xs |> List.map (fun x -> x.ToLowerInvariant ()) with
         {{#each Routes}}
-        | {{UrlPatternWithQuery}} -> Route.{{Name}} ({{#if ArgsUsage}}{{ArgsUsage}}, {{/if}}query)
+        | {{UrlPatternWithQuery}} -> Route.{{Name}} ({{#if ArgsUsage}}{{ArgsUsage}}, {{/if}}getQuery xs)
         {{/each}}
         {{#each Routes}}
         | {{UrlPattern}} -> Route.{{Name}} ({{#if ArgsUsage}}{{ArgsUsage}}, {{/if}}[])

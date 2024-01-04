@@ -37,7 +37,7 @@
         <EmbeddedResource Include="templates\index.html.handlebars">
             <LogicalName>index.html.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates/Routes.handlebars">
+        <EmbeddedResource Include="templates\Routes.handlebars">
             <LogicalName>Routes.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates\Command.fs.handlebars">
