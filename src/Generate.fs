@@ -72,12 +72,7 @@ let generate (projectDir: AbsoluteProjectDir) dotnetSdkVersion =
         do!
             npmDependencyCommands
             |> List.map (fun (cmd, args) ->
-                true,
-                AbsoluteProjectDir.asFilePath projectDir,
-                cmd,
-                args,
-                CancellationToken.None,
-                ignore)
+                true, AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
             |> runProcesses
 
         let routeData = getRouteData projectDir

@@ -14,6 +14,7 @@ open Orsak
 let dotnetVersionFromGlobalJson () =
     if File.Exists("global.json") then
         let doc = JsonDocument.Parse(File.ReadAllText("global.json"))
+
         requireJson "sdk" doc.RootElement
         |> Result.bind (requireJson "version")
         |> Result.map (fun x -> x.GetString())
