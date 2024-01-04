@@ -1,7 +1,5 @@
 module ElmishLand.AppError
 
-open System
-open System.IO
 open ElmishLand.Base
 open ElmishLand.Log
 

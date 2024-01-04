@@ -1,19 +1,13 @@
 <!DOCTYPE html>
-<html{{#if Lang}} lang="{{Lang}}"{{/if}}>
+<html lang="en">
     <head>
-        {{#each Meta}}
-        {{this}}
-        {{/each}}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta charset="UTF-8">
         <title>{{Title}}</title>
-        {{#each Link}}
-        {{this}}
-        {{/each}}
     </head>
     <body>
         <div id="app"></div>
-        {{#each Script}}
-        {{this}}
-        {{/each}}
-        <script type="module" src="/App/App.fs.js"></script>
+        <script type="module" src=".elmish-land/App/App.fs.js"></script>
     </body>
 </html>

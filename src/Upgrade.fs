@@ -22,7 +22,7 @@ let upgrade (projectDir: AbsoluteProjectDir) =
 
         let fsProjPath = FsProjPath.fromProjectDir projectDir |> FsProjPath.asFilePath
 
-        let! dotnetSdkVersion = getLatestDotnetSdkVersion ()
+        let! dotnetSdkVersion = getDotnetSdkVersionToUse ()
 
         replaceFile fsProjPath "(<TargetFramework>)([^<]+)(</TargetFramework>)" (fun m ->
             $"%s{m.Groups[1].Value}%s{DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion}%s{m.Groups[3].Value}")
@@ -33,16 +33,6 @@ let upgrade (projectDir: AbsoluteProjectDir) =
              |> FilePath.appendParts [ "global.json" ])
             "(\"version\":\s+\")([^\"]+)(\")"
             (fun m -> $"%s{m.Groups[1].Value}%s{DotnetSdkVersion.asString dotnetSdkVersion}%s{m.Groups[3].Value}")
-
-        do!
-            [
-                for name, version in getDotnetToolDependencies () do
-                    "dotnet", [| "tool"; "update"; name; version |]
-                yield! dependencyCommands
-            ]
-            |> List.map (fun (cmd, args) ->
-                true, AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
-            |> runProcesses
 
         log.Info
             $"""%s{getCommandHeader $"upgraded the project in ./%s{ProjectName.asString projectName}"}

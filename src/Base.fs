@@ -326,42 +326,19 @@ let npmDependencies = [ "react", "18"; "react-dom", "18" ]
 
 let npmDevDependencies = [ "vite", "5" ]
 
-let dependencyCommands = [
+let nugetDependencyCommands = [
     for name, version in nugetDependencies do
         "dotnet", [| "add"; "./Base/Base.fsproj"; "package"; name; version |]
+]
+
+let npmDependencyCommands = [
     for name, version in npmDependencies do
         "npm", [| "install"; $"%s{name}@%s{version}"; "--save" |]
     for name, version in npmDevDependencies do
         "npm", [| "install"; $"%s{name}@%s{version}"; "--save-dev" |]
 ]
 
-type Settings = {
-    App: {|
-        Env: string list
-        Html:
-            {|
-                Lang: string
-                Title: string
-                Meta: JsonElement array
-                Link: JsonElement array
-                Script: JsonElement array
-            |}
-    |}
-    NpmScripts: JsonElement
-    NpmDependencies: JsonElement
-    NpmDevDependencies: JsonElement
-}
-
-module Settings =
-    let load (projectDir: AbsoluteProjectDir) =
-        let json =
-            projectDir
-            |> AbsoluteProjectDir.asFilePath
-            |> FilePath.appendParts [ "elmish-land.json" ]
-            |> FilePath.asString
-            |> File.ReadAllText
-
-        JsonSerializer.Deserialize<Settings>(
-            json,
-            JsonSerializerOptions(PropertyNamingPolicy = JsonNamingPolicy.CamelCase)
-        )
+let requireJson (name: string) (element: JsonElement) =
+    match element.TryGetProperty(name) with
+    | true, x -> Ok x
+    | _ -> Error $"Failed to get property %s{name}"

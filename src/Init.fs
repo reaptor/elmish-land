@@ -13,6 +13,7 @@ open ElmishLand.Process
 open ElmishLand.AppError
 open ElmishLand.FsProj
 open ElmishLand.Resource
+open ElmishLand.Generate
 
 let getNodeVersion () =
     runProcess false (FilePath.fromString Environment.CurrentDirectory) "node" [| "-v" |] CancellationToken.None ignore
@@ -38,7 +39,7 @@ let init (projectDir: AbsoluteProjectDir) =
 
         let projectName = projectDir |> ProjectName.fromProjectDir
 
-        let! dotnetSdkVersion = getLatestDotnetSdkVersion ()
+        let! dotnetSdkVersion = getDotnetSdkVersionToUse ()
         log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
         let! nodeVersion = getNodeVersion ()
@@ -62,25 +63,15 @@ let init (projectDir: AbsoluteProjectDir) =
 
         do!
             writeResource
-                "elmish-land.json.handlebars"
-                [ "elmish-land.json" ]
+                "global.json.handlebars"
+                [ "global.json" ]
                 (Some(
                     handlebars {|
-                        ProjectName = ProjectName.asString projectName
+                        DotNetSdkVersion = (DotnetSdkVersion.asString dotnetSdkVersion)
                     |}
                 ))
 
-        do! writeResource "vite.config.js" [ ".elmish-land"; "vite.config.js" ] None
-
-        do!
-            writeResource
-                "Base.fsproj.handlebars"
-                [ ".elmish-land"; "Base"; "Base.fsproj" ]
-                (Some(
-                    handlebars {|
-                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
-                    |}
-                ))
+        do! writeResource "settings.json" [ ".vscode"; "settings.json" ] None
 
         do!
             writeResource
@@ -94,37 +85,25 @@ let init (projectDir: AbsoluteProjectDir) =
 
         do!
             writeResource
-                "App.fsproj.handlebars"
-                [ ".elmish-land"; "App"; "App.fsproj" ]
-                (Some(
-                    handlebars {|
-                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
-                        ProjectReference =
-                            $"""<ProjectReference Include="../../%s{ProjectName.asString projectName}.fsproj" />"""
-                    |}
-                ))
-
-        do!
-            writeResource
-                "global.json.handlebars"
-                [ "global.json" ]
-                (Some(
-                    handlebars {|
-                        DotNetSdkVersion = (DotnetSdkVersion.asString dotnetSdkVersion)
-                    |}
-                ))
-
-        do!
-            writeResource
                 "package.json.handlebars"
-                [ ".elmish-land/package.json" ]
+                [ "package.json" ]
                 (Some(
                     handlebars {|
                         ProjectName = projectName |> ProjectName.asString |> String.asKebabCase
                     |}
                 ))
 
-        do! writeResource "settings.json" [ ".vscode"; "settings.json" ] None
+        do! writeResource "vite.config.js" [ "vite.config.js" ] None
+
+        do!
+            writeResource
+                "index.html.handlebars"
+                [ "index.html" ]
+                (Some(
+                    handlebars {|
+                        Title = ProjectName.asString projectName
+                    |}
+                ))
 
         let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
 
@@ -169,7 +148,7 @@ let init (projectDir: AbsoluteProjectDir) =
 
         do! writeResource "Shared.handlebars" [ "src"; "Shared.fs" ] (Some(handlebars routeData))
 
-        do! generateFiles projectDir routeData
+        do! generate projectDir dotnetSdkVersion
 
         do! validate projectDir
 
@@ -186,18 +165,6 @@ let init (projectDir: AbsoluteProjectDir) =
             ]
             |> List.map (fun (cmd, args) ->
                 true, AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
-            |> runProcesses
-
-        do!
-            dependencyCommands
-            |> List.map (fun (cmd, args) ->
-                true,
-                AbsoluteProjectDir.asFilePath projectDir
-                |> FilePath.appendParts [ ".elmish-land" ],
-                cmd,
-                args,
-                CancellationToken.None,
-                ignore)
             |> runProcesses
 
         do!

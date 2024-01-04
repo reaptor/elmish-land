@@ -2,11 +2,12 @@ module ElmishLand.Generate
 
 open System.Text
 open System.Text.Json
+open System.Threading
 open Orsak
 open ElmishLand.Base
-open ElmishLand.Log
 open ElmishLand.TemplateEngine
 open ElmishLand.Resource
+open ElmishLand.Process
 
 let settingsArrayToHtmlElements (name: string) close (arr: JsonElement array) =
     arr
@@ -28,28 +29,56 @@ let settingsArrayToHtmlElements (name: string) close (arr: JsonElement array) =
             sb.ToString() :: xs)
         []
 
-let generate (projectDir: AbsoluteProjectDir) =
+let generate (projectDir: AbsoluteProjectDir) dotnetSdkVersion =
     eff {
-        let! log = Log().Get()
-
-        let settings = Settings.load projectDir
-        log.Debug("Using settings: {}", settings)
+        let projectName = projectDir |> ProjectName.fromProjectDir
 
         let writeResource = writeResource projectDir true
 
         do!
             writeResource
-                "index.html.handlebars"
-                [ ".elmish-land"; "index.html" ]
+                "Base.fsproj.handlebars"
+                [ ".elmish-land"; "Base"; "Base.fsproj" ]
                 (Some(
                     handlebars {|
-                        Lang = settings.App.Html.Lang
-                        Meta = settingsArrayToHtmlElements "meta" false settings.App.Html.Meta
-                        Title = settings.App.Html.Title
-                        Link = settingsArrayToHtmlElements "link" true settings.App.Html.Link
-                        Script = settingsArrayToHtmlElements "script" true settings.App.Html.Script
+                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
                     |}
                 ))
+
+        do!
+            writeResource
+                "App.fsproj.handlebars"
+                [ ".elmish-land"; "App"; "App.fsproj" ]
+                (Some(
+                    handlebars {|
+                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
+                        ProjectReference =
+                            $"""<ProjectReference Include="../../%s{ProjectName.asString projectName}.fsproj" />"""
+                    |}
+                ))
+
+        do!
+            nugetDependencyCommands
+            |> List.map (fun (cmd, args) ->
+                true,
+                AbsoluteProjectDir.asFilePath projectDir
+                |> FilePath.appendParts [ ".elmish-land" ],
+                cmd,
+                args,
+                CancellationToken.None,
+                ignore)
+            |> runProcesses
+
+        do!
+            npmDependencyCommands
+            |> List.map (fun (cmd, args) ->
+                true,
+                AbsoluteProjectDir.asFilePath projectDir,
+                cmd,
+                args,
+                CancellationToken.None,
+                ignore)
+            |> runProcesses
 
         let routeData = getRouteData projectDir
         do! generateFiles projectDir routeData

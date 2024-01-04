@@ -10,22 +10,19 @@
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <ItemGroup>
-        <EmbeddedResource Include="templates/elmish-land.json.handlebars">
-            <LogicalName>elmish-land.json.handlebars</LogicalName>
-        </EmbeddedResource>
-        <EmbeddedResource Include="templates/vite.config.js">
+        <EmbeddedResource Include="templates\vite.config.js">
             <LogicalName>vite.config.js</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates/.gitignore">
             <LogicalName>gitignore</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\package.json.handlebars">
+        <EmbeddedResource Include="templates/package.json.handlebars">
             <LogicalName>package.json.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates/settings.json">
             <LogicalName>settings.json</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\Base.fsproj.handlebars">
+        <EmbeddedResource Include="templates/Base.fsproj.handlebars">
             <LogicalName>Base.fsproj.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates\Project.fsproj.handlebars">
@@ -37,7 +34,7 @@
         <EmbeddedResource Include="templates\global.json.handlebars">
             <LogicalName>global.json.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates/index.html.handlebars">
+        <EmbeddedResource Include="templates\index.html.handlebars">
             <LogicalName>index.html.handlebars</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates/Routes.handlebars">
@@ -63,9 +60,9 @@
         <Compile Include="DotNetCli.fs" />
         <Compile Include="FsProj.fs" />
         <Compile Include="TemplateEngine.fs" />
+        <Compile Include="Generate.fs" />
         <Compile Include="Init.fs" />
         <Compile Include="Upgrade.fs" />
-        <Compile Include="Generate.fs" />
         <Compile Include="Server.fs" />
         <Compile Include="Build.fs" />
         <Compile Include="AddPage.fs" />

@@ -8,6 +8,7 @@ open ElmishLand.Log
 open ElmishLand.FsProj
 open ElmishLand.Process
 open ElmishLand.Generate
+open ElmishLand.DotNetCli
 open Orsak
 open System.Text
 
@@ -35,13 +36,14 @@ let server (projectDir: AbsoluteProjectDir) =
     eff {
         let! log = Log().Get()
 
-        do! generate projectDir
+        let! dotnetSdkVersion = getDotnetSdkVersionToUse ()
+        log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
+
+        do! generate projectDir dotnetSdkVersion
 
         do! validate projectDir
 
-        let workingDir =
-            AbsoluteProjectDir.asFilePath projectDir
-            |> FilePath.appendParts [ ".elmish-land" ]
+        let workingDir = AbsoluteProjectDir.asFilePath projectDir
 
         let mutable isViteRunning = false
         let mutable isParsing = false
@@ -51,7 +53,15 @@ let server (projectDir: AbsoluteProjectDir) =
                 true
                 workingDir
                 "dotnet"
-                [| "fable"; "watch"; "App/App.fsproj"; "--run"; "vite" |]
+                [|
+                    "fable"
+                    "watch"
+                    ".elmish-land/App/App.fsproj"
+                    "--run"
+                    "vite"
+                    "--config"
+                    "vite.config.js"
+                |]
                 CancellationToken.None
                 (fun output ->
                     let m = Regex.Match(output, "(http[s]?://[^:]+:\d+)")
