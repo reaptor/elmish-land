@@ -130,10 +130,10 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
             |> String.concat "; "
             |> fun pattern ->
                 if pattern.Length > 0 then
-                    let query = if includeQuery then "; Route.Query query" else ""
+                    let query = if includeQuery then "; Query _" else ""
                     $"[ %s{pattern}{query} ]"
                 else
-                    let query = if includeQuery then "Route.Query query" else ""
+                    let query = if includeQuery then "Query _" else ""
                     $"[ %s{query} ]"
 
         {

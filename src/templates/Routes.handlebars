@@ -18,12 +18,24 @@ module Route =
         {{/each}}
         | Route.NotFound -> "notFound"
 
+    // Need to define our own from Feliz.Router.Route.Query
+    // because we need to check if the value is a query parameter
+    let private (|Query|_|) (input: string) =
+        try
+            if input.StartsWith("?") then
+                let urlParams = Router.createUrlSearchParams input
+                Some [ for entry in urlParams.entries() -> entry.[0], entry.[1] ]
+            else
+                None
+        with
+        | _ -> None
+
     let private getQuery (xs: string list) =
         xs
         |> List.tryPick (
             fun x ->
-                match x.StartsWith("?"), x with
-                | true, Route.Query query -> Some query
+                match x with
+                | Query query -> Some query
                 | _ -> None
         )
         |> Option.defaultValue []
