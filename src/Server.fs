@@ -1,5 +1,6 @@
 module ElmishLand.Server
 
+open System
 open System.Threading
 open System.Text.Json
 open System.Text.RegularExpressions
@@ -54,6 +55,7 @@ let server (projectDir: AbsoluteProjectDir) =
                     "fable"
                     "watch"
                     ".elmish-land/App/App.fsproj"
+                    "--noCache"
                     "--run"
                     "vite"
                     "--config"
