@@ -3,5 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "start": "dotnet fable watch .elmish-land/App/App.fsproj --noCache --run vite --config vite.config.js",
+    "build": "dotnet fable .elmish-land/App/App.fsproj --noCache --run vite build --config vite.config.js"
   }
 }

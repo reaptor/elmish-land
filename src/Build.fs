@@ -28,22 +28,7 @@ let build (projectDir: AbsoluteProjectDir) =
         let workingDir = AbsoluteProjectDir.asFilePath projectDir
 
         do!
-            runProcess
-                true
-                workingDir
-                "dotnet"
-                [|
-                    "fable"
-                    ".elmish-land/App/App.fsproj"
-                    "--noCache"
-                    "--run"
-                    "vite"
-                    "build"
-                    "--config"
-                    "vite.config.js"
-                |]
-                CancellationToken.None
-                ignore
+            runProcess true workingDir "npm" [| "run"; "build" |] CancellationToken.None ignore
             |> Effect.map ignore<string>
 
         log.Info successMessage
