@@ -1,8 +1,8 @@
 module ElmishLand.Server
 
-open System
 open System.Threading
 open System.Text.Json
+open System.Text.RegularExpressions
 open ElmishLand.Base
 open ElmishLand.Log
 open ElmishLand.FsProj
@@ -46,6 +46,20 @@ let server (projectDir: AbsoluteProjectDir) =
         let workingDir = AbsoluteProjectDir.asFilePath projectDir
 
         do!
-            runProcess true workingDir "npm" [| "run"; "start" |] CancellationToken.None ignore
+            runProcess
+                true
+                workingDir
+                "dotnet"
+                [|
+                    "fable"
+                    "watch"
+                    ".elmish-land/App/App.fsproj"
+                    "--run"
+                    "vite"
+                    "--config"
+                    "vite.config.js"
+                |]
+                CancellationToken.None
+                ignore
             |> Effect.map ignore<string>
     }
