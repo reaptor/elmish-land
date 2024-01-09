@@ -29,6 +29,7 @@ type Route = {
     UrlUsage: string
     UrlPattern: string
     UrlPatternWithQuery: string
+    UrlPatternWhen: string
 }
 
 type RouteData = {
@@ -122,19 +123,23 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
             |> String.split "/"
             |> Array.map (fun x -> if x.StartsWith "_" then x.TrimStart('_') else x)
             |> Array.map (fun arg -> arg.ToLowerInvariant())
-            |> Array.map (fun arg ->
-                if List.contains arg lowerCaseArgs then
-                    wrapWithTicksIfNeeded arg
-                else
-                    $"\"%s{arg}\"")
+            |> Array.map wrapWithTicksIfNeeded
             |> String.concat "; "
             |> fun pattern ->
                 if pattern.Length > 0 then
-                    let query = if includeQuery then "; Query _" else ""
+                    let query = if includeQuery then "; Query q" else ""
                     $"[ %s{pattern}{query} ]"
                 else
-                    let query = if includeQuery then "Query _" else ""
+                    let query = if includeQuery then "Query q" else ""
                     $"[ %s{query} ]"
+
+        let urlPatternWhen =
+            (if route = "/Home" then "/" else route)
+            |> String.split "/"
+            |> Array.choose (fun x -> if x.StartsWith "_" then None else Some x)
+            |> Array.map (fun arg -> arg.ToLowerInvariant())
+            |> Array.map (fun arg -> $"eq %s{wrapWithTicksIfNeeded arg} \"%s{arg}\"")
+            |> String.concat " && "
 
         {
             Name = wrapWithTicksIfNeeded name
@@ -150,6 +155,7 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
             UrlUsage = urlUsage
             UrlPattern = urlPattern false
             UrlPatternWithQuery = urlPattern true
+            UrlPatternWhen = urlPatternWhen
         }
 
 let getRouteData (projectDir: AbsoluteProjectDir) =

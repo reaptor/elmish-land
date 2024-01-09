@@ -30,23 +30,16 @@ module Route =
         with
         | _ -> None
 
-    let private getQuery (xs: string list) =
-        xs
-        |> List.tryPick (
-            fun x ->
-                match x with
-                | Query query -> Some query
-                | _ -> None
-        )
-        |> Option.defaultValue []
+    let eq x y =
+        System.String.Equals(x, y, System.StringComparison.InvariantCultureIgnoreCase)
 
     let parse (xs: string list) =
-        match xs |> List.map (fun x -> x.ToLowerInvariant ()) with
+        match xs with
         {{#each Routes}}
-        | {{UrlPatternWithQuery}} -> Route.{{Name}} ({{#if ArgsUsage}}{{ArgsUsage}}, {{/if}}getQuery xs)
+        | {{UrlPatternWithQuery}}{{#if UrlPatternWhen}} when {{UrlPatternWhen}}{{/if}} -> Route.{{Name}} ({{#if ArgsUsage}}{{ArgsUsage}}, {{/if}}q)
         {{/each}}
         {{#each Routes}}
-        | {{UrlPattern}} -> Route.{{Name}} ({{#if ArgsUsage}}{{ArgsUsage}}, {{/if}}[])
+        | {{UrlPattern}}{{#if UrlPatternWhen}} when {{UrlPatternWhen}}{{/if}} -> Route.{{Name}} ({{#if ArgsUsage}}{{ArgsUsage}}, {{/if}}[])
         {{/each}}
         | other ->
             printfn "Route not found: '%A'" other
