@@ -15,13 +15,13 @@ Some page folders have a leading underscore, (like _Id or _User). These are call
 The name of the folder (_Id, _User or _Tab) will determine the names of the parameters passed into your page's init function:
 
 ```fsharp
--- /blog/123
+// /blog/123
 let init ... (``id``) ... = ... // ``id`` = 123
 
--- /users/ryan
+// /users/ryan
 let init ... (username) = ... // username = "ryan"
 
--- /settings/account
+// /settings/account
 let init ... (tab) = ... // tab = "account"
 ```
 

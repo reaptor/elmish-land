@@ -72,8 +72,8 @@ This scaffolding command generates a new Elmish Land page in your src/Pages fold
 
 Here are some examples:
 ```bash
-dotnet elmish-land add page /SignIn ........ Creates "src/Pages/SignIn/Page.fs"
-dotnet elmish-land add page /Users/{id} .... Creates "src/Pages/Users/{id}/Page.fs"
+dotnet elmish-land add page "/SignIn"      # Creates "src/Pages/SignIn/Page.fs"
+dotnet elmish-land add page "/Users/_id"   # Creates "src/Pages/Users/_id/Page.fs"
 ```
 
 :::warning

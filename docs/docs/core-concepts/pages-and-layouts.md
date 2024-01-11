@@ -14,16 +14,16 @@ To get started, let's create a page that is displayed when a user visits the URL
 dotnet elmish-land add page "/about"
 ```
 
-```bash
-    Elmish Land added a new page at /about
-    --------------------------------------
+```
+Elmish Land added a new page at /about
+--------------------------------------
 
-    You can edit your new page here:
-    ./src/Pages/About/Page.fs
+You can edit your new page here:
+./src/Pages/About/Page.fs
 
-    Please add the file to the project using an IDE or add the following line to an
-    ItemGroup in the project file './MyProject.fsproj':
-    <Compile Include="src/Pages/About/Page.fs" />
+Please add the file to the project using an IDE or add the following line to an
+ItemGroup in the project file './MyProject.fsproj':
+<Compile Include="src/Pages/About/Page.fs" />
 ```
 
 :::warning
