@@ -1,0 +1,27 @@
+﻿module {{RootModule}}.Pages.{{Route.Name}}.Page
+
+open System
+open Feliz
+open Elmish
+open ElmishLand.Routes
+open ElmishLand.Page
+open {{RootModule}}
+open {{RootModule}}.Shared
+
+type Model = unit
+
+type Msg = | NoOp
+
+let init (): Model * Command<Msg, SharedMsg> =
+    (),
+    Command.none
+
+let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
+    match msg with
+    | NoOp -> model, Command.none
+
+let view (model: Model) (dispatch: Msg -> unit): ReactElement =
+    Html.text "{{Route.Name}}"
+
+let page (shared: SharedModel) (route: {{Route.RouteName}}) =
+    Page.create init update view

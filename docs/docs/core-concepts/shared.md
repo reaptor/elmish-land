@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 4
 ---
 
 # Shared state
@@ -123,23 +123,24 @@ let update (msg: SharedMsg) (model: SharedModel): SharedModel * Command<'msg, Sh
 ```
 
 ## Reading Shared data from pages
-Often you need to read data from Shared from pages. Every page's `init`, `update` and `view` functions first argument is the `SharedModel`.
+Often you need to read data from Shared from pages. Every page's `page` function receives the `shared` model as an argument.
 
 ```fsharp
 // A Page.fs file
-let init (shared: SharedModel) ...
-
-let update (shared: SharedModel) ... 
-    
-let view (shared: SharedModel) ...
+let page (shared: SharedModel) (route: AboutRoute) =
+    Page.create init update view
 ```
 
-## Sending message from pages to Shared
-When you need to send messages from pages to Shared you will use the Command.ofShared function. 
+In [the "Working with shared and route" section](/docs/core-concepts/pages#working-with-shared-and-route), you'll learn more about how to use `shared` from a page.
+
+## Sending messages from pages to Shared
+When you need to send messages from a page to Shared you will use the `Command.ofShared` function. 
 
 ```fsharp
 // A Page.fs file
-let update (shared: SharedModel) (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
+let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
     match msg with
-    | NoOp -> model, Command.ofShared SharedMsg.SignOutClicked
+    | SignOut -> model, Command.ofShared SharedMsg.SignOutClicked
 ```
+
+In [the Commands section](/docs/core-concepts/commands), you'll learn more about commands.

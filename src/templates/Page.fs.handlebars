@@ -1,0 +1,29 @@
+﻿module ElmishLand.Page
+
+open System.Runtime.CompilerServices
+open Elmish
+open Feliz
+open ElmishLand.Routes
+
+[<assembly: InternalsVisibleTo("App")>]
+do()
+
+type Page<'sharedMsg, 'model, 'msg> =
+    internal {
+        Init: unit -> 'model * Command<'msg, 'sharedMsg>
+        Update: 'msg -> 'model -> 'model * Command<'msg, 'sharedMsg>
+        View: 'model -> ('msg -> unit) -> ReactElement
+        Subscriptions: 'model -> (string list * (('msg -> unit) -> System.IDisposable)) list
+    }
+
+module Page =
+    let create init update view =
+        {
+            Init = init
+            Update = update
+            View = view
+            Subscriptions = fun _ -> []
+        }
+
+    let withSubscriptions subscriptions page =
+        { page with Subscriptions = subscriptions }

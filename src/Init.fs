@@ -113,11 +113,13 @@ let init (projectDir: AbsoluteProjectDir) =
             else
                 let homeRoute = {
                     Name = "Home"
+                    RouteName = "HomeRoute"
                     MsgName = "HomeMsg"
                     ModuleName = $"%s{rootModuleName}.Pages.Home.Page"
-                    ArgsDefinition = ""
-                    ArgsUsage = ""
-                    ArgsPattern = ""
+                    RecordDefinition = ""
+                    RecordConstructor = "[]"
+                    RecordConstructorWithQuery = "query"
+                    RecordPattern = ""
                     UrlUsage = "\"\""
                     UrlPattern = "[]"
                     UrlPatternWithQuery = "[ Query q ]"
@@ -133,7 +135,7 @@ let init (projectDir: AbsoluteProjectDir) =
                 eff {
                     do!
                         writeResource
-                            "Page.handlebars"
+                            "AddPage.handlebars"
                             [ "src"; "Pages"; "Home"; "Page.fs" ]
                             (Some(
                                 handlebars {|

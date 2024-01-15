@@ -1,10 +1,10 @@
 ---
-sidebar_position: 4
+sidebar_position: 3
 ---
 
 # Linking and Navigating
 
-There are two ways to navigate between routes in Elmish Land:
+There are two ways to navigate between pages in Elmish Land:
 
 * Using the HTML Anchor element (\<a\>) with the `Route.format` function
 * Using the `Command.navigate` command
@@ -13,21 +13,29 @@ This page will go through how to use `Route.format` and `Command.navigate`, and 
 
 ## Routes
 
-Elmish Land generates a discriminated union called `<MyProject>.Routes.Route` with all the routes for your project.
+Elmish Land generates a discriminated union named `<MyProject>.Routes.Route` with all the routes for your project.
 
-The file `src/Pages/Foo/_bar/_baz/Page.fs` will generate the route entry:
-
-```fsharp
-Foo_bar_baz of bar: string * baz: string * query: list<string * string>
-```
-
-You can refer to routes by using the relevant route entry:
+The file `src/Pages/Foo/_bar/_baz/Page.fs` will generate the following route:
 
 ```fsharp
-Route.Foo_bar_baz ("bar", "baz", ["name", "John"])
+type FooBarBazRoute =
+    {
+        Bar: string
+        Baz: string
+        Query: list<string * string>
+    }
+    
+type Route =
+    | FooBarBaz of FooBarBazRoute
 ```
 
-will point to the URL: `#/Foo/bar/baz?name=John`
+You can refer to the above route by using the following:
+
+```fsharp
+Route.FooBarBaz { Bar = "bar"; Baz = "baz"; Query = ["name", "John"] }
+```
+
+which will point to the URL: `#/Foo/bar/baz?name=John`
 
 ## Anchor element (\<a\>)
 
@@ -35,24 +43,29 @@ The `Route.format` function is used to get the URL for a specific route.
 ```fsharp
 Html.a [
     prop.text "Click me"
-    prop.href (Route.Foo_bar_baz ("bar", "baz", ["name", "John"]) |> Routes.Route.format)
+    prop.href (
+        Route.FooBarBaz { Bar = "bar"; Baz = "baz"; Query = ["name", "John"] }
+        |> Routes.Route.format
+    )
 ]
 ```
 
-## Command
+## Command.navigate
 
-The `Elmish.Command.navigate` function creates a command that navigates to a specified route.
+The `Command.navigate` function creates a command that navigates to a specified route.
 
 ```fsharp
-let init (shared: SharedModel) (query: list<string * string>): Model * Command<Msg, SharedMsg> =
+open Elmish 
+
+let init (): Model * Command<Msg, SharedMsg> =
     (),
-    Command.navigate(Route.Foo_bar_baz ("bar", "baz", ["name", "John"]))
+    Command.navigate(Route.FooBarBaz { Bar = "bar"; Baz = "baz"; Query = ["name", "John"] })
 ```
 
 Will automatically redirect the page to the `#/Foo/bar/baz?name=John` when loaded.
 
 :::info
 
-These examples uses dynamic routes. [Click here to read more](/docs/core-concepts/dynamic-routes)
+These examples uses [dynamic routes](/docs/core-concepts/pages#dynamic-routes).
 
 :::

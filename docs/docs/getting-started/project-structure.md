@@ -11,7 +11,6 @@ MyProject
 ├── global.json
 ├── MyProject.fsproj
 ├── MyProject.sln
-├── elmish-land.json
 └── src
     ├── Shared.fs
     └── Pages

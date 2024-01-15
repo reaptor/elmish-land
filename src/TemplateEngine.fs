@@ -21,11 +21,13 @@ let handlebars model (src: string) =
 
 type Route = {
     Name: string
+    RouteName: string
     MsgName: string
     ModuleName: string
-    ArgsDefinition: string
-    ArgsUsage: string
-    ArgsPattern: string
+    RecordDefinition: string
+    RecordConstructor: string
+    RecordConstructorWithQuery: string
+    RecordPattern: string
     UrlUsage: string
     UrlPattern: string
     UrlPatternWithQuery: string
@@ -83,32 +85,40 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
         let args = List.rev args
 
         let name =
-            String.concat "_" (List.rev parts)
+            parts
+            |> List.rev
+            |> List.map toPascalCase
+            |> String.concat ""
             |> fun name -> if name = "" then "Home" else name
 
-        let argsPattern =
+        let recordPattern =
             let argString =
                 args
-                |> List.map (fun arg -> $"%s{wrapWithTicksIfNeeded arg}: string")
-                |> String.concat ", "
+                |> List.map (fun arg ->
+                    $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded} = %s{wrapWithTicksIfNeeded arg}")
+                |> String.concat "; "
 
-            if argString.Length = 0 then "" else $"%s{argString}"
+            let argString = if argString.Length = 0 then "" else $"%s{argString}; "
+            $"{{ %s{argString}Query = query }}"
 
-        let argsDefinition =
+        let recordDefinition =
+            args
+            |> List.map (fun arg -> $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded}: string")
+            |> String.concat "; "
+            |> fun x ->
+                let x = if String.IsNullOrWhiteSpace x then "" else $"%s{x}; "
+                $"{{ %s{x}Query: list<string * string> }}"
+
+        let recordConstructor hasNonEmptyQuery =
             let argString =
                 args
-                |> List.map (fun arg -> $"%s{wrapWithTicksIfNeeded arg}: string")
-                |> String.concat " * "
+                |> List.map (fun arg ->
+                    $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded} = %s{wrapWithTicksIfNeeded arg}")
+                |> String.concat "; "
 
-            if argString.Length = 0 then "" else $"%s{argString}"
-
-        let argsUsage =
-            let argString =
-                args
-                |> List.map (fun arg -> $"%s{wrapWithTicksIfNeeded arg}")
-                |> String.concat ", "
-
-            if argString.Length = 0 then "" else $"%s{argString}"
+            let argString = if argString.Length = 0 then "" else $"%s{argString}; "
+            let query = if hasNonEmptyQuery then "query" else "[]"
+            $"{{ %s{argString}Query = %s{query} }}"
 
         let urlUsage =
             if route = "/Home" then "/" else route
@@ -127,10 +137,10 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
             |> String.concat "; "
             |> fun pattern ->
                 if pattern.Length > 0 then
-                    let query = if includeQuery then "; Query q" else ""
+                    let query = if includeQuery then "; Query query" else ""
                     $"[ %s{pattern}{query} ]"
                 else
-                    let query = if includeQuery then "Query q" else ""
+                    let query = if includeQuery then "Query query" else ""
                     $"[ %s{query} ]"
 
         let urlPatternWhen =
@@ -143,15 +153,17 @@ let fileToRoute (projectDir: AbsoluteProjectDir) (FilePath file) =
 
         {
             Name = wrapWithTicksIfNeeded name
+            RouteName = wrapWithTicksIfNeeded $"%s{name}Route"
             MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
             ModuleName =
                 $"%s{projectDir
                      |> AbsoluteProjectDir.asFilePath
                      |> FileName.fromFilePath
                      |> FileName.asString}.Pages.%s{wrapWithTicksIfNeeded name}.Page"
-            ArgsDefinition = argsDefinition
-            ArgsUsage = argsUsage
-            ArgsPattern = argsPattern
+            RecordDefinition = recordDefinition
+            RecordConstructor = recordConstructor false
+            RecordConstructorWithQuery = recordConstructor true
+            RecordPattern = recordPattern
             UrlUsage = urlUsage
             UrlPattern = urlPattern false
             UrlPatternWithQuery = urlPattern true
@@ -178,5 +190,7 @@ let generateFiles projectDir (routeData: RouteData) =
     eff {
         do! writeResource "Routes.handlebars" [ ".elmish-land"; "Base"; "Routes.fs" ] (Some(handlebars routeData))
         do! writeResource "Command.fs.handlebars" [ ".elmish-land"; "Base"; "Command.fs" ] (Some(handlebars routeData))
+        do! writeResource "Page.fs.handlebars" [ ".elmish-land"; "Base"; "Page.fs" ] (Some(handlebars routeData))
+        do! writeResource "Layout.fs.handlebars" [ ".elmish-land"; "Base"; "Layout.fs" ] (Some(handlebars routeData))
         do! writeResource "App.handlebars" [ ".elmish-land"; "App"; "App.fs" ] (Some(handlebars routeData))
     }

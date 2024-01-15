@@ -51,7 +51,7 @@ let addPage (url: string) =
             writeResource
                 projectDir
                 false
-                "Page.handlebars"
+                "AddPage.handlebars"
                 routeFileParts
                 (Some(
                     handlebars {|

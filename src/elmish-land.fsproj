@@ -43,13 +43,19 @@
         <EmbeddedResource Include="templates\Command.fs.handlebars">
             <LogicalName>Command.fs.handlebars</LogicalName>
         </EmbeddedResource>
+        <EmbeddedResource Include="templates\Page.fs.handlebars">
+          <LogicalName>Page.fs.handlebars</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="templates\Layout.fs.handlebars">
+          <LogicalName>Layout.fs.handlebars</LogicalName>
+        </EmbeddedResource>
         <EmbeddedResource Include="templates\Shared.handlebars">
             <LogicalName>Shared.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates/Page.handlebars">
-            <LogicalName>Page.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\AddPage.handlebars">
+            <LogicalName>AddPage.handlebars</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates/App.handlebars">
+        <EmbeddedResource Include="templates\App.handlebars">
             <LogicalName>App.handlebars</LogicalName>
         </EmbeddedResource>
         <Compile Include="Base.fs" />
