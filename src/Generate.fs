@@ -10,6 +10,7 @@ open ElmishLand.Base
 open ElmishLand.TemplateEngine
 open ElmishLand.Resource
 open ElmishLand.Process
+open ElmishLand.Log
 
 let settingsArrayToHtmlElements (name: string) close (arr: JsonElement array) =
     arr
@@ -33,18 +34,20 @@ let settingsArrayToHtmlElements (name: string) close (arr: JsonElement array) =
 
 let generate (projectDir: AbsoluteProjectDir) dotnetSdkVersion =
     eff {
+        let! logger = Log().Get()
+
         let projectName = projectDir |> ProjectName.fromProjectDir
 
         let writeResource = writeResource projectDir true
 
-        let dotnElmishLandDirectory =
+        let dotElmishLandDirectory =
             AbsoluteProjectDir.asFilePath projectDir
             |> FilePath.appendParts [ ".elmish-land" ]
 
         if Environment.CommandLine.Contains("--clean") then
-            Directory.Delete(FilePath.asString dotnElmishLandDirectory)
+            Directory.Delete(FilePath.asString dotElmishLandDirectory)
 
-        if not (Directory.Exists(FilePath.asString dotnElmishLandDirectory)) then
+        if not (Directory.Exists(FilePath.asString dotElmishLandDirectory)) then
             do!
                 writeResource
                     "Base.fsproj.handlebars"
@@ -69,8 +72,7 @@ let generate (projectDir: AbsoluteProjectDir) dotnetSdkVersion =
 
             do!
                 nugetDependencyCommands
-                |> List.map (fun (cmd, args) ->
-                    true, dotnElmishLandDirectory, cmd, args, CancellationToken.None, ignore)
+                |> List.map (fun (cmd, args) -> true, dotElmishLandDirectory, cmd, args, CancellationToken.None, ignore)
                 |> runProcesses
 
             do!
@@ -80,5 +82,6 @@ let generate (projectDir: AbsoluteProjectDir) dotnetSdkVersion =
                 |> runProcesses
 
         let routeData = getRouteData projectDir
+        logger.Debug("Using route data: {}", routeData)
         do! generateFiles projectDir routeData
     }

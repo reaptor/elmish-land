@@ -6,7 +6,7 @@ sidebar_position: 1
 
 ## Overview
 
-Pages are the basic building blocks of your Elmish Land application. When a user visits a URL, Elmish Land will use the names of the folders 
+Pages are the basic building blocks of your Elmish Land application. When a user visits a URL, Elmish Land will use the names of the folders
 in your src/Pages folder to decide which page to render. See [Routing](#routing) for more information.
 
 :::info
@@ -45,9 +45,10 @@ module MyProject.Pages.About.Page
 open System
 open Feliz
 open Elmish
+open ElmishLand.Page
+open ElmishLand.Routes
 open MyProject
 open MyProject.Shared
-open MyProject.Routes
 
 type Model = unit
 
@@ -71,7 +72,7 @@ let page (shared: SharedModel) (route: AboutRoute) =
 ### Understanding pages
 
 #### `Model`
-The `Model` contains the state of or page. Everytime a value change on the page we need to update the `Model`. An example 
+The `Model` contains the state of or page. Everytime a value change on the page we need to update the `Model`. An example
 of this is typing text in a HTML `ìnput` element. For every change we need update the `Model` with the new value from the
 `onChange` event of the element.
 
@@ -142,9 +143,9 @@ In the code example below, note how we pass the `shared` value as the first argu
 
 ```fsharp
 let page (shared: SharedModel) (route: AboutRoute) =
-    Page.create 
-        init 
-        update 
+    Page.create
+        init
+        update
         (view shared)
 ```
 
@@ -161,9 +162,9 @@ For example, you might want your `init` function to use a URL parameter to decid
 
 ```fsharp
 let page (shared: SharedModel) (route: AboutRoute) =
-    Page.create 
-        (init route) 
-        update 
+    Page.create
+        (init route)
+        update
         view
 ```
 
@@ -252,7 +253,7 @@ route.Id = "123"
 route.User = "ryan"
 
 // /settings/account
-route.Tab = "account" 
+route.Tab = "account"
 ```
 
 For example, if we renamed `Settings/_Tab/Page.fs` to `Settings/_Foo/Page.fs`, we'd access the dynamic route parameter with `route.Foo` instead.
