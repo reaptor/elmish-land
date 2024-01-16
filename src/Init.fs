@@ -1,7 +1,6 @@
 module ElmishLand.Init
 
 open System
-open System.IO
 open System.Reflection
 open System.Threading
 open Orsak
@@ -36,6 +35,7 @@ dotnet elmish-land server
 let init (projectDir: AbsoluteProjectDir) =
     eff {
         let! log = Log().Get()
+        let! fs = getFileSystem ()
 
         let projectName = projectDir |> ProjectName.fromProjectDir
 
@@ -59,7 +59,7 @@ let init (projectDir: AbsoluteProjectDir) =
         let fsProjPath = FsProjPath.fromProjectDir projectDir
         log.Debug("Project path {}", fsProjPath)
 
-        let fsProjExists = File.Exists(FsProjPath.asString fsProjPath)
+        let fsProjExists = fs.FileExists(FsProjPath.asFilePath fsProjPath)
 
         do!
             writeResource
@@ -109,7 +109,7 @@ let init (projectDir: AbsoluteProjectDir) =
 
         let! routeData =
             if fsProjExists then
-                eff { return getRouteData projectDir }
+                getRouteData projectDir
             else
                 let homeRoute = {
                     Name = "Home"

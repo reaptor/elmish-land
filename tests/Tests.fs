@@ -1,7 +1,7 @@
 module Tests
 
 open System
-open System.IO
+open System.Collections.Generic
 open System.Text
 open System.Threading
 open ElmishLand.Base
@@ -9,8 +9,28 @@ open ElmishLand.Log
 open Xunit
 open Orsak
 
-let env (logOutput: Expects.LogOutput) =
-    { new ILogProvider with
+type MemoryFileSystem() =
+    let fs = Dictionary<string, string>()
+
+    interface IFileSystem with
+        member _.FileExists(FilePath filePath) = fs.ContainsKey filePath
+        member _.DirectoryExists(FilePath filePath) = fs.ContainsKey filePath
+
+        member _.EnsureDirectory(FilePath filePath) =
+            if not (fs.ContainsKey filePath) then
+                fs.Add(filePath, "")
+
+        member _.WriteAllText(FilePath filePath, contents) = fs[filePath] <- contents
+        member _.ReadAllText(FilePath filePath) = fs[filePath]
+        member _.ReadAllLines(FilePath filePath) = fs[filePath].Split("\n")
+
+        member _.GetFilesRecursive(FilePath filePath, _) =
+            fs.Keys |> Seq.filter (fun fp -> fp.StartsWith filePath) |> Seq.toArray
+
+        member _.DeleteDirectory(FilePath filePath) = fs.Remove(filePath) |> ignore
+
+type TestEffectEnv(logOutput: Expects.LogOutput) =
+    interface ILogProvider with
         member _.GetLogger(memberName, path, line) =
             let logger = Logger(memberName, path, line)
 
@@ -27,7 +47,9 @@ let env (logOutput: Expects.LogOutput) =
                 member _.Error(message, [<ParamArray>] args: obj array) =
                     logger.WriteLine (unindent >> logOutput.Error.AppendLine >> ignore) message args
             }
-    }
+
+    interface IFileSystemProvider with
+        member _.Create() = MemoryFileSystem()
 
 let runEff (e: Effect<_, unit, _>) =
     let logOutput: Expects.LogOutput = {
@@ -37,7 +59,7 @@ let runEff (e: Effect<_, unit, _>) =
     }
 
     task {
-        let! result = Effect.run (env logOutput) e
+        let! result = Effect.run (TestEffectEnv(logOutput)) e
         return result, logOutput
     }
 
@@ -51,18 +73,14 @@ let ``Init, generates project`` () =
         cts.CancelAfter(TimeSpan.FromSeconds 30)
         let folder = getFolder ()
 
-        try
-            let! result, logs = ElmishLand.Program.run [| "init"; folder; "--verbose" |] |> runEff
-            Expects.ok logs result
-            let projectDir = folder |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath
+        let! result, logs = ElmishLand.Program.run [| "init"; folder; "--verbose" |] |> runEff
+        Expects.ok logs result
+        let projectDir = folder |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath
 
-            Expects.equalsIgnoringWhitespace
-                logs
-                $"%s{ElmishLand.Init.successMessage projectDir}\n"
-                (logs.Info.ToString())
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
+        Expects.equalsIgnoringWhitespace
+            logs
+            $"%s{ElmishLand.Init.successMessage projectDir}\n"
+            (logs.Info.ToString())
     }
 
 
@@ -73,14 +91,11 @@ let ``Build, builds project`` () =
         cts.CancelAfter(TimeSpan.FromSeconds 30)
         let folder = getFolder ()
 
-        try
-            let! _ = ElmishLand.Program.run [| "init"; folder |] |> runEff
+        let! _ = ElmishLand.Program.run [| "init"; folder |] |> runEff
 
-            let! result, logs = ElmishLand.Program.run [| "build"; folder; "--verbose" |] |> runEff
+        let! result, logs = ElmishLand.Program.run [| "build"; folder; "--verbose" |] |> runEff
 
-            Expects.ok logs result
-            Expects.equalsIgnoringWhitespace logs $"%s{ElmishLand.Build.successMessage}\n" (logs.Info.ToString())
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
+        Expects.ok logs result
+        Expects.equalsIgnoringWhitespace logs $"%s{ElmishLand.Build.successMessage}\n" (logs.Info.ToString())
+
     }

@@ -1,6 +1,7 @@
 ﻿module ElmishLand.Program
 
 open System
+open System.IO
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open ElmishLand.Base
@@ -68,16 +69,34 @@ type ConsoleLogger(memberName, path, line) =
             logger.WriteLine Console.Error.WriteLine message args
             Console.ResetColor()
 
+type PhysicalFileSystem() =
+    interface IFileSystem with
+        member _.FileExists(FilePath filePath) = File.Exists(filePath)
+        member _.DirectoryExists(FilePath filePath) = Directory.Exists filePath
+        member _.EnsureDirectory(FilePath filePath) =
+            if not (Directory.Exists filePath) then
+                Directory.CreateDirectory(filePath) |> ignore
+
+        member _.WriteAllText(FilePath filePath, contents) = File.WriteAllText(filePath, contents)
+        member _.ReadAllText(FilePath filePath) = File.ReadAllText(filePath)
+        member _.ReadAllLines(FilePath filePath) = File.ReadAllLines(filePath)
+
+        member _.GetFilesRecursive(FilePath filePath, searchPattern) =
+            Directory.GetFiles(filePath, searchPattern, EnumerationOptions(RecurseSubdirectories = true))
+
+        member _.DeleteDirectory(FilePath filePath) = Directory.Delete(filePath)
+
+type EffectEnv() =
+    interface ILogProvider with
+        member _.GetLogger(memberName, path, line) = ConsoleLogger(memberName, path, line)
+
+    interface IFileSystemProvider with
+        member _.Create() = PhysicalFileSystem()
 
 [<EntryPoint>]
 let main argv =
     (task {
-        let! result =
-            run argv
-            |> Effect.run
-                { new ILogProvider with
-                    member _.GetLogger(memberName, path, line) = ConsoleLogger(memberName, path, line)
-                }
+        let! result = run argv |> Effect.run (EffectEnv())
 
         return handleAppResult (ConsoleLogger("", "", 0)) ignore result
     })

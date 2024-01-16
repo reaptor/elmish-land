@@ -4,31 +4,35 @@ open System
 open System.Diagnostics
 open System.Threading
 open System.Text
+open System.IO
 open ElmishLand.Log
 open ElmishLand.Base
 open ElmishLand.AppError
-open System.IO
 open Orsak
 
 let private getFullPathOrDefault command =
-    Environment.GetEnvironmentVariable("PATH")
-    |> String.split ";"
-    |> Array.tryPick (fun x ->
-        let fullPath = Path.Combine(x, command)
+    eff {
+        let! fs = getFileSystem ()
+        return
+            Environment.GetEnvironmentVariable("PATH")
+            |> String.split ";"
+            |> Array.tryPick (fun x ->
+                let fullPath = Path.Combine(x, command)
 
-        let rec inner =
-            function
-            | [] -> None
-            | extension :: rest ->
-                let filePathWithExtension = Path.ChangeExtension(fullPath, extension)
+                let rec inner =
+                    function
+                    | [] -> None
+                    | extension :: rest ->
+                        let filePathWithExtension = Path.ChangeExtension(fullPath, extension)
 
-                if File.Exists(filePathWithExtension) then
-                    Some filePathWithExtension
-                else
-                    inner rest
+                        if fs.FileExists(FilePath.fromString filePathWithExtension) then
+                            Some filePathWithExtension
+                        else
+                            inner rest
 
-        inner [ "exe"; "cmd"; "bat"; "sh"; "" ])
-    |> Option.defaultValue command
+                inner [ "exe"; "cmd"; "bat"; "sh"; "" ])
+            |> Option.defaultValue command
+    }
 
 let private runProcessInternal
     (printOutput: bool)
@@ -40,8 +44,7 @@ let private runProcessInternal
     =
     eff {
         let! log = Log().Get()
-
-        let command = getFullPathOrDefault command
+        let! command = getFullPathOrDefault command
 
         log.Debug("Running {} {}", command, args)
 

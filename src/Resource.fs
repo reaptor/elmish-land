@@ -9,13 +9,13 @@ open Orsak
 let writeResource (projectDir: AbsoluteProjectDir) overwrite (resourceName: string) dst replace =
     eff {
         let! log = Log().Get()
+        let! fs = getFileSystem ()
         let dstPath = AbsoluteProjectDir.asFilePath projectDir |> FilePath.appendParts dst
 
-        if overwrite || not (File.Exists(FilePath.asString dstPath)) then
-            let dstDir = FilePath.directoryPath dstPath |> FilePath.asString
+        if overwrite || not (fs.FileExists(dstPath)) then
+            let dstDir = FilePath.directoryPath dstPath
 
-            if not (Directory.Exists dstDir) then
-                Directory.CreateDirectory(dstDir) |> ignore
+            fs.EnsureDirectory(dstDir)
 
             let assembly = Assembly.GetExecutingAssembly()
 
@@ -28,12 +28,12 @@ let writeResource (projectDir: AbsoluteProjectDir) overwrite (resourceName: stri
 
             use reader = new StreamReader(stream)
             let fileContents = reader.ReadToEnd()
-            File.WriteAllText(FilePath.asString dstPath, fileContents)
+            fs.WriteAllText(dstPath, fileContents)
 
             match replace with
             | Some f ->
-                File.ReadAllText(FilePath.asString dstPath)
+                fs.ReadAllText(dstPath)
                 |> f
-                |> (fun x -> File.WriteAllText(FilePath.asString dstPath, x))
+                |> (fun x -> fs.WriteAllText(dstPath, x))
             | None -> ()
     }

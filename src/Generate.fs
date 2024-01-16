@@ -1,7 +1,6 @@
 module ElmishLand.Generate
 
 open System
-open System.IO
 open System.Text
 open System.Text.Json
 open System.Threading
@@ -35,7 +34,7 @@ let settingsArrayToHtmlElements (name: string) close (arr: JsonElement array) =
 let generate (projectDir: AbsoluteProjectDir) dotnetSdkVersion =
     eff {
         let! logger = Log().Get()
-
+        let! fs = getFileSystem ()
         let projectName = projectDir |> ProjectName.fromProjectDir
 
         let writeResource = writeResource projectDir true
@@ -45,9 +44,9 @@ let generate (projectDir: AbsoluteProjectDir) dotnetSdkVersion =
             |> FilePath.appendParts [ ".elmish-land" ]
 
         if Environment.CommandLine.Contains("--clean") then
-            Directory.Delete(FilePath.asString dotElmishLandDirectory)
+            fs.DeleteDirectory(dotElmishLandDirectory)
 
-        if not (Directory.Exists(FilePath.asString dotElmishLandDirectory)) then
+        if not (fs.DirectoryExists(dotElmishLandDirectory)) then
             do!
                 writeResource
                     "Base.fsproj.handlebars"
@@ -81,7 +80,7 @@ let generate (projectDir: AbsoluteProjectDir) dotnetSdkVersion =
                     true, AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
                 |> runProcesses
 
-        let routeData = getRouteData projectDir
+        let! routeData = getRouteData projectDir
         logger.Debug("Using route data: {}", routeData)
         do! generateFiles projectDir routeData
     }

@@ -342,3 +342,18 @@ let requireJson (name: string) (element: JsonElement) =
     match element.TryGetProperty(name) with
     | true, x -> Ok x
     | _ -> Error $"Failed to get property %s{name}"
+
+type IFileSystem =
+    abstract member FileExists: FilePath -> bool
+    abstract member DirectoryExists: FilePath -> bool
+    abstract member EnsureDirectory: FilePath -> unit
+    abstract member WriteAllText: FilePath * contents: string -> unit
+    abstract member ReadAllText: FilePath -> string
+    abstract member ReadAllLines: FilePath -> string array
+    abstract member GetFilesRecursive: FilePath * filter: string -> string array
+    abstract member DeleteDirectory: FilePath -> unit
+
+type IFileSystemProvider =
+    abstract member Create: unit -> IFileSystem
+
+let getFileSystem () = Effect.Create(fun (fsFactory: #IFileSystemProvider) -> fsFactory.Create())

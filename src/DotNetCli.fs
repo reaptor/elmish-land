@@ -2,7 +2,6 @@ module ElmishLand.DotNetCli
 
 open System
 open System.Threading
-open System.IO
 open System.Text.RegularExpressions
 open System.Text.Json
 open ElmishLand.Base
@@ -12,16 +11,21 @@ open ElmishLand.AppError
 open Orsak
 
 let dotnetVersionFromGlobalJson () =
-    if File.Exists("global.json") then
-        let doc = JsonDocument.Parse(File.ReadAllText("global.json"))
+    eff {
+        let! fs = getFileSystem ()
 
-        requireJson "sdk" doc.RootElement
-        |> Result.bind (requireJson "version")
-        |> Result.map (fun x -> x.GetString())
-        |> Result.toOption
-        |> Option.bind DotnetSdkVersion.fromString
-    else
-        None
+        return
+            if fs.FileExists(FilePath.fromString "global.json") then
+                let doc = JsonDocument.Parse(fs.ReadAllText(FilePath.fromString "global.json"))
+
+                requireJson "sdk" doc.RootElement
+                |> Result.bind (requireJson "version")
+                |> Result.map (fun x -> x.GetString())
+                |> Result.toOption
+                |> Option.bind DotnetSdkVersion.fromString
+            else
+                None
+    }
 
 let getLatestDotnetSdkVersion () =
     eff {
@@ -55,6 +59,7 @@ let getLatestDotnetSdkVersion () =
     }
 
 let getDotnetSdkVersionToUse () =
-    match dotnetVersionFromGlobalJson () with
-    | Some x -> eff { return! Ok x }
-    | None -> getLatestDotnetSdkVersion ()
+    dotnetVersionFromGlobalJson ()
+    |> Effect.bind (function
+        | Some x -> eff { return! Ok x }
+        | None -> getLatestDotnetSdkVersion ())

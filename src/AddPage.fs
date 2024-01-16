@@ -60,7 +60,7 @@ let addPage (url: string) =
                     |}
                 ))
 
-        let routeData = getRouteData projectDir
+        let! routeData = getRouteData projectDir
         log.Debug("routeData: {}", routeData)
         do! generateFiles projectDir routeData
 
