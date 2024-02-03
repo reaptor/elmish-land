@@ -32,7 +32,7 @@ let private getFullPathOrDefault command =
 
 let private runProcessInternal
     (printOutput: bool)
-    (workingDirectory: FilePath)
+    (FilePath workingDir)
     (command: string)
     (args: string array)
     (cancellation: CancellationToken)
@@ -43,7 +43,7 @@ let private runProcessInternal
 
         let command = getFullPathOrDefault command
 
-        log.Debug("Running {} {}", command, args)
+        log.Debug("Running {} {} in working dir {}", command, args, FilePath.asString workingDirectory)
 
         try
             let p =
@@ -53,7 +53,7 @@ let private runProcessInternal
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     RedirectStandardInput = true,
-                    WorkingDirectory = FilePath.asString workingDirectory
+                    WorkingDirectory = workingDir
                 )
                 |> Process.Start
 
@@ -103,18 +103,18 @@ let private runProcessInternal
 
     }
 
-let runProcess printOutput (workingDirectory: FilePath) (command: string) (args: string array) cancel outputReceived =
-    runProcessInternal printOutput workingDirectory command args cancel outputReceived
+let runProcess printOutput workingDir (command: string) (args: string array) cancel outputReceived =
+    runProcessInternal printOutput workingDir command args cancel outputReceived
 
 let runProcesses (processes: (bool * FilePath * string * string array * CancellationToken * (string -> unit)) list) =
     eff {
         return!
             processes
             |> List.fold
-                (fun previousResult (printOutput, workingDirectory, command, args, cancellation, outputReceived) ->
+                (fun previousResult (printOutput, workingDir, command, args, cancellation, outputReceived) ->
                     previousResult
                     |> Effect.bind (fun () ->
-                        runProcessInternal printOutput workingDirectory command args cancellation outputReceived)
+                        runProcessInternal printOutput workingDir command args cancellation outputReceived)
                     |> Effect.map ignore)
                 (eff { return! Ok() })
     }

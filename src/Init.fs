@@ -14,9 +14,10 @@ open ElmishLand.AppError
 open ElmishLand.FsProj
 open ElmishLand.Resource
 open ElmishLand.Generate
+open ElmishLand.Paket
 
 let getNodeVersion () =
-    runProcess false (FilePath.fromString Environment.CurrentDirectory) "node" [| "-v" |] CancellationToken.None ignore
+    runProcess false workingDirectory "node" [| "-v" |] CancellationToken.None ignore
     |> Effect.changeError (fun _ -> AppError.NodeNotFound)
     |> Effect.map (fun output ->
         match Version.TryParse(output[1..]) with
@@ -24,28 +25,28 @@ let getNodeVersion () =
         | _ -> Error NodeNotFound)
     |> Effect.joinResult
 
-let successMessage projectDir =
-    let projectName = projectDir |> ProjectName.fromProjectDir
-
-    $"""%s{getCommandHeader $"created a new project in ./%s{ProjectName.asString projectName}"}
+let successMessage () =
+    $"""%s{getCommandHeader "created a new project"}
 Run the following command to start the development server:
 
 dotnet elmish-land server
 """
 
-let init (projectDir: AbsoluteProjectDir) =
+let init (absoluteProjectDir: AbsoluteProjectDir) =
     eff {
         let! log = Log().Get()
 
-        let projectName = projectDir |> ProjectName.fromProjectDir
+        if not (Directory.Exists(absoluteProjectDir |> AbsoluteProjectDir.asString)) then
+            Directory.CreateDirectory(absoluteProjectDir |> AbsoluteProjectDir.asString)
+            |> ignore
 
-        let! dotnetSdkVersion = getDotnetSdkVersionToUse ()
+        let! dotnetSdkVersion = getDotnetSdkVersion ()
         log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
         let! nodeVersion = getNodeVersion ()
         log.Debug("Using Node.js: {}", nodeVersion)
 
-        log.Debug("Initializing project. {}", AbsoluteProjectDir.asString projectDir)
+        log.Debug("Initializing project. {}", AbsoluteProjectDir.asString absoluteProjectDir)
 
         let assembly = Assembly.GetExecutingAssembly()
 
@@ -54,27 +55,43 @@ let init (projectDir: AbsoluteProjectDir) =
         for resource in assembly.GetManifestResourceNames() do
             log.Debug(resource)
 
-        let writeResource = writeResource projectDir false
+        let writeResourceToProjectDir =
+            writeResource (AbsoluteProjectDir.asFilePath absoluteProjectDir) false
 
-        let fsProjPath = FsProjPath.fromProjectDir projectDir
-        log.Debug("Project path {}", fsProjPath)
+        let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir
+
+        let fsProjName = $"%s{ProjectName.asString projectName}.fsproj"
+
+        let fsProjPath =
+            absoluteProjectDir
+            |> AbsoluteProjectDir.asFilePath
+            |> FilePath.appendParts [ fsProjName ]
+            |> FsProjPath
+
+        log.Debug("Project path {}", FsProjPath.asString fsProjPath)
 
         let fsProjExists = File.Exists(FsProjPath.asString fsProjPath)
 
-        do!
-            writeResource
-                "global.json.handlebars"
-                [ "global.json" ]
-                (Some(
-                    handlebars {|
-                        DotNetSdkVersion = (DotnetSdkVersion.asString dotnetSdkVersion)
-                    |}
-                ))
+        if
+            not
+            <| File.Exists(workingDirectory |> FilePath.appendParts [ "global.json" ] |> FilePath.asString)
+        then
+            do!
+                writeResource
+                    workingDirectory
+                    false
+                    "global.json.handlebars"
+                    [ "global.json" ]
+                    (Some(
+                        handlebars {|
+                            DotNetSdkVersion = (DotnetSdkVersion.asString dotnetSdkVersion)
+                        |}
+                    ))
 
-        do! writeResource "settings.json" [ ".vscode"; "settings.json" ] None
+        do! writeResourceToProjectDir "settings.json" [ ".vscode"; "settings.json" ] None
 
         do!
-            writeResource
+            writeResourceToProjectDir
                 "Project.fsproj.handlebars"
                 [ $"%s{ProjectName.asString projectName}.fsproj" ]
                 (Some(
@@ -84,7 +101,7 @@ let init (projectDir: AbsoluteProjectDir) =
                 ))
 
         do!
-            writeResource
+            writeResourceToProjectDir
                 "package.json.handlebars"
                 [ "package.json" ]
                 (Some(
@@ -93,10 +110,10 @@ let init (projectDir: AbsoluteProjectDir) =
                     |}
                 ))
 
-        do! writeResource "vite.config.js" [ "vite.config.js" ] None
+        do! writeResourceToProjectDir "vite.config.js" [ "vite.config.js" ] None
 
         do!
-            writeResource
+            writeResourceToProjectDir
                 "index.html.handlebars"
                 [ "index.html" ]
                 (Some(
@@ -109,7 +126,7 @@ let init (projectDir: AbsoluteProjectDir) =
 
         let! routeData =
             if fsProjExists then
-                eff { return getRouteData projectDir }
+                eff { return getRouteData projectName absoluteProjectDir }
             else
                 let homeRoute = {
                     Name = "Home"
@@ -127,14 +144,13 @@ let init (projectDir: AbsoluteProjectDir) =
                 }
 
                 let routeData = {
-                    Autogenerated = getAutogenerated ()
                     RootModule = rootModuleName
                     Routes = [| homeRoute |]
                 }
 
                 eff {
                     do!
-                        writeResource
+                        writeResourceToProjectDir
                             "AddPage.handlebars"
                             [ "src"; "Pages"; "Home"; "Page.fs" ]
                             (Some(
@@ -149,36 +165,46 @@ let init (projectDir: AbsoluteProjectDir) =
 
         log.Debug("Using route data {}", routeData)
 
-        do! writeResource "Shared.handlebars" [ "src"; "Shared.fs" ] (Some(handlebars routeData))
+        do! writeResourceToProjectDir "Shared.handlebars" [ "src"; "Shared.fs" ] (Some(handlebars routeData))
 
-        do! generate projectDir dotnetSdkVersion
+        do! generate absoluteProjectDir dotnetSdkVersion
 
-        do! validate projectDir
+        do! validate absoluteProjectDir
+
+        let dotnetToolsJsonPath =
+            workingDirectory |> FilePath.appendParts [ ".config"; "dotnet-tools.json" ]
+
+        let hasDotnetTool name =
+            let filepath = FilePath.asString dotnetToolsJsonPath
+            File.Exists filepath && (File.ReadAllText filepath).Contains($"\"%s{name}\"")
 
         do!
             [
-                if not (FilePath.exists projectDir [ ".config"; "dotnet-tools.json" ]) then
-                    "dotnet", [| "new"; "tool-manifest"; "--force" |]
+                if not (FilePath.exists dotnetToolsJsonPath) then
+                    "dotnet", [| "new"; "tool-manifest" |]
                 for name, version in getDotnetToolDependencies () do
-                    "dotnet", [| "tool"; "install"; name; version |]
-                "dotnet", [| "new"; "sln" |]
-                "dotnet", [| "sln"; "add"; ".elmish-land/Base/Base.fsproj" |]
-                "dotnet", [| "sln"; "add"; $"%s{ProjectName.asString projectName}.fsproj" |]
-                "dotnet", [| "sln"; "add"; ".elmish-land/App/App.fsproj" |]
+                    if not <| hasDotnetTool name then
+                        "dotnet", [| "tool"; "install"; name; version |]
             ]
             |> List.map (fun (cmd, args) ->
-                true, AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
+                true, AbsoluteProjectDir.asFilePath absoluteProjectDir, cmd, args, CancellationToken.None, ignore)
             |> runProcesses
+
+        match! getPaketDependencies () with
+        | [] -> ()
+        | paketDependencies ->
+            do! writePaketReferences absoluteProjectDir paketDependencies
+            do! ensurePaketInstalled ()
 
         do!
             runProcess
                 true
-                (AbsoluteProjectDir.asFilePath projectDir)
+                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
                 "dotnet"
-                [| "restore" |]
+                [| "restore"; ".elmish-land/App/App.fsproj" |]
                 CancellationToken.None
                 ignore
             |> Effect.map ignore<string>
 
-        log.Info(successMessage projectDir)
+        log.Info(successMessage ())
     }

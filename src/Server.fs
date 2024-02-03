@@ -1,9 +1,6 @@
 module ElmishLand.Server
 
-open System
 open System.Threading
-open System.Text.Json
-open System.Text.RegularExpressions
 open ElmishLand.Base
 open ElmishLand.Log
 open ElmishLand.FsProj
@@ -11,57 +8,54 @@ open ElmishLand.Process
 open ElmishLand.Generate
 open ElmishLand.DotNetCli
 open Orsak
-open System.Text
 
-let settingsArrayToHtmlElements (name: string) close (arr: JsonElement array) =
-    arr
-    |> Array.fold
-        (fun xs elem ->
-            let sb = StringBuilder()
-            sb.Append($"<%s{name} ") |> ignore
+let fableWatch absoluteProjectDir =
+    let appFsproj =
+        absoluteProjectDir
+        |> AbsoluteProjectDir.asFilePath
+        |> FilePath.appendParts [ ".elmish-land"; "App"; "App.fsproj" ]
+        |> FilePath.asString
 
-            for x in elem.EnumerateObject() do
-                sb.Append($"""%s{x.Name}="%s{x.Value.GetString()}" """) |> ignore
+    runProcess
+        true
+        (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+        "dotnet"
+        [|
+            "fable"
+            "watch"
+            appFsproj
+            "--noCache"
+            "--run"
+            "vite"
+            "--config"
+            "vite.config.js"
+        |]
+        CancellationToken.None
+        ignore
 
-            sb.Remove(sb.Length - 1, 1) |> ignore
-
-            if close then
-                sb.Append($"></%s{name}>") |> ignore
-            else
-                sb.Append(">") |> ignore
-
-            sb.ToString() :: xs)
-        []
-
-let server (projectDir: AbsoluteProjectDir) =
+let server absoluteProjectDir =
     eff {
         let! log = Log().Get()
 
-        let! dotnetSdkVersion = getDotnetSdkVersionToUse ()
+        let! dotnetSdkVersion = getDotnetSdkVersion ()
         log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
-        do! generate projectDir dotnetSdkVersion
+        do! generate absoluteProjectDir dotnetSdkVersion
 
-        do! validate projectDir
+        do! validate absoluteProjectDir
 
-        let workingDir = AbsoluteProjectDir.asFilePath projectDir
+        let! result =
+            fableWatch absoluteProjectDir
+            |> Effect.map Ok
+            |> Effect.onError (fun e -> eff { return Error e })
 
-        do!
-            runProcess
-                true
-                workingDir
-                "dotnet"
-                [|
-                    "fable"
-                    "watch"
-                    ".elmish-land/App/App.fsproj"
-                    "--noCache"
-                    "--run"
-                    "vite"
-                    "--config"
-                    "vite.config.js"
-                |]
-                CancellationToken.None
-                ignore
-            |> Effect.map ignore<string>
+        match result with
+        | Ok _ -> return! Ok()
+        | Error(AppError.ProcessError e) when e.Contains "dotnet tool restore" ->
+            do!
+                runProcess true workingDirectory "dotnet" [| "tool"; "restore" |] CancellationToken.None ignore
+                |> Effect.map ignore<string>
+
+            do! fableWatch absoluteProjectDir |> Effect.map ignore
+        | Error e -> return! Error e
     }

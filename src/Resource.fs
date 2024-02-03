@@ -6,10 +6,11 @@ open ElmishLand.Base
 open ElmishLand.Log
 open Orsak
 
-let writeResource (projectDir: AbsoluteProjectDir) overwrite (resourceName: string) dst replace =
+let writeResource (workingDir: FilePath) overwrite (resourceName: string) dst replace =
     eff {
         let! log = Log().Get()
-        let dstPath = AbsoluteProjectDir.asFilePath projectDir |> FilePath.appendParts dst
+
+        let dstPath = workingDir |> FilePath.appendParts dst
 
         if overwrite || not (File.Exists(FilePath.asString dstPath)) then
             let dstDir = FilePath.directoryPath dstPath |> FilePath.asString

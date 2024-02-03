@@ -27,13 +27,6 @@ let ok logs (x: Result<'a, 'e>) : 'a =
     | Error e -> failwithf $"Expected Ok. Got Error '%A{e}'\n%s{LogOutput.asString logs}"
 
 let equals logs expected actual =
-    let x =
-        match (box expected, box actual) with
-        | (:? string as expected), (:? string as actual) ->
-            expected |> String.eachLine String.trimWhitespace |> box,
-            actual |> String.eachLine String.trimWhitespace |> box
-        | _ -> expected, actual
-
     if expected <> actual then
         failwithf $"Expected %A{expected}. Got %A{actual}\n%s{LogOutput.asString logs}"
 

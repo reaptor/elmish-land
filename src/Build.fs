@@ -14,37 +14,55 @@ let successMessage =
 Your app was saved in the 'dist' directory.
 """
 
-let build (projectDir: AbsoluteProjectDir) =
+let fableBuild absoluteProjectDir =
+    let appFsproj =
+        absoluteProjectDir
+        |> AbsoluteProjectDir.asFilePath
+        |> FilePath.appendParts [ ".elmish-land"; "App"; "App.fsproj" ]
+        |> FilePath.asString
+
+    runProcess
+        true
+        (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+        "dotnet"
+        [|
+            "fable"
+            appFsproj
+            "--noCache"
+            "--run"
+            "vite"
+            "build"
+            "--config"
+            "vite.config.js"
+        |]
+        CancellationToken.None
+        ignore
+
+let build absoluteProjectDir =
     eff {
         let! log = Log().Get()
 
-        let! dotnetSdkVersion = getDotnetSdkVersionToUse ()
+        let! dotnetSdkVersion = getDotnetSdkVersion ()
         log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
-        do! generate projectDir dotnetSdkVersion
+        do! generate absoluteProjectDir dotnetSdkVersion
 
-        do! validate projectDir
+        do! validate absoluteProjectDir
 
-        let workingDir = AbsoluteProjectDir.asFilePath projectDir
+        let! result =
+            fableBuild absoluteProjectDir
+            |> Effect.map Ok
+            |> Effect.onError (fun e -> eff { return Error e })
 
-        do!
-            runProcess
-                true
-                workingDir
-                "dotnet"
-                [|
-                    "fable"
-                    ".elmish-land/App/App.fsproj"
-                    "--noCache"
-                    "--run"
-                    "vite"
-                    "build"
-                    "--config"
-                    "vite.config.js"
-                |]
-                CancellationToken.None
-                ignore
-            |> Effect.map ignore<string>
+        match result with
+        | Ok _ ->
+            log.Info successMessage
+            return! Ok()
+        | Error(AppError.ProcessError e) when e.Contains "dotnet tool restore" ->
+            do!
+                runProcess true workingDirectory "dotnet" [| "tool"; "restore" |] CancellationToken.None ignore
+                |> Effect.map ignore<string>
 
-        log.Info successMessage
+            do! fableBuild absoluteProjectDir |> Effect.map (fun _ -> log.Info successMessage)
+        | Error e -> return! Error e
     }

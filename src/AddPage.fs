@@ -1,34 +1,23 @@
 module ElmishLand.AddPage
 
-open System
 open Orsak
 open ElmishLand.Base
 open ElmishLand.Log
 open ElmishLand.TemplateEngine
 open ElmishLand.Resource
 
-let addPage (url: string) =
+let addPage absoluteProjectDir (url: string) =
     eff {
         let! log = Log().Get()
 
-        let args =
-            Environment.GetCommandLineArgs()
-            |> Array.pairwise
-            |> Array.choose (fun (x, y) ->
-                if x.StartsWith("--") && not (y.StartsWith("--")) then
-                    Some(x, y)
-                else
-                    None)
-            |> Map
+        log.Debug("Working driectory: {}", FilePath.asString workingDirectory)
+        log.Debug("Project directory: {}", absoluteProjectDir |> AbsoluteProjectDir.asFilePath |> FilePath.asString)
 
-        let projectDir =
-            args
-            |> Map.tryFind "--project-dir"
-            |> function
-                | Some projectDir -> projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath
-                | None -> AbsoluteProjectDir.getDefaultProjectDir ()
+        let! projectPath = absoluteProjectDir |> FsProjPath.findExantlyOneFromProjectDir
+        let projectName = projectPath |> ProjectName.fromFsProjPath
 
-        log.Debug("Using projectDir: {}", AbsoluteProjectDir.asString projectDir)
+        log.Debug("Project file: {}", FsProjPath.asString projectPath)
+        log.Debug("Project name: {}", ProjectName.asString projectName)
 
         let routeFileParts =
             url
@@ -37,19 +26,19 @@ let addPage (url: string) =
             |> fun x -> [ "src"; "Pages"; yield! x; "Page.fs" ]
 
         let routeFilePath =
-            projectDir
+            absoluteProjectDir
             |> AbsoluteProjectDir.asFilePath
             |> FilePath.appendParts routeFileParts
 
         log.Debug("routeFilePath: {}", routeFilePath)
 
-        let route = fileToRoute projectDir routeFilePath
-        let projectName = projectDir |> ProjectName.fromProjectDir
+        let route = fileToRoute projectName absoluteProjectDir routeFilePath
+        let! projectPath = absoluteProjectDir |> FsProjPath.findExantlyOneFromProjectDir
         let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
 
         do!
             writeResource
-                projectDir
+                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
                 false
                 "AddPage.handlebars"
                 routeFileParts
@@ -60,9 +49,9 @@ let addPage (url: string) =
                     |}
                 ))
 
-        let routeData = getRouteData projectDir
+        let routeData = getRouteData projectName absoluteProjectDir
         log.Debug("routeData: {}", routeData)
-        do! generateFiles projectDir routeData
+        do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData
 
         let relativefilePathString = $"""%s{routeFileParts |> String.concat "/"}"""
 
@@ -71,7 +60,7 @@ You can edit your new page here:
 ./%s{relativefilePathString}
 
 Please add the file to the project using an IDE or add the following line to an
-ItemGroup in the project file '%s{projectDir |> FsProjPath.fromProjectDir |> FsProjPath.asString}':
+ItemGroup in the project file '%s{FsProjPath.asString projectPath}':
 <Compile Include="%s{relativefilePathString}" />
 """
         |> log.Info

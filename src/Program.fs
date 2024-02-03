@@ -1,12 +1,9 @@
 ﻿module ElmishLand.Program
 
 open System
-open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
 open ElmishLand.Base
 open ElmishLand.Init
 open ElmishLand.Log
-open ElmishLand.Upgrade
 open ElmishLand.Server
 open ElmishLand.Build
 open ElmishLand.AddPage
@@ -22,20 +19,10 @@ let run argv =
 
         return!
             match List.ofArray argv with
-            | "init" :: NotFlag projectDir :: _ ->
-                init (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
-            | "init" :: _ -> init (AbsoluteProjectDir.getDefaultProjectDir ())
-            | "upgrade" :: NotFlag projectDir :: _ ->
-                upgrade (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
-            | "upgrade" :: _ -> init (AbsoluteProjectDir.getDefaultProjectDir ())
-            | "server" :: NotFlag projectDir :: _ ->
-                server (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
-            | "server" :: _ -> server (AbsoluteProjectDir.getDefaultProjectDir ())
-            | "build" :: NotFlag projectDir :: _ ->
-                build (projectDir |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath)
-            | "build" :: _ -> build (AbsoluteProjectDir.getDefaultProjectDir ())
-            | "add" :: "page" :: NotFlag url :: _ -> addPage url
-            | "add" :: "layout" :: url :: _ -> eff { return () }
+            | "init" :: _ -> init (AbsoluteProjectDir.create argv)
+            | "server" :: _ -> server (AbsoluteProjectDir.create argv)
+            | "build" :: _ -> build (AbsoluteProjectDir.create argv)
+            | "add" :: "page" :: NotFlag url :: _ -> addPage (AbsoluteProjectDir.create argv) url
             | "routes" :: _ -> eff { return () }
             | _ ->
                 $"""
@@ -67,6 +54,50 @@ type ConsoleLogger(memberName, path, line) =
             Console.ForegroundColor <- ConsoleColor.Red
             logger.WriteLine Console.Error.WriteLine message args
             Console.ResetColor()
+
+let handleAppResult (log: ILog) onSuccess =
+    function
+    | Ok _ ->
+        onSuccess ()
+        0
+    | Error e ->
+        match e with
+        | ProcessError(error) -> log.Error error
+        | FsProjNotFound -> log.Error "No F# project file found."
+        | MultipleFsProjFound -> log.Error "Multiple F# project files found."
+        | FsProjValidationError errors ->
+            for error in errors do
+                log.Error error
+
+        | DotnetSdkNotFound ->
+            log.Error
+                $"""You need to install .NET Core SDK version %s{DotnetSdkVersion.asString minimumRequiredDotnetSdk} or above
+https://dotnet.microsoft.com/
+"""
+
+        | NodeNotFound ->
+            log.Error
+                $"""You need to install Node.js version %s{minimumRequiredNode.ToString()} or above
+https://nodejs.org/
+"""
+
+        | DepsMissingFromPaket ->
+            let dependenies =
+                nugetDependencies
+                |> Set.map (fun (name, version) -> let v = version.Replace("--version ", "") in $"nuget %s{name} %s{v}")
+                |> String.concat "\n"
+
+            log.Error
+                $"""The following nuget dependencies are missing from paket.dependencies:
+
+%s{dependenies}
+"""
+        | PaketNotInstalled ->
+            log.Error
+                """Found paket.dependencies but paket is not installed. Please install paket.
+"""
+
+        -1
 
 
 [<EntryPoint>]

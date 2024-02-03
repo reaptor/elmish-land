@@ -2,8 +2,6 @@ module ElmishLand.Generate
 
 open System
 open System.IO
-open System.Text
-open System.Text.Json
 open System.Threading
 open Orsak
 open ElmishLand.Base
@@ -11,37 +9,27 @@ open ElmishLand.TemplateEngine
 open ElmishLand.Resource
 open ElmishLand.Process
 open ElmishLand.Log
+open ElmishLand.Paket
 
-let settingsArrayToHtmlElements (name: string) close (arr: JsonElement array) =
-    arr
-    |> Array.fold
-        (fun xs elem ->
-            let sb = StringBuilder()
-            sb.Append($"<%s{name} ") |> ignore
-
-            for x in elem.EnumerateObject() do
-                sb.Append($"""%s{x.Name}="%s{x.Value.GetString()}" """) |> ignore
-
-            sb.Remove(sb.Length - 1, 1) |> ignore
-
-            if close then
-                sb.Append($"></%s{name}>") |> ignore
-            else
-                sb.Append(">") |> ignore
-
-            sb.ToString() :: xs)
-        []
-
-let generate (projectDir: AbsoluteProjectDir) dotnetSdkVersion =
+let generate absoluteProjectDir dotnetSdkVersion =
     eff {
         let! logger = Log().Get()
 
-        let projectName = projectDir |> ProjectName.fromProjectDir
+        logger.Debug("Working driectory: {}", FilePath.asString workingDirectory)
+        logger.Debug("Project directory: {}", absoluteProjectDir |> AbsoluteProjectDir.asFilePath |> FilePath.asString)
 
-        let writeResource = writeResource projectDir true
+        let! projectPath = absoluteProjectDir |> FsProjPath.findExantlyOneFromProjectDir
+        let projectName = projectPath |> ProjectName.fromFsProjPath
+
+        logger.Debug("Project file: {}", FsProjPath.asString projectPath)
+        logger.Debug("Project name: {}", ProjectName.asString projectName)
+
+        let writeResourceToProjectDir =
+            writeResource (AbsoluteProjectDir.asFilePath absoluteProjectDir) true
 
         let dotElmishLandDirectory =
-            AbsoluteProjectDir.asFilePath projectDir
+            absoluteProjectDir
+            |> AbsoluteProjectDir.asFilePath
             |> FilePath.appendParts [ ".elmish-land" ]
 
         if Environment.CommandLine.Contains("--clean") then
@@ -49,7 +37,7 @@ let generate (projectDir: AbsoluteProjectDir) dotnetSdkVersion =
 
         if not (Directory.Exists(FilePath.asString dotElmishLandDirectory)) then
             do!
-                writeResource
+                writeResourceToProjectDir
                     "Base.fsproj.handlebars"
                     [ ".elmish-land"; "Base"; "Base.fsproj" ]
                     (Some(
@@ -59,7 +47,7 @@ let generate (projectDir: AbsoluteProjectDir) dotnetSdkVersion =
                     ))
 
             do!
-                writeResource
+                writeResourceToProjectDir
                     "App.fsproj.handlebars"
                     [ ".elmish-land"; "App"; "App.fsproj" ]
                     (Some(
@@ -70,18 +58,29 @@ let generate (projectDir: AbsoluteProjectDir) dotnetSdkVersion =
                         |}
                     ))
 
-            do!
-                nugetDependencyCommands
-                |> List.map (fun (cmd, args) -> true, dotElmishLandDirectory, cmd, args, CancellationToken.None, ignore)
-                |> runProcesses
+            match! getPaketDependencies () with
+            | [] ->
+                do!
+                    nugetDependencyCommands
+                    |> List.map (fun (cmd, args) ->
+                        true, dotElmishLandDirectory, cmd, args, CancellationToken.None, ignore)
+                    |> runProcesses
+            | paketDependencies ->
+                do! writePaketReferences absoluteProjectDir paketDependencies
+                do! ensurePaketInstalled ()
 
             do!
                 npmDependencyCommands
                 |> List.map (fun (cmd, args) ->
-                    true, AbsoluteProjectDir.asFilePath projectDir, cmd, args, CancellationToken.None, ignore)
+                    true,
+                    absoluteProjectDir |> AbsoluteProjectDir.asFilePath,
+                    cmd,
+                    args,
+                    CancellationToken.None,
+                    ignore)
                 |> runProcesses
 
-        let routeData = getRouteData projectDir
+        let routeData = getRouteData projectName absoluteProjectDir
         logger.Debug("Using route data: {}", routeData)
-        do! generateFiles projectDir routeData
+        do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData
     }

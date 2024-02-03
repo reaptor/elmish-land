@@ -1,5 +1,10 @@
 <Project>
     <PropertyGroup>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <WarnOn>$(WarnOn); FS1182; FS3579</WarnOn>
+        <NoWarn>NU1803</NoWarn>
+    </PropertyGroup>
+    <PropertyGroup>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryUrl>https://github.com/reaptor/elmish-land</RepositoryUrl>
         <Copyright>Copyright © 2023</Copyright>

@@ -42,29 +42,27 @@ let runEff (e: Effect<_, unit, _>) =
     }
 
 let getFolder () =
-    $"""Proj_{Guid.NewGuid().ToString().Replace("-", "")}"""
+    $"""Proj_%s{Guid.NewGuid().ToString().Replace("-", "")}"""
 
 [<Fact>]
 let ``Init, generates project`` () =
     task {
         let cts = new CancellationTokenSource()
         cts.CancelAfter(TimeSpan.FromSeconds 30)
-        let folder = getFolder ()
+        let rootFolder = getFolder ()
 
         try
-            let! result, logs = ElmishLand.Program.run [| "init"; folder; "--verbose" |] |> runEff
+            let! result, logs =
+                ElmishLand.Program.run [| "init"; "--project-dir"; rootFolder; "--verbose" |]
+                |> runEff
+
             Expects.ok logs result
-            let projectDir = folder |> FilePath.fromString |> AbsoluteProjectDir.fromFilePath
 
-            Expects.equalsIgnoringWhitespace
-                logs
-                $"%s{ElmishLand.Init.successMessage projectDir}\n"
-                (logs.Info.ToString())
+            Expects.equalsIgnoringWhitespace logs $"%s{ElmishLand.Init.successMessage ()}\n" (logs.Info.ToString())
         finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
+            if Directory.Exists(rootFolder) then
+                Directory.Delete(rootFolder, true)
     }
-
 
 [<Fact>]
 let ``Build, builds project`` () =
@@ -74,9 +72,11 @@ let ``Build, builds project`` () =
         let folder = getFolder ()
 
         try
-            let! _ = ElmishLand.Program.run [| "init"; folder |] |> runEff
+            let! _ = ElmishLand.Program.run [| "init"; "--project-dir"; folder |] |> runEff
 
-            let! result, logs = ElmishLand.Program.run [| "build"; folder; "--verbose" |] |> runEff
+            let! result, logs =
+                ElmishLand.Program.run [| "build"; "--project-dir"; folder; "--verbose" |]
+                |> runEff
 
             Expects.ok logs result
             Expects.equalsIgnoringWhitespace logs $"%s{ElmishLand.Build.successMessage}\n" (logs.Info.ToString())
