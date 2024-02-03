@@ -13,7 +13,7 @@ After installing, you can run `donet elmish-land --help` to see these commands a
 ## Init
 
 ```bash
-dotnet elmish-land init <folder-name> --verbose
+dotnet elmish-land init --project-dir <folder-name> --verbose
 ```
 
 #### Description
@@ -22,35 +22,35 @@ This command creates a new Elmish Land project or initializes an existing Fable 
 See [Project structure](/docs/getting-started/project-structure) for more information on what files that will be created.
 
 #### Arguments
-`<folder-name>` – Optional name of the folder for the new or existing Elmish Land project.
+`--project-dir <folder-name>` – Optional name of the folder for your Elmish Land project.
 
 `--verbose` - Optional argument to display more output for the command.
 
 ## Server
 
 ```bash
-dotnet elmish-land server <folder-name> --verbose
+dotnet elmish-land server --project-dir <folder-name> --verbose
 ```
 
 #### Description
 This command starts a development server (powered by [Vite](https://vitejs.dev)) at http://localhost:5173. If port 5173 is already taken, the server will automatically find the next available port.
 
 #### Arguments
-`<folder-name>` – Optional name of the folder for your Elmish Land project.
+`--project-dir <folder-name>` – Optional name of the folder for your Elmish Land project.
 
 `--verbose` - Optional argument to display more output for the command.
 
 ## Build
 
 ```bash
-dotnet elmish-land build <folder-name> --verbose
+dotnet elmish-land build --project-dir <folder-name> --verbose
 ```
 
 #### Description
 This command builds your Elmish Land app in production-mode. The result is a static site that is ready to be hosted from the ./dist folder.
 
 #### Arguments
-`<folder-name>` – Optional name of the folder for your Elmish Land project.
+`--project-dir <folder-name>` – Optional name of the folder for your Elmish Land project.
 
 `--verbose` - Optional argument to display more output for the command.
 
