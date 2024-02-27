@@ -18,7 +18,7 @@ let generate absoluteProjectDir dotnetSdkVersion =
         logger.Debug("Working driectory: {}", FilePath.asString workingDirectory)
         logger.Debug("Project directory: {}", absoluteProjectDir |> AbsoluteProjectDir.asFilePath |> FilePath.asString)
 
-        let! projectPath = absoluteProjectDir |> FsProjPath.findExantlyOneFromProjectDir
+        let! projectPath = absoluteProjectDir |> FsProjPath.findExactlyOneFromProjectDir
         let projectName = projectPath |> ProjectName.fromFsProjPath
 
         logger.Debug("Project file: {}", FsProjPath.asString projectPath)
@@ -80,7 +80,7 @@ let generate absoluteProjectDir dotnetSdkVersion =
                     ignore)
                 |> runProcesses
 
-        let routeData = getRouteData projectName absoluteProjectDir
+        let! routeData = getRouteData projectName absoluteProjectDir
         logger.Debug("Using route data: {}", routeData)
         do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData
     }

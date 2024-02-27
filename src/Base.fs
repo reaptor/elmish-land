@@ -259,7 +259,7 @@ module FileName =
 type FsProjPath =
     | FsProjPath of FilePath
 
-    static member findExantlyOneFromProjectDir(AbsoluteProjectDir(FilePath filePath)) =
+    static member findExactlyOneFromProjectDir(AbsoluteProjectDir(FilePath filePath)) =
         Directory.GetFiles(filePath, "*.fsproj")
         |> Array.toList
         |> function

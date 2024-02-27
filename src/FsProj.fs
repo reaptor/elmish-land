@@ -7,7 +7,7 @@ open ElmishLand.AppError
 
 let validate absoluteProjectDir =
     result {
-        let! projectPath = FsProjPath.findExantlyOneFromProjectDir absoluteProjectDir
+        let! projectPath = FsProjPath.findExactlyOneFromProjectDir absoluteProjectDir
 
         let formatError lineNr (line: string) (FilePath filePath) msg =
             let colNr = line.IndexOf(filePath)

@@ -40,20 +40,26 @@ type RouteData = {
 }
 
 let getSortedPageFiles absoluteProjectDir =
-    Directory.GetFiles(
+    let pageFilesDir =
         absoluteProjectDir
         |> AbsoluteProjectDir.asFilePath
         |> FilePath.appendParts [ "src"; "Pages" ]
-        |> FilePath.asString,
-        "Page.fs",
-        EnumerationOptions(RecurseSubdirectories = true)
-    )
-    |> Array.map FilePath.fromString
-    |> Array.sortByDescending (fun x ->
-        if x |> FilePath.endsWithParts [ "src"; "Pages"; "Home"; "Page.fs" ] then
-            0
-        else
-            x |> FilePath.parts |> Array.length)
+        |> FilePath.asString
+    if not (Directory.Exists pageFilesDir) then
+        Error AppError.PagesDirectoryMissing
+    else
+        Directory.GetFiles(
+            pageFilesDir,
+            "Page.fs",
+            EnumerationOptions(RecurseSubdirectories = true)
+        )
+        |> Array.map FilePath.fromString
+        |> Array.sortByDescending (fun x ->
+            if x |> FilePath.endsWithParts [ "src"; "Pages"; "Home"; "Page.fs" ] then
+                0
+            else
+                x |> FilePath.parts |> Array.length)
+        |> Ok
 
 let wrapWithTicksIfNeeded (s: string) =
     if Regex.IsMatch(s, "^[0-9a-zA-Z_]+$") && s <> "id" then
@@ -169,11 +175,14 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
         }
 
 let getRouteData projectName absoluteProjectDir =
-    let pageFiles = getSortedPageFiles absoluteProjectDir
+    eff {
+        let! pageFiles = getSortedPageFiles absoluteProjectDir
 
-    {
-        RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
-        Routes = pageFiles |> Array.map (fileToRoute projectName absoluteProjectDir)
+        return
+            {
+                RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
+                Routes = pageFiles |> Array.map (fileToRoute projectName absoluteProjectDir)
+            }
     }
 
 let generateFiles workingDir (routeData: RouteData) =

@@ -9,3 +9,4 @@ type AppError =
     | NodeNotFound
     | DepsMissingFromPaket
     | PaketNotInstalled
+    | PagesDirectoryMissing

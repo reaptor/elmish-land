@@ -13,7 +13,7 @@ let addPage absoluteProjectDir (url: string) =
         log.Debug("Working driectory: {}", FilePath.asString workingDirectory)
         log.Debug("Project directory: {}", absoluteProjectDir |> AbsoluteProjectDir.asFilePath |> FilePath.asString)
 
-        let! projectPath = absoluteProjectDir |> FsProjPath.findExantlyOneFromProjectDir
+        let! projectPath = absoluteProjectDir |> FsProjPath.findExactlyOneFromProjectDir
         let projectName = projectPath |> ProjectName.fromFsProjPath
 
         log.Debug("Project file: {}", FsProjPath.asString projectPath)
@@ -33,7 +33,7 @@ let addPage absoluteProjectDir (url: string) =
         log.Debug("routeFilePath: {}", routeFilePath)
 
         let route = fileToRoute projectName absoluteProjectDir routeFilePath
-        let! projectPath = absoluteProjectDir |> FsProjPath.findExantlyOneFromProjectDir
+        let! projectPath = absoluteProjectDir |> FsProjPath.findExactlyOneFromProjectDir
         let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
 
         do!
@@ -49,7 +49,7 @@ let addPage absoluteProjectDir (url: string) =
                     |}
                 ))
 
-        let routeData = getRouteData projectName absoluteProjectDir
+        let! routeData = getRouteData projectName absoluteProjectDir
         log.Debug("routeData: {}", routeData)
         do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData
 

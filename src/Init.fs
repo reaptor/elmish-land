@@ -126,7 +126,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
 
         let! routeData =
             if fsProjExists then
-                eff { return getRouteData projectName absoluteProjectDir }
+                getRouteData projectName absoluteProjectDir
             else
                 let homeRoute = {
                     Name = "Home"

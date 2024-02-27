@@ -84,17 +84,21 @@ https://nodejs.org/
         | DepsMissingFromPaket ->
             let dependenies =
                 nugetDependencies
-                |> Set.map (fun (name, version) -> let v = version.Replace("--version ", "") in $"nuget %s{name} %s{v}")
+                |> Set.map (fun (name, _) -> $"nuget %s{name}")
                 |> String.concat "\n"
 
             log.Error
-                $"""The following nuget dependencies are missing from paket.dependencies:
+                $"""Some or all of the following dependencies are missing from paket.dependencies:
 
 %s{dependenies}
 """
         | PaketNotInstalled ->
             log.Error
                 """Found paket.dependencies but paket is not installed. Please install paket.
+"""
+        | PagesDirectoryMissing ->
+            log.Error
+                """src/Pages directory is missing. Please run 'elmish-land init'.
 """
 
         -1

@@ -79,14 +79,11 @@ let writePaketReferences absoluteProjectDir paketDependencies =
             |> FilePath.asString
 
         let paketReferencesContent =
-            let padding = if group = "" then "" else "    "
-
             nugetDependencies
-            |> Set.map (fun (dep, _) -> $"%s{padding}%s{dep}")
+            |> Set.map fst
             |> String.concat "\n"
-            |> fun deps -> $"%s{group}%s{deps}"
+            |> fun deps -> $"group %s{group}%s{deps}"
 
         File.WriteAllText(paketReferencesPath [ ".elmish-land"; "Base" ], paketReferencesContent)
         File.WriteAllText(paketReferencesPath [ ".elmish-land"; "App" ], paketReferencesContent)
-        File.WriteAllText(paketReferencesPath [], paketReferencesContent)
     }
