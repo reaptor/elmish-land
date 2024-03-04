@@ -7,38 +7,31 @@ open Orsak
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
 open ElmishLand.Resource
-open ElmishLand.Process
 open ElmishLand.Log
 open ElmishLand.Paket
-open ElmishLand.DotNetCli
-open ElmishLand.FsProj
+open ElmishLand.Process
 
 let dotElmishLandDirectory absoluteProjectDir =
     absoluteProjectDir
     |> AbsoluteProjectDir.asFilePath
     |> FilePath.appendParts [ ".elmish-land" ]
 
-let restore absoluteProjectDir =
+let getNugetDependencies absoluteProjectDir =
     eff {
         match! getPaketDependencies () with
         | [] ->
-            do!
-                nugetDependencyCommands
-                |> List.map (fun (cmd, args) ->
-                    true, dotElmishLandDirectory absoluteProjectDir, cmd, args, CancellationToken.None, ignore)
-                |> runProcesses
+            return
+                nugetDependencies
+                |> Seq.map (fun (name, ver) -> $"        <PackageReference Include=\"%s{name}\" Version=\"%s{ver}\" />")
+                |> String.concat "\n"
+                |> fun deps -> $"<ItemGroup>\n%s{deps}\n    </ItemGroup>"
         | paketDependencies ->
             do! writePaketReferences absoluteProjectDir paketDependencies
             do! ensurePaketInstalled ()
-
-        do!
-            npmDependencyCommands
-            |> List.map (fun (cmd, args) ->
-                true, absoluteProjectDir |> AbsoluteProjectDir.asFilePath, cmd, args, CancellationToken.None, ignore)
-            |> runProcesses
+            return ""
     }
 
-let generate absoluteProjectDir dotnetSdkVersion doRestore =
+let generate absoluteProjectDir dotnetSdkVersion =
     eff {
         let! logger = Log().Get()
 
@@ -54,13 +47,12 @@ let generate absoluteProjectDir dotnetSdkVersion doRestore =
         let writeResourceToProjectDir =
             writeResource (AbsoluteProjectDir.asFilePath absoluteProjectDir) true
 
-        let dotElmishLandDirectory =
-            absoluteProjectDir
-            |> AbsoluteProjectDir.asFilePath
-            |> FilePath.appendParts [ ".elmish-land" ]
+        let dotElmishLandDirectory = dotElmishLandDirectory absoluteProjectDir
 
         if Environment.CommandLine.Contains("--clean") then
             Directory.Delete(FilePath.asString dotElmishLandDirectory)
+
+        let! nugetDependencies = getNugetDependencies absoluteProjectDir
 
         do!
             writeResourceToProjectDir
@@ -69,6 +61,7 @@ let generate absoluteProjectDir dotnetSdkVersion doRestore =
                 (Some(
                     handlebars {|
                         DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
+                        References = nugetDependencies
                     |}
                 ))
 
@@ -84,22 +77,24 @@ let generate absoluteProjectDir dotnetSdkVersion doRestore =
                     |}
                 ))
 
-        if doRestore then
-            do! restore absoluteProjectDir
-
         let! routeData = getRouteData projectName absoluteProjectDir
         logger.Debug("Using route data: {}", routeData)
         do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData
-    }
 
-let generateCommand absoluteProjectDir =
-    eff {
-        let! log = Log().Get()
+        let isViteInstalled =
+            absoluteProjectDir
+            |> AbsoluteProjectDir.asRelativeFilePath
+            |> FilePath.appendParts [ "node_modules"; "vite" ]
+            |> FilePath.exists
 
-        let! dotnetSdkVersion = getDotnetSdkVersion ()
-        log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
-
-        do! generate absoluteProjectDir dotnetSdkVersion false
-
-        do! validate absoluteProjectDir
+        if not isViteInstalled then
+            do!
+                runProcess
+                    true
+                    (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                    "npm"
+                    [| "install" |]
+                    CancellationToken.None
+                    ignore
+                |> Effect.map ignore<string>
     }

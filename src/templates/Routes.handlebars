@@ -1,58 +1,60 @@
-﻿module ElmishLand.Routes
+﻿namespace ElmishLand
 
-open Feliz.Router
+[<AutoOpen>]
+module Routes =
+    open Feliz.Router
 
-{{#each Routes}}
-type {{RouteName}} = {{#if RecordDefinition}}{{RecordDefinition}}{{/if}}
-{{/each}}
-
-[<RequireQualifiedAccess>]
-type Route =
     {{#each Routes}}
-    | {{Name}} of {{RouteName}}
+    type {{RouteName}} = {{#if RecordDefinition}}{{RecordDefinition}}{{/if}}
     {{/each}}
-    | NotFound
 
-module Route =
-    let format =
-        function
+    [<RequireQualifiedAccess>]
+    type Route =
         {{#each Routes}}
-        | Route.{{Name}} {{#if RecordPattern}}{{RecordPattern}}{{/if}} -> Router.format({{#if UrlUsage}}{{UrlUsage}}{{else}}""{{/if}}, query)
+        | {{Name}} of {{RouteName}}
         {{/each}}
-        | Route.NotFound -> "notFound"
+        | NotFound
 
-    // Need to define our own from Feliz.Router.Route.Query
-    // because we need to check if the value is a query parameter
-    let private (|Query|_|) (input: string) =
-        try
-            if input.StartsWith("?") then
-                let urlParams = Router.createUrlSearchParams input
-                Some [ for entry in urlParams.entries() -> entry.[0], entry.[1] ]
+    module Route =
+        let format =
+            function
+            {{#each Routes}}
+            | Route.{{Name}} {{#if RecordPattern}}{{RecordPattern}}{{/if}} -> Router.format({{#if UrlUsage}}{{UrlUsage}}{{else}}""{{/if}}, query)
+            {{/each}}
+            | Route.NotFound -> "notFound"
+
+        // Need to define our own from Feliz.Router.Route.Query
+        // because we need to check if the value is a query parameter
+        let private (|Query|_|) (input: string) =
+            try
+                if input.StartsWith("?") then
+                    let urlParams = Router.createUrlSearchParams input
+                    Some [ for entry in urlParams.entries() -> entry.[0], entry.[1] ]
+                else
+                    None
+            with
+            | _ -> None
+
+        let eq x y =
+            System.String.Equals(x, y, System.StringComparison.InvariantCultureIgnoreCase)
+
+        let parse (xs: string list) =
+            match xs with
+            {{#each Routes}}
+            | {{UrlPatternWithQuery}}{{#if UrlPatternWhen}} when {{UrlPatternWhen}}{{/if}} -> Route.{{Name}} {{#if RecordConstructorWithQuery}}{{RecordConstructorWithQuery}}{{/if}}
+            {{/each}}
+            {{#each Routes}}
+            | {{UrlPattern}}{{#if UrlPatternWhen}} when {{UrlPatternWhen}}{{/if}} -> Route.{{Name}} {{#if RecordConstructor}}{{RecordConstructor}}{{/if}}
+            {{/each}}
+            | other ->
+                printfn "Route not found: '%A'" other
+                Route.NotFound
+
+    let tryGetQueryParam (name: string) (query: list<string * string>): string option =
+        query
+        |> List.tryPick (fun (name', value') ->
+            if name = name' then
+                (Some value')
             else
                 None
-        with
-        | _ -> None
-
-    let eq x y =
-        System.String.Equals(x, y, System.StringComparison.InvariantCultureIgnoreCase)
-
-    let parse (xs: string list) =
-        match xs with
-        {{#each Routes}}
-        | {{UrlPatternWithQuery}}{{#if UrlPatternWhen}} when {{UrlPatternWhen}}{{/if}} -> Route.{{Name}} {{#if RecordConstructorWithQuery}}{{RecordConstructorWithQuery}}{{/if}}
-        {{/each}}
-        {{#each Routes}}
-        | {{UrlPattern}}{{#if UrlPatternWhen}} when {{UrlPatternWhen}}{{/if}} -> Route.{{Name}} {{#if RecordConstructor}}{{RecordConstructor}}{{/if}}
-        {{/each}}
-        | other ->
-            printfn "Route not found: '%A'" other
-            Route.NotFound
-
-let tryGetQueryParam (name: string) (query: list<string * string>): string option =
-    query
-    |> List.tryPick (fun (name', value') ->
-        if name = name' then
-            (Some value')
-        else
-            None
-    )
+        )

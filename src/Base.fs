@@ -153,7 +153,7 @@ let help eachLine =
 %s{cliName} init ...... create a new project in the current directory
 %s{cliName} server ........................... run a local dev server
 %s{cliName} build ..................... build your app for production
-%s{cliName} generate ............................... generates routes
+%s{cliName} restore ....... restores dependencies and generates files
 %s{cliName} add page <url> ........................... add a new page
 
 Want to learn more? Visit https://elmish.land
@@ -296,26 +296,14 @@ let getDotnetToolDependencies () = [ "fable", "--version 4.*" ]
 
 let nugetDependencies =
     Set [
-        "Elmish", "--version 4.*"
-        "Fable.Promise", "--version 3.*"
-        "Fable.Elmish.HMR", "--version 7.*"
-        "Fable.Elmish.React", "--version 4.*"
-        "Feliz", "--version 2.*"
-        "Feliz.Router", "--version 4.*"
+        "Elmish", "4.*"
+        "Fable.Promise", "3.*"
+        "Fable.Elmish.HMR", "7.*"
+        "Fable.Elmish.React", "4.*"
+        "Feliz", "2.*"
+        "Feliz.Router", "4.*"
     ]
 
 let npmDependencies = Set [ "react", "18"; "react-dom", "18" ]
 
 let npmDevDependencies = Set [ "vite", "5" ]
-
-let nugetDependencyCommands = [
-    for name, version in nugetDependencies do
-        "dotnet", [| "add"; "./Base/Base.fsproj"; "package"; name; version |]
-]
-
-let npmDependencyCommands = [
-    for name, version in npmDependencies do
-        "npm", [| "install"; $"%s{name}@%s{version}"; "--save" |]
-    for name, version in npmDevDependencies do
-        "npm", [| "install"; $"%s{name}@%s{version}"; "--save-dev" |]
-]

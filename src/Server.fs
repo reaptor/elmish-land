@@ -41,10 +41,7 @@ let server absoluteProjectDir =
         let! dotnetSdkVersion = getDotnetSdkVersion ()
         log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
-        let doRestore =
-            not (Directory.Exists(absoluteProjectDir |> dotElmishLandDirectory |> FilePath.asString))
-
-        do! generate absoluteProjectDir dotnetSdkVersion doRestore
+        do! generate absoluteProjectDir dotnetSdkVersion
 
         do! validate absoluteProjectDir
 

@@ -8,7 +8,7 @@ open ElmishLand.Server
 open ElmishLand.Build
 open ElmishLand.AddPage
 open ElmishLand.AppError
-open ElmishLand.Generate
+open ElmishLand.Restore
 open Orsak
 
 let (|NotFlag|_|) (x: string) =
@@ -23,7 +23,7 @@ let run argv =
             | "init" :: _ -> init (AbsoluteProjectDir.create argv)
             | "server" :: _ -> server (AbsoluteProjectDir.create argv)
             | "build" :: _ -> build (AbsoluteProjectDir.create argv)
-            | "generate" :: _ -> generateCommand (AbsoluteProjectDir.create argv)
+            | "restore" :: _ -> restore (AbsoluteProjectDir.create argv)
             | "add" :: "page" :: NotFlag url :: _ -> addPage (AbsoluteProjectDir.create argv) url
             | _ ->
                 $"""

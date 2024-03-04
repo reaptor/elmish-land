@@ -70,6 +70,7 @@
         <Compile Include="Generate.fs" />
         <Compile Include="Init.fs" />
         <Compile Include="Upgrade.fs" />
+        <Compile Include="Restore.fs" />
         <Compile Include="Server.fs" />
         <Compile Include="Build.fs" />
         <Compile Include="AddPage.fs" />

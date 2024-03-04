@@ -100,6 +100,16 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     |}
                 ))
 
+        let npmDependencies =
+            npmDependencies
+            |> Seq.map (fun (name, ver) -> $"\"%s{name}\": \"^%s{ver}\"")
+            |> String.concat ",\n    "
+
+        let npmDevDependencies =
+            npmDevDependencies
+            |> Seq.map (fun (name, ver) -> $"\"%s{name}\": \"^%s{ver}\"")
+            |> String.concat ",\n    "
+
         do!
             writeResourceToProjectDir
                 "package.json.handlebars"
@@ -107,6 +117,8 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 (Some(
                     handlebars {|
                         ProjectName = projectName |> ProjectName.asString |> String.asKebabCase
+                        Dependencies = npmDependencies
+                        DevDependencies = npmDevDependencies
                     |}
                 ))
 
@@ -167,10 +179,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
 
         do! writeResourceToProjectDir "Shared.handlebars" [ "src"; "Shared.fs" ] (Some(handlebars routeData))
 
-        let doRestore =
-            not (Directory.Exists(absoluteProjectDir |> dotElmishLandDirectory |> FilePath.asString))
-
-        do! generate absoluteProjectDir dotnetSdkVersion doRestore
+        do! generate absoluteProjectDir dotnetSdkVersion
 
         do! validate absoluteProjectDir
 
