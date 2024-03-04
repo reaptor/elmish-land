@@ -1,5 +1,6 @@
 module ElmishLand.Server
 
+open System.IO
 open System.Threading
 open ElmishLand.Base
 open ElmishLand.Log
@@ -40,7 +41,10 @@ let server absoluteProjectDir =
         let! dotnetSdkVersion = getDotnetSdkVersion ()
         log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
-        do! generate absoluteProjectDir dotnetSdkVersion
+        let doRestore =
+            not (Directory.Exists(absoluteProjectDir |> dotElmishLandDirectory |> FilePath.asString))
+
+        do! generate absoluteProjectDir dotnetSdkVersion doRestore
 
         do! validate absoluteProjectDir
 

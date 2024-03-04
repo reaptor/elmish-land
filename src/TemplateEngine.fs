@@ -45,14 +45,11 @@ let getSortedPageFiles absoluteProjectDir =
         |> AbsoluteProjectDir.asFilePath
         |> FilePath.appendParts [ "src"; "Pages" ]
         |> FilePath.asString
+
     if not (Directory.Exists pageFilesDir) then
         Error AppError.PagesDirectoryMissing
     else
-        Directory.GetFiles(
-            pageFilesDir,
-            "Page.fs",
-            EnumerationOptions(RecurseSubdirectories = true)
-        )
+        Directory.GetFiles(pageFilesDir, "Page.fs", EnumerationOptions(RecurseSubdirectories = true))
         |> Array.map FilePath.fromString
         |> Array.sortByDescending (fun x ->
             if x |> FilePath.endsWithParts [ "src"; "Pages"; "Home"; "Page.fs" ] then
@@ -178,11 +175,10 @@ let getRouteData projectName absoluteProjectDir =
     eff {
         let! pageFiles = getSortedPageFiles absoluteProjectDir
 
-        return
-            {
-                RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
-                Routes = pageFiles |> Array.map (fileToRoute projectName absoluteProjectDir)
-            }
+        return {
+            RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
+            Routes = pageFiles |> Array.map (fileToRoute projectName absoluteProjectDir)
+        }
     }
 
 let generateFiles workingDir (routeData: RouteData) =

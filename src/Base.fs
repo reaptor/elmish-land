@@ -153,8 +153,8 @@ let help eachLine =
 %s{cliName} init ...... create a new project in the current directory
 %s{cliName} server ........................... run a local dev server
 %s{cliName} build ..................... build your app for production
+%s{cliName} generate ............................... generates routes
 %s{cliName} add page <url> ........................... add a new page
-%s{cliName} routes ...................... list all routes in your app
 
 Want to learn more? Visit https://elmish.land
 """

@@ -167,7 +167,10 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
 
         do! writeResourceToProjectDir "Shared.handlebars" [ "src"; "Shared.fs" ] (Some(handlebars routeData))
 
-        do! generate absoluteProjectDir dotnetSdkVersion
+        let doRestore =
+            not (Directory.Exists(absoluteProjectDir |> dotElmishLandDirectory |> FilePath.asString))
+
+        do! generate absoluteProjectDir dotnetSdkVersion doRestore
 
         do! validate absoluteProjectDir
 
