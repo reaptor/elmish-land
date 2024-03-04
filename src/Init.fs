@@ -202,11 +202,11 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 true, AbsoluteProjectDir.asFilePath absoluteProjectDir, cmd, args, CancellationToken.None, ignore)
             |> runProcesses
 
-        match! getPaketDependencies () with
+        match! getPaketDependencies absoluteProjectDir with
         | [] -> ()
         | paketDependencies ->
             do! writePaketReferences absoluteProjectDir paketDependencies
-            do! ensurePaketInstalled ()
+            do! ensurePaketInstalled absoluteProjectDir
 
         do!
             runProcess

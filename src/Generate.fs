@@ -18,17 +18,24 @@ let dotElmishLandDirectory absoluteProjectDir =
 
 let getNugetDependencies absoluteProjectDir =
     eff {
-        match! getPaketDependencies () with
+        match! getPaketDependencies absoluteProjectDir with
         | [] ->
             return
                 nugetDependencies
                 |> Seq.map (fun (name, ver) -> $"        <PackageReference Include=\"%s{name}\" Version=\"%s{ver}\" />")
                 |> String.concat "\n"
                 |> fun deps -> $"<ItemGroup>\n%s{deps}\n    </ItemGroup>"
+        | _ -> return ""
+    }
+
+let ensurePaketInstalled absoluteProjectDir =
+    eff {
+        match! getPaketDependencies absoluteProjectDir with
+        | [] -> ()
         | paketDependencies ->
             do! writePaketReferences absoluteProjectDir paketDependencies
-            do! ensurePaketInstalled ()
-            return ""
+            do! doPaketInstall absoluteProjectDir
+            return ()
     }
 
 let generate absoluteProjectDir dotnetSdkVersion =
@@ -80,6 +87,10 @@ let generate absoluteProjectDir dotnetSdkVersion =
         let! routeData = getRouteData projectName absoluteProjectDir
         logger.Debug("Using route data: {}", routeData)
         do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData
+
+        match! getPaketDependencies absoluteProjectDir with
+        | [] -> ()
+        | _ -> do! ensurePaketInstalled absoluteProjectDir
 
         let isViteInstalled =
             absoluteProjectDir

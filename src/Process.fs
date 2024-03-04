@@ -43,7 +43,7 @@ let private runProcessInternal
 
         let command = getFullPathOrDefault command
 
-        log.Debug("Running {} {} in working dir {}", command, args, FilePath.asString workingDirectory)
+        log.Debug("Running {} {} in working dir {}", command, args, workingDir)
 
         try
             let p =

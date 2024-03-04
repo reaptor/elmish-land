@@ -8,20 +8,29 @@ open ElmishLand.Base
 open ElmishLand.Process
 open ElmishLand.Log
 
-let getPaketDependencies () =
+let getPaketDependencies absoluteProjectDir =
     eff {
         let! log = Log().Get()
 
-        let paketDependenciesFile =
-            workingDirectory
-            |> FilePath.appendParts [ "paket.dependencies" ]
-            |> FilePath.asString
+        let getPaketDependenciesFile filePath =
+            filePath |> FilePath.appendParts [ "paket.dependencies" ] |> FilePath.asString
+
+        let paketDependenciesPath =
+            let path =
+                getPaketDependenciesFile (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+
+            if File.Exists path then
+                Some path
+            else
+                let path = getPaketDependenciesFile workingDirectory
+                if File.Exists path then Some path else None
 
         return
-            if File.Exists(paketDependenciesFile) then
-                log.Debug("Using {}", paketDependenciesFile)
+            match paketDependenciesPath with
+            | Some paketDependenciesPath ->
+                log.Debug("Using {}", paketDependenciesPath)
 
-                File.ReadLines(paketDependenciesFile)
+                File.ReadLines(paketDependenciesPath)
                 |> Seq.fold
                     (fun groups line ->
                         match Regex.Match(line, "group (.*)") with
@@ -36,27 +45,50 @@ let getPaketDependencies () =
                                     (group, Set.add m.Groups[1].Value dependencies) :: rest
                             | _ -> groups)
                     []
-            else
+            | None ->
                 log.Debug("Not using paket")
                 []
     }
 
-let ensurePaketInstalled () =
-    eff {
-        let! paketToolOutput =
-            runProcess false workingDirectory "dotnet" [| "tool"; "list" |] CancellationToken.None ignore
-            |> Effect.onError (fun e -> Effect.ret <| e.ToString())
+let doPaketInstall absoluteProjectDir =
+    let inner (log: ILog) dir =
+        let configFile = FilePath.appendParts [ ".config"; "dotnet-tools.json" ] dir
 
-        do!
-            if paketToolOutput.Contains "paket" then
-                Ok()
+        if FilePath.exists configFile then
+            let contents = File.ReadAllText(FilePath.asString configFile)
+
+            if contents.Contains "paket" then
+                log.Info("Running paket install in {}", FilePath.asString dir)
+
+                runProcess true dir "dotnet" [| "paket"; "install" |] CancellationToken.None ignore
+                |> Effect.map (fun _ -> true)
             else
-                Error AppError.PaketNotInstalled
+                eff { return false }
+        else
+            eff { return false }
 
-        do!
-            runProcess true workingDirectory "dotnet" [| "paket"; "install" |] CancellationToken.None ignore
-            |> Effect.map ignore<string>
+    eff {
+        let! log = Log().Get()
+
+        let! x = inner log (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+
+        return!
+            if x then
+                eff { return () }
+            else
+                inner log workingDirectory
+                |> Effect.bind (function
+                    | true -> eff { return () }
+                    | false -> eff { return! Error AppError.PaketNotInstalled })
     }
+
+let private writeAllText path content =
+    let dirPath = path |> FilePath.directoryPath |> FilePath.asString
+
+    if not (Directory.Exists dirPath) then
+        Directory.CreateDirectory(dirPath) |> ignore
+
+    File.WriteAllText(FilePath.asString path, content)
 
 let writePaketReferences absoluteProjectDir paketDependencies =
     eff {
@@ -76,7 +108,6 @@ let writePaketReferences absoluteProjectDir paketDependencies =
             absoluteProjectDir
             |> AbsoluteProjectDir.asFilePath
             |> FilePath.appendParts (pathParts @ [ "paket.references" ])
-            |> FilePath.asString
 
         let paketReferencesContent =
             nugetDependencies
@@ -84,6 +115,6 @@ let writePaketReferences absoluteProjectDir paketDependencies =
             |> String.concat "\n"
             |> fun deps -> $"group %s{group}%s{deps}"
 
-        File.WriteAllText(paketReferencesPath [ ".elmish-land"; "Base" ], paketReferencesContent)
-        File.WriteAllText(paketReferencesPath [ ".elmish-land"; "App" ], paketReferencesContent)
+        writeAllText (paketReferencesPath [ ".elmish-land"; "Base" ]) paketReferencesContent
+        writeAllText (paketReferencesPath [ ".elmish-land"; "App" ]) paketReferencesContent
     }
