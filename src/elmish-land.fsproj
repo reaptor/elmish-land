@@ -19,6 +19,9 @@
         <EmbeddedResource Include="templates/package.json.handlebars">
             <LogicalName>package.json.handlebars</LogicalName>
         </EmbeddedResource>
+        <EmbeddedResource Include="templates\elmish-land.json.handlebars">
+          <LogicalName>elmish-land.json.handlebars</LogicalName>
+        </EmbeddedResource>
         <EmbeddedResource Include="templates/settings.json">
             <LogicalName>settings.json</LogicalName>
         </EmbeddedResource>

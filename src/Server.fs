@@ -14,7 +14,7 @@ let fableWatch absoluteProjectDir =
     let appFsproj =
         absoluteProjectDir
         |> AbsoluteProjectDir.asFilePath
-        |> FilePath.appendParts [ ".elmish-land"; "App"; "App.fsproj" ]
+        |> FilePath.appendParts [ ".elmish-land"; "App"; "ElmishLand.App.fsproj" ]
         |> FilePath.asString
 
     runProcess
@@ -44,6 +44,7 @@ let server absoluteProjectDir =
         do! generate absoluteProjectDir dotnetSdkVersion
 
         do! validate absoluteProjectDir
+        do! ensureViteInstalled ()
 
         let! result =
             fableWatch absoluteProjectDir

@@ -182,17 +182,17 @@ module FilePath =
     let extension (FilePath filePath) = Path.GetExtension(filePath)
 
     let removePath (FilePath pathToRemove) (FilePath filePath) =
-        filePath.Replace($"%s{pathToRemove}/", "") |> FilePath
+        filePath.Replace($"%s{pathToRemove}/", "") |> fromString
 
     let directoryPath (FilePath filePath) =
-        Path.GetDirectoryName(filePath) |> FilePath
+        Path.GetDirectoryName(filePath) |> fromString
 
     let directoryName (FilePath filePath) =
         filePath
         |> String.split "/"
         |> Array.tryLast
         |> Option.defaultValue ""
-        |> FilePath
+        |> fromString
 
     let asString (FilePath filePath) = filePath
 
@@ -201,10 +201,10 @@ module FilePath =
 
     let appendParts append (FilePath basePath) =
         let appendPath = append |> String.concat "/"
-        $"%s{basePath}/%s{appendPath}" |> FilePath
+        $"%s{basePath}/%s{appendPath}" |> fromString
 
     let appendFilePath append (FilePath basePath) =
-        $"%s{basePath}/%s{asString append}" |> FilePath
+        $"%s{basePath}/%s{asString append}" |> fromString
 
     let startsWithParts parts (FilePath path) =
         path.StartsWith(parts |> String.concat "/")
@@ -263,7 +263,7 @@ type FsProjPath =
         Directory.GetFiles(filePath, "*.fsproj")
         |> Array.toList
         |> function
-            | [ fsproj ] -> fsproj |> FilePath |> FsProjPath |> Ok
+            | [ fsproj ] -> fsproj |> FilePath.fromString |> FsProjPath |> Ok
             | [] -> Error FsProjNotFound
             | _ -> Error MultipleFsProjFound
 

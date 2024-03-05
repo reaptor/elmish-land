@@ -9,4 +9,6 @@ type AppError =
     | NodeNotFound
     | DepsMissingFromPaket
     | PaketNotInstalled
+    | ViteNotInstalled
     | PagesDirectoryMissing
+    | ElmishLandProjectMissing

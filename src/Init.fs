@@ -97,6 +97,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 (Some(
                     handlebars {|
                         DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
+                        ProjectName = ProjectName.asString projectName
                     |}
                 ))
 
@@ -121,6 +122,8 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                         DevDependencies = npmDevDependencies
                     |}
                 ))
+
+        do! writeResourceToProjectDir "elmish-land.json.handlebars" [ "elmish-land.json" ] None
 
         do! writeResourceToProjectDir "vite.config.js" [ "vite.config.js" ] None
 
@@ -213,7 +216,17 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 true
                 (AbsoluteProjectDir.asFilePath absoluteProjectDir)
                 "dotnet"
-                [| "restore"; ".elmish-land/App/App.fsproj" |]
+                [| "restore"; ".elmish-land/App/ElmishLand.App.fsproj" |]
+                CancellationToken.None
+                ignore
+            |> Effect.map ignore<string>
+
+        do!
+            runProcess
+                true
+                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                "npm"
+                [| "install" |]
                 CancellationToken.None
                 ignore
             |> Effect.map ignore<string>

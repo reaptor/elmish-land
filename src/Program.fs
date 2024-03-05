@@ -102,6 +102,15 @@ https://nodejs.org/
                 """src/Pages directory is missing. Please run 'elmish-land init'.
 """
 
+        | ViteNotInstalled ->
+            log.Error
+                """Vite.js is missing. Please install vite (npm install vite --save-dev)'.
+"""
+        | ElmishLandProjectMissing ->
+            log.Error
+                """Could not find any elmish-land projects. Create a new project with 'dotnet elmish-land init'.
+"""
+
         -1
 
 

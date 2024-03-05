@@ -38,6 +38,14 @@ let ensurePaketInstalled absoluteProjectDir =
             return ()
     }
 
+let ensureViteInstalled () =
+    eff {
+        do!
+            runProcess true workingDirectory "npm" [| "run"; "vite"; "--version" |] CancellationToken.None ignore
+            |> Effect.map ignore<string>
+    }
+    |> Effect.changeError (fun _ -> AppError.ViteNotInstalled)
+
 let generate absoluteProjectDir dotnetSdkVersion =
     eff {
         let! logger = Log().Get()
@@ -64,7 +72,11 @@ let generate absoluteProjectDir dotnetSdkVersion =
         do!
             writeResourceToProjectDir
                 "Base.fsproj.handlebars"
-                [ ".elmish-land"; "Base"; "Base.fsproj" ]
+                [
+                    ".elmish-land"
+                    "Base"
+                    $"ElmishLand.%s{ProjectName.asString projectName}.fsproj"
+                ]
                 (Some(
                     handlebars {|
                         DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
@@ -75,7 +87,7 @@ let generate absoluteProjectDir dotnetSdkVersion =
         do!
             writeResourceToProjectDir
                 "App.fsproj.handlebars"
-                [ ".elmish-land"; "App"; "App.fsproj" ]
+                [ ".elmish-land"; "App"; "ElmishLand.App.fsproj" ]
                 (Some(
                     handlebars {|
                         DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
@@ -91,21 +103,4 @@ let generate absoluteProjectDir dotnetSdkVersion =
         match! getPaketDependencies absoluteProjectDir with
         | [] -> ()
         | _ -> do! ensurePaketInstalled absoluteProjectDir
-
-        let isViteInstalled =
-            absoluteProjectDir
-            |> AbsoluteProjectDir.asRelativeFilePath
-            |> FilePath.appendParts [ "node_modules"; "vite" ]
-            |> FilePath.exists
-
-        if not isViteInstalled then
-            do!
-                runProcess
-                    true
-                    (AbsoluteProjectDir.asFilePath absoluteProjectDir)
-                    "npm"
-                    [| "install" |]
-                    CancellationToken.None
-                    ignore
-                |> Effect.map ignore<string>
     }
