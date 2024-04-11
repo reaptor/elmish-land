@@ -162,6 +162,15 @@ let wrapWithTicksIfNeeded (s: string) =
 let toPascalCase (s: string) = $"%s{s[0..0].ToUpper()}%s{s[1..]}"
 let toCamelCase (s: string) = $"%s{s[0..0].ToLower()}%s{s[1..]}"
 
+let camelToKebabCase (s: string) =
+    s.ToCharArray()
+    |> Array.map (fun c ->
+        if Char.IsUpper c then
+            $"-%c{Char.ToLowerInvariant c}"
+        else
+            $"%c{c}")
+    |> String.concat ""
+
 let fileToRoute projectName absoluteProjectDir (FilePath file) =
     let route =
         file[0 .. file.Length - 9]
@@ -214,7 +223,7 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
             let argString =
                 args
                 |> List.map (fun arg ->
-                    $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded} = %s{wrapWithTicksIfNeeded arg}")
+                    $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded} = %s{arg |> toCamelCase |> wrapWithTicksIfNeeded}")
                 |> String.concat "; "
 
             let argString = if argString.Length = 0 then "" else $"%s{argString}; "
@@ -226,9 +235,9 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
             |> String.split "/"
             |> Array.map (fun x ->
                 if x.StartsWith("_") then
-                    x.TrimStart('_') |> wrapWithTicksIfNeeded
+                    x.TrimStart('_') |> toCamelCase |> wrapWithTicksIfNeeded
                 else
-                    $"\"%s{wrapWithTicksIfNeeded x}\"")
+                    $"\"%s{wrapWithTicksIfNeeded x |> toCamelCase |> camelToKebabCase}\"")
             |> String.concat ", "
 
 
@@ -251,7 +260,8 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
             (if route = "/Home" then "/" else route)
             |> String.split "/"
             |> Array.choose (fun x -> if x.StartsWith "_" then None else Some x)
-            |> Array.map (fun arg -> $"eq %s{arg |> toCamelCase |> wrapWithTicksIfNeeded} \"%s{arg}\"")
+            |> Array.map (fun arg ->
+                $"eq %s{arg |> toCamelCase |> wrapWithTicksIfNeeded} \"%s{arg |> toCamelCase |> camelToKebabCase}\"")
             |> String.concat " && "
 
         {
