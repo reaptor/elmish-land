@@ -224,7 +224,11 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
         let urlUsage =
             if route = "/Home" then "/" else route
             |> String.split "/"
-            |> Array.map (fun x -> if x.StartsWith("_") then x.TrimStart('_') |> wrapWithTicksIfNeeded else $"\"%s{wrapWithTicksIfNeeded x}\"")
+            |> Array.map (fun x ->
+                if x.StartsWith("_") then
+                    x.TrimStart('_') |> wrapWithTicksIfNeeded
+                else
+                    $"\"%s{wrapWithTicksIfNeeded x}\"")
             |> String.concat ", "
 
 
