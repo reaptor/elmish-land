@@ -9,6 +9,101 @@ open Microsoft.FSharp.Collections
 open Orsak
 open ElmishLand.Resource
 
+let reservedWords = [|
+    "abstract"
+    "and"
+    "as"
+    "assert"
+    "base"
+    "begin"
+    "class"
+    "default"
+    "delegate"
+    "do"
+    "done"
+    "downcast"
+    "downto"
+    "elif"
+    "else"
+    "end"
+    "exception"
+    "extern"
+    "false"
+    "finally"
+    "fixed"
+    "for"
+    "fun"
+    "function"
+    "global"
+    "if"
+    "in"
+    "inherit"
+    "inline"
+    "interface"
+    "internal"
+    "lazy"
+    "let"
+    "match"
+    "member"
+    "module"
+    "mutable"
+    "namespace"
+    "new"
+    "not"
+    "null"
+    "of"
+    "open"
+    "or"
+    "override"
+    "private"
+    "public"
+    "rec"
+    "return"
+    "select"
+    "static"
+    "struct"
+    "then"
+    "to"
+    "true"
+    "try"
+    "type"
+    "upcast"
+    "use"
+    "val"
+    "void"
+    "when"
+    "while"
+    "with"
+    "yield"
+    "const"
+    "asr"
+    "land"
+    "lor"
+    "lsl"
+    "lsr"
+    "lxor"
+    "mod"
+    "sig"
+    "break"
+    "checked"
+    "component"
+    "const"
+    "constraint"
+    "continue"
+    "event"
+    "external"
+    "include"
+    "mixin"
+    "parallel"
+    "process"
+    "protected"
+    "pure"
+    "sealed"
+    "tailcall"
+    "trait"
+    "virtual"
+|]
+
 let handlebars model (src: string) =
     let handlebars = Handlebars.Create()
     handlebars.Configuration.ThrowOnUnresolvedBindingExpression <- true
@@ -59,7 +154,7 @@ let getSortedPageFiles absoluteProjectDir =
         |> Ok
 
 let wrapWithTicksIfNeeded (s: string) =
-    if Regex.IsMatch(s, "^[0-9a-zA-Z_]+$") && s <> "id" then
+    if Regex.IsMatch(s, "^[0-9a-zA-Z_]+$") && not (Array.contains s reservedWords) then
         s
     else
         $"``%s{s}``"
@@ -94,14 +189,14 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
             parts
             |> List.rev
             |> List.map toPascalCase
-            |> String.concat ""
+            |> String.concat "_"
             |> fun name -> if name = "" then "Home" else name
 
         let recordPattern =
             let argString =
                 args
                 |> List.map (fun arg ->
-                    $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded} = %s{wrapWithTicksIfNeeded arg}")
+                    $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded} = %s{arg |> toCamelCase |> wrapWithTicksIfNeeded}")
                 |> String.concat "; "
 
             let argString = if argString.Length = 0 then "" else $"%s{argString}; "
@@ -129,14 +224,15 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
         let urlUsage =
             if route = "/Home" then "/" else route
             |> String.split "/"
-            |> Array.map (fun x -> if x.StartsWith("_") then x.TrimStart('_') else $"\"%s{x}\"")
+            |> Array.map (fun x -> if x.StartsWith("_") then x.TrimStart('_') |> wrapWithTicksIfNeeded else $"\"%s{wrapWithTicksIfNeeded x}\"")
             |> String.concat ", "
+
 
         let urlPattern includeQuery =
             (if route = "/Home" then "/" else route)
             |> String.split "/"
             |> Array.map (fun x -> if x.StartsWith "_" then x.TrimStart('_') else x)
-            |> Array.map (fun arg -> arg.ToLowerInvariant())
+            |> Array.map toCamelCase
             |> Array.map wrapWithTicksIfNeeded
             |> String.concat "; "
             |> fun pattern ->
@@ -151,8 +247,7 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
             (if route = "/Home" then "/" else route)
             |> String.split "/"
             |> Array.choose (fun x -> if x.StartsWith "_" then None else Some x)
-            |> Array.map (fun arg -> arg.ToLowerInvariant())
-            |> Array.map (fun arg -> $"eq %s{wrapWithTicksIfNeeded arg} \"%s{arg}\"")
+            |> Array.map (fun arg -> $"eq %s{arg |> toCamelCase |> wrapWithTicksIfNeeded} \"%s{arg}\"")
             |> String.concat " && "
 
         {
