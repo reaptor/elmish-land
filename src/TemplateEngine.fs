@@ -230,6 +230,13 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
             |> String.concat "_"
             |> fun name -> if name = "" then "Home" else name
 
+        let moduleNamePart =
+            parts
+            |> List.rev
+            |> List.map (toPascalCase >> wrapWithTicksIfNeeded)
+            |> String.concat "."
+            |> fun name -> if name = "" then "Home" else name
+
         let recordPattern =
             let argString =
                 args
@@ -297,8 +304,7 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
             Name = wrapWithTicksIfNeeded name
             RouteName = wrapWithTicksIfNeeded $"%s{name}Route"
             MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
-            ModuleName =
-                $"%s{projectName |> ProjectName.asString |> wrapWithTicksIfNeeded}.Pages.%s{wrapWithTicksIfNeeded name}.Page"
+            ModuleName = $"%s{projectName |> ProjectName.asString}.Pages.%s{moduleNamePart}.Page"
             RecordDefinition = recordDefinition
             RecordConstructor = recordConstructor false
             RecordConstructorWithQuery = recordConstructor true
