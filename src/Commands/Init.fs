@@ -80,7 +80,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 writeResource
                     workingDirectory
                     false
-                    "global.json.handlebars"
+                    "global.json.template"
                     [ "global.json" ]
                     (Some(
                         handlebars {|
@@ -92,7 +92,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
 
         do!
             writeResourceToProjectDir
-                "Project.fsproj.handlebars"
+                "Project.fsproj.template"
                 [ $"%s{ProjectName.asString projectName}.fsproj" ]
                 (Some(
                     handlebars {|
@@ -113,7 +113,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
 
         do!
             writeResourceToProjectDir
-                "package.json.handlebars"
+                "package.json.template"
                 [ "package.json" ]
                 (Some(
                     handlebars {|
@@ -123,13 +123,11 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     |}
                 ))
 
-        do! writeResourceToProjectDir "elmish-land.json.handlebars" [ "elmish-land.json" ] None
-
         do! writeResourceToProjectDir "vite.config.js" [ "vite.config.js" ] None
 
         do!
             writeResourceToProjectDir
-                "index.html.handlebars"
+                "index.html.template"
                 [ "index.html" ]
                 (Some(
                     handlebars {|
@@ -138,10 +136,11 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 ))
 
         let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
+        let! settings = getSettings absoluteProjectDir
 
         let! routeData =
             if fsProjExists then
-                getRouteData projectName absoluteProjectDir
+                getTemplateData projectName absoluteProjectDir
             else
                 let homeRoute = {
                     Name = "Home"
@@ -158,18 +157,22 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     UrlPatternWhen = ""
                 }
 
+
                 let routeData = {
+                    ViewType = settings.ViewType
                     RootModule = rootModuleName
                     Routes = [| homeRoute |]
+                    Layouts = Array.empty
                 }
 
                 eff {
                     do!
                         writeResourceToProjectDir
-                            "AddPage.handlebars"
+                            "AddPage.template"
                             [ "src"; "Pages"; "Home"; "Page.fs" ]
                             (Some(
                                 handlebars {|
+                                    ViewType = settings.ViewType
                                     RootModule = rootModuleName
                                     Route = homeRoute
                                 |}
@@ -180,7 +183,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
 
         log.Debug("Using route data {}", routeData)
 
-        do! writeResourceToProjectDir "Shared.handlebars" [ "src"; "Shared.fs" ] (Some(handlebars routeData))
+        do! writeResourceToProjectDir "Shared.template" [ "src"; "Shared.fs" ] (Some(handlebars routeData))
 
         do! generate absoluteProjectDir dotnetSdkVersion
 
@@ -216,7 +219,10 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 true
                 (AbsoluteProjectDir.asFilePath absoluteProjectDir)
                 "dotnet"
-                [| "restore"; ".elmish-land/App/ElmishLand.App.fsproj" |]
+                [|
+                    "restore"
+                    $".elmish-land/App/ElmishLand.%s{ProjectName.asString projectName}.App.fsproj"
+                |]
                 CancellationToken.None
                 ignore
             |> Effect.map ignore<string>

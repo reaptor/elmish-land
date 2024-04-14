@@ -16,50 +16,50 @@
         <EmbeddedResource Include="templates/.gitignore">
             <LogicalName>gitignore</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates/package.json.handlebars">
-            <LogicalName>package.json.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\Page.fs.template">
+          <LogicalName>Page.fs.template</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\elmish-land.json.handlebars">
-          <LogicalName>elmish-land.json.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\package.json.template">
+            <LogicalName>package.json.template</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates/settings.json">
             <LogicalName>settings.json</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates/Base.fsproj.handlebars">
-            <LogicalName>Base.fsproj.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\Base.fsproj.template">
+            <LogicalName>Base.fsproj.template</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\Project.fsproj.handlebars">
-            <LogicalName>Project.fsproj.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\Project.fsproj.template">
+            <LogicalName>Project.fsproj.template</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\App.fsproj.handlebars">
-            <LogicalName>App.fsproj.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\App.fsproj.template">
+            <LogicalName>App.fsproj.template</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\global.json.handlebars">
-            <LogicalName>global.json.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\global.json.template">
+            <LogicalName>global.json.template</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\index.html.handlebars">
-            <LogicalName>index.html.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\index.html.template">
+            <LogicalName>index.html.template</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\Routes.handlebars">
-            <LogicalName>Routes.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\Routes.template">
+            <LogicalName>Routes.template</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\Command.fs.handlebars">
-            <LogicalName>Command.fs.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\Command.fs.template">
+            <LogicalName>Command.fs.template</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\Page.fs.handlebars">
-          <LogicalName>Page.fs.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\Layout.fs.template">
+          <LogicalName>Layout.fs.template</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\Layout.fs.handlebars">
-          <LogicalName>Layout.fs.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\Shared.template">
+            <LogicalName>Shared.template</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\Shared.handlebars">
-            <LogicalName>Shared.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\AddPage.template">
+            <LogicalName>AddPage.template</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\AddPage.handlebars">
-            <LogicalName>AddPage.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\AddLayout.template">
+          <LogicalName>AddLayout.template</LogicalName>
         </EmbeddedResource>
-        <EmbeddedResource Include="templates\App.handlebars">
-            <LogicalName>App.handlebars</LogicalName>
+        <EmbeddedResource Include="templates\App.template">
+            <LogicalName>App.template</LogicalName>
         </EmbeddedResource>
         <Compile Include="AppError.fs" />
         <Compile Include="Base.fs" />
@@ -71,12 +71,12 @@
         <Compile Include="TemplateEngine.fs" />
         <Compile Include="Paket.fs" />
         <Compile Include="Generate.fs" />
-        <Compile Include="Init.fs" />
-        <Compile Include="Upgrade.fs" />
-        <Compile Include="Restore.fs" />
-        <Compile Include="Server.fs" />
-        <Compile Include="Build.fs" />
-        <Compile Include="AddPage.fs" />
+        <Compile Include="Commands\Init.fs" />
+        <Compile Include="Commands\Restore.fs" />
+        <Compile Include="Commands\Build.fs" />
+        <Compile Include="Commands\Server.fs" />
+        <Compile Include="Commands\AddPage.fs" />
+        <Compile Include="Commands\AddLayout.fs" />
         <Compile Include="Program.fs" />
 
         <Content Include="../README.md" Pack="true" PackagePath="\" />

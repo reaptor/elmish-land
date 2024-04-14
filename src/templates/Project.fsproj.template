@@ -5,12 +5,18 @@
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
+    <PropertyGroup Label="ElmishLand">
+        <ViewType>Feliz.ReactElement</ViewType>
+        <ProjectReferences>
+        </ProjectReferences>
+    </PropertyGroup>
+
     <ItemGroup>
         <Compile Include="src/Shared.fs"/>
         <Compile Include="src/Pages/Home/Page.fs"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include=".elmish-land/Base/ElmishLand.{{ProjectName}}.fsproj" />
+      <ProjectReference Include=".elmish-land/Base/ElmishLand.{{ProjectName}}.Base.fsproj" />
     </ItemGroup>
 </Project>

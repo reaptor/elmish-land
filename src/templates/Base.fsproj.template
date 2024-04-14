@@ -3,13 +3,24 @@
     <PropertyGroup>
         <TargetFramework>{{DotNetVersion}}</TargetFramework>
         <LangVersion>latest</LangVersion>
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+        <WarnOn></WarnOn>
+        <NoWarn></NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
         <Compile Include="Routes.fs"/>
         <Compile Include="Command.fs"/>
+        <Compile Include="Layout.fs"/>
         <Compile Include="Page.fs"/>
     </ItemGroup>
 
-    {{References}}
+    {{PackageReferences}}
+
+    <ItemGroup>
+        {{#each ProjectReferences}}
+        <ProjectReference Include="{{this}}" />
+        {{/each}}
+    </ItemGroup>
+
 </Project>

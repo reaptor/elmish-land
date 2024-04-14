@@ -3,6 +3,9 @@
     <PropertyGroup>
         <TargetFramework>{{DotNetVersion}}</TargetFramework>
         <LangVersion>latest</LangVersion>
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+        <WarnOn></WarnOn>
+        <NoWarn></NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -10,7 +13,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      {{ProjectReference}}
+    </ItemGroup>
+
+    <ItemGroup>
+        {{#each ProjectReferences}}
+        <ProjectReference Include="{{this}}" />
+        {{/each}}
     </ItemGroup>
 
 </Project>

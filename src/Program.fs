@@ -1,15 +1,16 @@
 ﻿module ElmishLand.Program
 
 open System
-open ElmishLand.Base
-open ElmishLand.Init
+open Orsak
 open ElmishLand.Log
+open ElmishLand.Base
+open ElmishLand.AppError
+open ElmishLand.Init
+open ElmishLand.Restore
 open ElmishLand.Server
 open ElmishLand.Build
 open ElmishLand.AddPage
-open ElmishLand.AppError
-open ElmishLand.Restore
-open Orsak
+open ElmishLand.AddLayout
 
 let (|NotFlag|_|) (x: string) =
     if x.StartsWith("--") then None else Some x
@@ -25,6 +26,7 @@ let run argv =
             | "build" :: _ -> build (AbsoluteProjectDir.create argv)
             | "restore" :: _ -> restore (AbsoluteProjectDir.create argv)
             | "add" :: "page" :: NotFlag url :: _ -> addPage (AbsoluteProjectDir.create argv) url
+            | "add" :: "layout" :: NotFlag url :: _ -> addLayout (AbsoluteProjectDir.create argv) url
             | _ ->
                 $"""
     %s{getWelcomeTitle ()}
@@ -110,7 +112,6 @@ https://nodejs.org/
             log.Error
                 """Could not find any elmish-land projects. Create a new project with 'dotnet elmish-land init'.
 """
-
         -1
 
 

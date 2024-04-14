@@ -68,37 +68,44 @@ let generate absoluteProjectDir dotnetSdkVersion =
             Directory.Delete(FilePath.asString dotElmishLandDirectory)
 
         let! nugetDependencies = getNugetDependencies absoluteProjectDir
+        let! settings = getSettings absoluteProjectDir
 
         do!
             writeResourceToProjectDir
-                "Base.fsproj.handlebars"
+                "Base.fsproj.template"
                 [
                     ".elmish-land"
                     "Base"
-                    $"ElmishLand.%s{ProjectName.asString projectName}.fsproj"
+                    $"ElmishLand.%s{ProjectName.asString projectName}.Base.fsproj"
                 ]
                 (Some(
                     handlebars {|
                         DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
-                        References = nugetDependencies
+                        PackageReferences = nugetDependencies
+                        ProjectReferences = settings.ProjectReferences
                     |}
                 ))
 
         do!
             writeResourceToProjectDir
-                "App.fsproj.handlebars"
-                [ ".elmish-land"; "App"; "ElmishLand.App.fsproj" ]
+                "App.fsproj.template"
+                [
+                    ".elmish-land"
+                    "App"
+                    $"ElmishLand.%s{ProjectName.asString projectName}.App.fsproj"
+                ]
                 (Some(
                     handlebars {|
                         DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
-                        ProjectReference =
-                            $"""<ProjectReference Include="../../%s{ProjectName.asString projectName}.fsproj" />"""
+                        ProjectReferences =
+                            [ $"../../%s{ProjectName.asString projectName}.fsproj" ]
+                            |> List.append settings.ProjectReferences
                     |}
                 ))
 
-        let! routeData = getRouteData projectName absoluteProjectDir
-        logger.Debug("Using route data: {}", routeData)
-        do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData
+        let! templateData = getTemplateData projectName absoluteProjectDir
+        logger.Debug("Using template data: {}", templateData)
+        do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) templateData
 
         match! getPaketDependencies absoluteProjectDir with
         | [] -> ()

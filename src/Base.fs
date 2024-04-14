@@ -4,6 +4,7 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
+open System.Text.Json
 open System.Text.RegularExpressions
 open ElmishLand.AppError
 
@@ -307,3 +308,69 @@ let nugetDependencies =
 let npmDependencies = Set [ "react", "18"; "react-dom", "18" ]
 
 let npmDevDependencies = Set [ "vite", "5" ]
+
+type Settings = {
+    ViewType: string
+    ProjectReferences: string list
+    DefaultLayoutTemplate: string option
+    DefaultPageTemplate: string option
+}
+
+let getElmishLandPropertyGroup fsProjPath =
+    let doc = System.Xml.XmlDocument()
+    doc.Load(FsProjPath.asString fsProjPath)
+
+    doc.DocumentElement.SelectSingleNode("/Project/PropertyGroup[@Label='ElmishLand']")
+    |> Option.ofObj
+
+let getSettings absoluteProjectDir =
+    result {
+        let! fsProjPath = FsProjPath.findExactlyOneFromProjectDir absoluteProjectDir
+
+        let! settings =
+            getElmishLandPropertyGroup fsProjPath
+            |> function
+                | Some x -> Ok x
+                | None -> Error ElmishLandProjectMissing
+
+        let viewType = settings.SelectSingleNode("ViewType").InnerText
+
+        let projectReferences = [
+            for x in settings.SelectNodes("ProjectReferences/Include") do
+                x.InnerText
+        ]
+
+        let trimLeadingSpaces (s: string) =
+            s.Split('\n')
+            |> Array.fold
+                (fun (state: string list, trimCount) s ->
+                    if state.Length = 0 && s.Trim().Length = 0 then
+                        state, trimCount
+                    else
+                        let trimCount =
+                            match trimCount with
+                            | Some trimCount' -> trimCount'
+                            | None -> s.Length - s.TrimStart().Length
+
+                        $"    %s{s[trimCount..]}" :: state, Some trimCount)
+                ([], None)
+            |> fun (xs, _) -> List.rev xs
+            |> String.concat "\n"
+
+        let defaultLayoutTemplate =
+            settings.SelectSingleNode("DefaultLayoutTemplate")
+            |> Option.ofObj
+            |> Option.map (fun x -> trimLeadingSpaces x.InnerText)
+
+        let defaultPageTemplate =
+            settings.SelectSingleNode("DefaultPageTemplate")
+            |> Option.ofObj
+            |> Option.map (fun x -> trimLeadingSpaces x.InnerText)
+
+        return {
+            ViewType = viewType
+            ProjectReferences = projectReferences
+            DefaultLayoutTemplate = defaultLayoutTemplate
+            DefaultPageTemplate = defaultPageTemplate
+        }
+    }

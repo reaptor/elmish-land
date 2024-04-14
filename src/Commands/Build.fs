@@ -1,20 +1,31 @@
-module ElmishLand.Server
+module ElmishLand.Build
 
 open System.IO
 open System.Threading
 open ElmishLand.Base
 open ElmishLand.Log
+open ElmishLand.DotNetCli
 open ElmishLand.FsProj
 open ElmishLand.Process
 open ElmishLand.Generate
-open ElmishLand.DotNetCli
 open Orsak
 
-let fableWatch absoluteProjectDir =
+let successMessage =
+    $"""%s{getCommandHeader "build was successful."}
+Your app was saved in the 'dist' directory.
+"""
+
+let fableBuild absoluteProjectDir =
+    let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir
+
     let appFsproj =
         absoluteProjectDir
         |> AbsoluteProjectDir.asFilePath
-        |> FilePath.appendParts [ ".elmish-land"; "App"; "ElmishLand.App.fsproj" ]
+        |> FilePath.appendParts [
+            ".elmish-land"
+            "App"
+            $"ElmishLand.%s{ProjectName.asString projectName}.App.fsproj"
+        ]
         |> FilePath.asString
 
     runProcess
@@ -23,18 +34,18 @@ let fableWatch absoluteProjectDir =
         "dotnet"
         [|
             "fable"
-            "watch"
             appFsproj
             "--noCache"
             "--run"
             "vite"
+            "build"
             "--config"
             "vite.config.js"
         |]
         CancellationToken.None
         ignore
 
-let server absoluteProjectDir =
+let build absoluteProjectDir =
     eff {
         let! log = Log().Get()
 
@@ -47,17 +58,19 @@ let server absoluteProjectDir =
         do! ensureViteInstalled ()
 
         let! result =
-            fableWatch absoluteProjectDir
+            fableBuild absoluteProjectDir
             |> Effect.map Ok
             |> Effect.onError (fun e -> eff { return Error e })
 
         match result with
-        | Ok _ -> return! Ok()
+        | Ok _ ->
+            log.Info successMessage
+            return! Ok()
         | Error(AppError.ProcessError e) when e.Contains "dotnet tool restore" ->
             do!
                 runProcess true workingDirectory "dotnet" [| "tool"; "restore" |] CancellationToken.None ignore
                 |> Effect.map ignore<string>
 
-            do! fableWatch absoluteProjectDir |> Effect.map ignore
+            do! fableBuild absoluteProjectDir |> Effect.map (fun _ -> log.Info successMessage)
         | Error e -> return! Error e
     }

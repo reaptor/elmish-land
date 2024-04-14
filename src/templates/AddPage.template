@@ -16,8 +16,8 @@ let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
     match msg with
     | NoOp -> model, Command.none
 
-let view (model: Model) (dispatch: Msg -> unit): ReactElement =
+let view (model: Model) (dispatch: Msg -> unit): {{ViewType}} =
     Html.text "{{Route.Name}}"
 
 let page (shared: SharedModel) (route: {{Route.RouteName}}) =
-    Page.create init update view
+    Page.from init update view

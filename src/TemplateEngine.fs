@@ -34,10 +34,20 @@ type Route = {
     UrlPatternWhen: string
 }
 
-type RouteData = {
+type Layout = {
+    Name: string
+    MsgName: string
+    ModuleName: string
+}
+
+type TemplateData = {
+    ViewType: string
     RootModule: string
     Routes: Route array
-}
+    Layouts: Layout array
+} with
+
+    member this.ViewTypeIsReact = this.ViewType = "Feliz.ReactElement"
 
 let getSortedPageFiles absoluteProjectDir =
     let pageFilesDir =
@@ -58,6 +68,25 @@ let getSortedPageFiles absoluteProjectDir =
                 x |> FilePath.parts |> Array.length)
         |> Ok
 
+let getSortedLayoutFiles absoluteProjectDir =
+    let layoutFilesDir =
+        absoluteProjectDir
+        |> AbsoluteProjectDir.asFilePath
+        |> FilePath.appendParts [ "src"; "Layouts" ]
+        |> FilePath.asString
+
+    if not (Directory.Exists layoutFilesDir) then
+        Ok Array.empty
+    else
+        Directory.GetFiles(layoutFilesDir, "Layout.fs", EnumerationOptions(RecurseSubdirectories = true))
+        |> Array.map FilePath.fromString
+        |> Array.sortByDescending (fun x ->
+            if x |> FilePath.endsWithParts [ "src"; "Pages"; "Home"; "Page.fs" ] then
+                0
+            else
+                x |> FilePath.parts |> Array.length)
+        |> Ok
+
 let wrapWithTicksIfNeeded (s: string) =
     if Regex.IsMatch(s, "^[0-9a-zA-Z_]+$") && s <> "id" then
         s
@@ -69,7 +98,7 @@ let toCamelCase (s: string) = $"%s{s[0..0].ToLower()}%s{s[1..]}"
 
 let fileToRoute projectName absoluteProjectDir (FilePath file) =
     let route =
-        file[0 .. file.Length - 9]
+        file[0 .. file.Length - "Page.fs".Length - 2]
         |> String.replace
             (absoluteProjectDir
              |> AbsoluteProjectDir.asFilePath
@@ -171,23 +200,57 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
             UrlPatternWhen = urlPatternWhen
         }
 
-let getRouteData projectName absoluteProjectDir =
+let fileToLayout projectName absoluteProjectDir (FilePath file) =
+    let layout =
+        file[0 .. file.Length - "Layout.fs".Length - 2]
+        |> String.replace
+            (absoluteProjectDir
+             |> AbsoluteProjectDir.asFilePath
+             |> FilePath.appendParts [ "src"; "Layouts" ]
+             |> FilePath.asString)
+            ""
+        |> String.replace "\\" "/"
+
+    layout[1..]
+    |> String.split "/"
+    |> Array.fold
+        (fun (parts) part ->
+            if part.StartsWith("_") then
+                (toPascalCase part).TrimStart('_') :: parts
+            else
+                toPascalCase part :: parts)
+        ([])
+    |> fun parts ->
+        let name = parts |> List.rev |> List.map toPascalCase |> String.concat ""
+
+        {
+            Name = wrapWithTicksIfNeeded name
+            MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
+            ModuleName =
+                $"%s{projectName |> ProjectName.asString |> wrapWithTicksIfNeeded}.Layouts.%s{wrapWithTicksIfNeeded name}.Layout"
+        }
+
+let getTemplateData projectName absoluteProjectDir =
     eff {
         let! pageFiles = getSortedPageFiles absoluteProjectDir
+        let! layoutFiles = getSortedLayoutFiles absoluteProjectDir
+        let! settings = getSettings absoluteProjectDir
 
         return {
+            ViewType = settings.ViewType
             RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
             Routes = pageFiles |> Array.map (fileToRoute projectName absoluteProjectDir)
+            Layouts = layoutFiles |> Array.map (fileToLayout projectName absoluteProjectDir)
         }
     }
 
-let generateFiles workingDir (routeData: RouteData) =
+let generateFiles workingDir (templateData: TemplateData) =
     let writeResource = writeResource workingDir true
 
     eff {
-        do! writeResource "Routes.handlebars" [ ".elmish-land"; "Base"; "Routes.fs" ] (Some(handlebars routeData))
-        do! writeResource "Command.fs.handlebars" [ ".elmish-land"; "Base"; "Command.fs" ] (Some(handlebars routeData))
-        do! writeResource "Page.fs.handlebars" [ ".elmish-land"; "Base"; "Page.fs" ] (Some(handlebars routeData))
-        // do! writeResource "Layout.fs.handlebars" [ ".elmish-land"; "Base"; "Layout.fs" ] (Some(handlebars routeData))
-        do! writeResource "App.handlebars" [ ".elmish-land"; "App"; "App.fs" ] (Some(handlebars routeData))
+        do! writeResource "Routes.template" [ ".elmish-land"; "Base"; "Routes.fs" ] (Some(handlebars templateData))
+        do! writeResource "Command.fs.template" [ ".elmish-land"; "Base"; "Command.fs" ] (Some(handlebars templateData))
+        do! writeResource "Page.fs.template" [ ".elmish-land"; "Base"; "Page.fs" ] (Some(handlebars templateData))
+        do! writeResource "Layout.fs.template" [ ".elmish-land"; "Base"; "Layout.fs" ] (Some(handlebars templateData))
+        do! writeResource "App.template" [ ".elmish-land"; "App"; "App.fs" ] (Some(handlebars templateData))
     }

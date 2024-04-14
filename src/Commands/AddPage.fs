@@ -35,21 +35,23 @@ let addPage absoluteProjectDir (url: string) =
         let route = fileToRoute projectName absoluteProjectDir routeFilePath
         let! projectPath = absoluteProjectDir |> FsProjPath.findExactlyOneFromProjectDir
         let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
+        let! settings = getSettings absoluteProjectDir
 
         do!
             writeResource
                 (AbsoluteProjectDir.asFilePath absoluteProjectDir)
                 false
-                "AddPage.handlebars"
+                "AddPage.template"
                 routeFileParts
                 (Some(
                     handlebars {|
+                        ViewType = settings.ViewType
                         RootModule = rootModuleName
                         Route = route
                     |}
                 ))
 
-        let! routeData = getRouteData projectName absoluteProjectDir
+        let! routeData = getTemplateData projectName absoluteProjectDir
         log.Debug("routeData: {}", routeData)
         do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData
 

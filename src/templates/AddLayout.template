@@ -1,0 +1,31 @@
+﻿module {{RootModule}}.Layouts.{{Layout.Name}}.Layout
+
+open Feliz
+open ElmishLand
+open {{RootModule}}.Shared
+
+type Model = unit
+
+type Msg = | NoOp
+
+type Props = unit
+
+let init (): Model * Command<Msg, SharedMsg> =
+    (),
+    Command.none
+
+let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
+    match msg with
+    | NoOp -> model, Command.none
+
+let view (model: Model) (content: {{ViewType}}) (dispatch: Msg -> unit): {{ViewType}} =
+    Html.div [
+        Html.text "{{Layout.Name}}"
+        content
+    ]
+
+let layout (props: Props) (shared: SharedModel) =
+    Layout.from init update view
+
+let with{{Layout.Name}}Layout (props: Props) page =
+    page |> Page.withUntypedLayout (Layout.untyped{{Layout.Name}} props)
