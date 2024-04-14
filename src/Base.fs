@@ -337,7 +337,7 @@ let getSettings absoluteProjectDir =
 
         let projectReferences = [
             for x in settings.SelectNodes("ProjectReferences/Include") do
-                x.InnerText
+                $"../../%s{x.InnerText}"
         ]
 
         let trimLeadingSpaces (s: string) =

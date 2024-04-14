@@ -28,10 +28,7 @@ let restore absoluteProjectDir =
         else
             for fsProj in fsProjFiles do
                 let subAbsoluteProjectDir =
-                    fsProj
-                    |> FilePath.fromString
-                    |> FilePath.directoryPath
-                    |> AbsoluteProjectDir
+                    fsProj |> FilePath.fromString |> FilePath.directoryPath |> AbsoluteProjectDir
 
                 do! generate subAbsoluteProjectDir dotnetSdkVersion
                 do! validate subAbsoluteProjectDir
