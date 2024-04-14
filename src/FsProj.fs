@@ -71,18 +71,6 @@ let validate absoluteProjectDir =
 
                         match prevFilePaths with
                         | prevFilePath :: _ when
-                            (FilePath.fromString "src" |> FilePath.equals dir |> not)
-                            && dir <> FilePath.directoryPath prevFilePath
-                            && prevFilePaths |> List.map FilePath.directoryPath |> List.contains dir
-                            ->
-                            filePath :: prevFilePaths,
-                            formatError
-                                lineNr
-                                line
-                                filePath
-                                "Files in the same directory must be located directly before or after each other"
-                            :: errors
-                        | prevFilePath :: _ when
                             FileName.fromFilePath prevFilePath |> FileName.equalsString "Page.fs"
                             && FilePath.directoryPath prevFilePath |> FilePath.equals dir
                             ->
