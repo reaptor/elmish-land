@@ -336,7 +336,7 @@ let getSettings absoluteProjectDir =
         let viewType = settings.SelectSingleNode("ViewType").InnerText
 
         let projectReferences = [
-            for x in settings.SelectNodes("ProjectReferences/Include") do
+            for x in settings.SelectNodes("ProjectReference") do
                 $"../../%s{x.InnerText}"
         ]
 
