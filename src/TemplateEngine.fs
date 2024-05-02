@@ -385,7 +385,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters)
                          else
                              $"match %s{name} with Some x -> \"%s{name}\", %s{formatter} x | None -> ()")
                      |> String.concat ";"
-                     |> fun x -> [| $"[ %s{x} ]" |])
+                     |> fun x -> if String.IsNullOrEmpty x then [||] else [| $"[ %s{x} ]" |])
             |> String.concat ", "
 
         let urlPattern =
