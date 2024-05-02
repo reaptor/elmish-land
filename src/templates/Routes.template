@@ -27,12 +27,12 @@ module Routes =
         | NotFound
 
     module Route =
-        let private formatGuid (x: Guid) = x.ToString()
-        let private formatInt (x: int) = x.ToString()
-        let private formatInt64 (x: int64) = x.ToString()
-        let private formatBool (x: bool) = x.ToString()
-        let private formatFloat (x: float) = x.ToString()
-        let private formatDecimal (x: Decimal) = x.ToString()
+        let internal formatGuid (x: Guid) = x.ToString()
+        let internal formatInt (x: int) = x.ToString()
+        let internal formatInt64 (x: int64) = x.ToString()
+        let internal formatBool (x: bool) = x.ToString()
+        let internal formatFloat (x: float) = x.ToString()
+        let internal formatDecimal (x: Decimal) = x.ToString()
 
         let private parseGuid (x: string) =
             match Guid.TryParse x with
@@ -88,13 +88,13 @@ module Routes =
 
         let private containsQuery name (parser: string -> _ option) query =
             query
-            |> List.exists (fun (name', value) -> name' = name && (parser value).IsSome)
+            |> List.exists (fun (name', value) -> eq name' name && (parser value).IsSome)
 
         let private tryGetQuery name (parser: string -> _ option) query =
             query
             |> List.tryPick (fun (name', value) ->
                 match parser value with
-                | Some value' when name' = name -> Some value'
+                | Some value' when eq name' name -> Some value'
                 | _ -> None
             )
 
@@ -102,6 +102,11 @@ module Routes =
             tryGetQuery name parser query |> Option.defaultWith (fun () -> failwith $"Query parameter '%s{name}' not found")
 
         let parse (xs: string list) =
+            let xs =
+                match xs with
+                | [] -> [ "?" ]
+                | xs when not <| (List.last xs).StartsWith("?") -> List.append xs [ "?" ]
+                | xs -> xs
             match xs with
             {{#each Routes}}
             | {{UrlPattern}}{{#if UrlPatternWhen}} when {{UrlPatternWhen}}{{/if}} -> Route.{{Name}} {{#if RecordConstructor}}{{RecordConstructor}}{{/if}}

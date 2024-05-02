@@ -27,7 +27,10 @@ let restore absoluteProjectDir =
         else
             for settingsFile in settingsFiles do
                 let subAbsoluteProjectDir =
-                    settingsFile |> FilePath.fromString |> FilePath.directoryPath |> AbsoluteProjectDir
+                    settingsFile
+                    |> FilePath.fromString
+                    |> FilePath.directoryPath
+                    |> AbsoluteProjectDir
 
                 do! generate subAbsoluteProjectDir dotnetSdkVersion
                 do! validate subAbsoluteProjectDir

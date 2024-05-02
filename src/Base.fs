@@ -381,9 +381,9 @@ let getSettings absoluteProjectDir =
                     (Decode.list (
                         Decode.object (fun get -> {
                             Name = get.Required.Field "name" Decode.string
-                            Type = get.Required.Field "type" Decode.string
+                            Type = get.Optional.Field "type" Decode.string |> Option.defaultValue "string"
                             Parser = get.Optional.Field "parser" Decode.string
-                            Required = get.Required.Field "required" Decode.bool
+                            Required = get.Optional.Field "required" Decode.bool |> Option.defaultValue false
                         })
                     ))
                 |> Option.toList
