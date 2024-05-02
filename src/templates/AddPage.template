@@ -1,4 +1,4 @@
-﻿module {{RootModule}}.Pages.{{Route.Name}}.Page
+﻿module {{Route.ModuleName}}
 
 open Feliz
 open ElmishLand

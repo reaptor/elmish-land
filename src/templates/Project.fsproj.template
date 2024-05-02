@@ -7,8 +7,6 @@
 
     <PropertyGroup Label="ElmishLand">
         <ViewType>Feliz.ReactElement</ViewType>
-        <ProjectReferences>
-        </ProjectReferences>
     </PropertyGroup>
 
     <ItemGroup>
