@@ -89,6 +89,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     ))
 
         do! writeResourceToProjectDir "settings.json" [ ".vscode"; "settings.json" ] None
+        do! writeResourceToProjectDir "elmish-land.json" [ "elmish-land.json" ] None
 
         do!
             writeResourceToProjectDir
@@ -149,11 +150,9 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     ModuleName = $"%s{rootModuleName}.Pages.Home.Page"
                     RecordDefinition = ""
                     RecordConstructor = "[]"
-                    RecordConstructorWithQuery = "query"
                     RecordPattern = ""
                     UrlUsage = "\"\""
                     UrlPattern = "[]"
-                    UrlPatternWithQuery = "[ Query q ]"
                     UrlPatternWhen = ""
                 }
 

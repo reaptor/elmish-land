@@ -3,6 +3,7 @@ module ElmishLand.TemplateEngine
 open System
 open System.IO
 open System.Text.RegularExpressions
+open System.Xml
 open HandlebarsDotNet
 open ElmishLand.Base
 open Microsoft.FSharp.Collections
@@ -121,11 +122,9 @@ type Route = {
     ModuleName: string
     RecordDefinition: string
     RecordConstructor: string
-    RecordConstructorWithQuery: string
     RecordPattern: string
     UrlUsage: string
     UrlPattern: string
-    UrlPatternWithQuery: string
     UrlPatternWhen: string
 }
 
@@ -200,7 +199,17 @@ let camelToKebabCase (s: string) =
             $"%c{c}")
     |> String.concat ""
 
-let fileToRoute projectName absoluteProjectDir (FilePath file) =
+let routeParamTypes =
+    Map [
+        "Guid", ("parseGuid", "formatGuid")
+        "int", ("parseInt", "formatInt")
+        "int64", ("parseInt64", "formatInt64")
+        "bool", ("parseBool", "formatBool")
+        "float", ("parseFloat", "formatFloat")
+        "Decimal", ("parseDecimal", "formatDecimal")
+    ]
+
+let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters) (FilePath file) =
     let route =
         file[0 .. file.Length - "Page.fs".Length - 2]
         |> String.replace
@@ -237,67 +246,186 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
             |> String.concat "."
             |> fun name -> if name = "" then "Home" else name
 
+        let queryParameters =
+            routeParameters
+            |> List.tryPick (fun (route', (_, queryParameters)) ->
+                if route.StartsWith(route') then
+                    Some queryParameters
+                else
+                    None)
+            |> Option.toList
+            |> List.collect id
+
         let recordPattern =
             let argString =
                 args
                 |> List.map (fun arg ->
                     $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded} = %s{arg |> toCamelCase |> wrapWithTicksIfNeeded}")
+                |> fun x ->
+                    List.append
+                        x
+                        (queryParameters
+                         |> List.map (fun qp ->
+                             $"%s{qp.Name |> toPascalCase |> wrapWithTicksIfNeeded} = %s{qp.Name |> toCamelCase |> wrapWithTicksIfNeeded}"))
                 |> String.concat "; "
 
-            let argString = if argString.Length = 0 then "" else $"%s{argString}; "
-            $"{{ %s{argString}Query = query }}"
+            if argString.Length = 0 then
+                "()"
+            else
+                $"{{ %s{argString} }}"
+
+        let pathParameters =
+            routeParameters
+            |> List.choose (fun (route', (pathParameter, _)) ->
+                pathParameter
+                |> Option.bind (fun pathParameter' ->
+                    if route.StartsWith(route') then
+                        route'.Split("/")
+                        |> Array.tryLast
+                        |> Option.map (fun pathParamName ->
+                            pathParamName[1..] (* Remove leading underscore *) , pathParameter')
+                    else
+                        None))
+            |> Map
+
+        let getPathParameter arg =
+            pathParameters
+            |> Map.tryFind arg
+            |> Option.defaultValue { Type = "string"; Parser = None }
+
+        let getPathParamParser (parameter: RoutePathParameter) =
+            parameter.Parser
+            |> Option.orElseWith (fun () -> routeParamTypes |> Map.tryFind parameter.Type |> Option.map fst)
+
+        let getQueryParamParser (parameter: RouteQueryParameter) =
+            parameter.Parser
+            |> Option.orElseWith (fun () -> routeParamTypes |> Map.tryFind parameter.Type |> Option.map fst)
+
+        let getQueryParamFormatter (parameter: RouteQueryParameter) =
+            parameter.Parser
+            |> Option.orElseWith (fun () -> routeParamTypes |> Map.tryFind parameter.Type |> Option.map snd)
 
         let recordDefinition =
             args
-            |> List.map (fun arg -> $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded}: string")
+            |> List.map (fun arg ->
+                let parameter = getPathParameter arg
+                $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded}: %s{parameter.Type}")
+            |> fun xs ->
+                List.append
+                    xs
+                    (queryParameters
+                     |> List.map (fun x ->
+                         let optional = if x.Required then "" else "option"
+                         $"%s{x.Name |> toPascalCase |> wrapWithTicksIfNeeded}: %s{x.Type} %s{optional}"))
             |> String.concat "; "
             |> fun x ->
-                let x = if String.IsNullOrWhiteSpace x then "" else $"%s{x}; "
-                $"{{ %s{x}Query: list<string * string> }}"
+                if String.IsNullOrWhiteSpace x then
+                    "unit"
+                else
+                    $"{{ %s{x} }}"
 
-        let recordConstructor hasNonEmptyQuery =
+        let recordConstructor =
             let argString =
                 args
                 |> List.map (fun arg ->
-                    $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded} = %s{arg |> toCamelCase |> wrapWithTicksIfNeeded}")
+                    let parameter = getPathParameter arg
+                    let arg = arg |> toCamelCase |> wrapWithTicksIfNeeded
+
+                    let value =
+                        getPathParamParser parameter
+                        |> Option.map (fun x -> $"(%s{x} %s{arg}).Value")
+                        |> Option.defaultValue arg
+
+                    $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded} = %s{value}")
+                |> fun xs ->
+                    List.append
+                        xs
+                        (queryParameters
+                         |> List.map (fun x ->
+                             let parser = x |> getQueryParamParser |> Option.defaultValue "Some"
+                             let getter = if x.Required then "getQuery" else "tryGetQuery"
+                             $"%s{x.Name |> toPascalCase |> wrapWithTicksIfNeeded} = %s{getter} \"%s{x.Name}\" %s{parser} q"))
                 |> String.concat "; "
 
-            let argString = if argString.Length = 0 then "" else $"%s{argString}; "
-            let query = if hasNonEmptyQuery then "query" else "[]"
-            $"{{ %s{argString}Query = %s{query} }}"
+            if argString.Length = 0 then
+                "()"
+            else
+                $"{{ %s{argString}; }}"
 
         let urlUsage =
             if route = "/Home" then "/" else route
             |> String.split "/"
             |> Array.map (fun x ->
                 if x.StartsWith("_") then
-                    x.TrimStart('_') |> toCamelCase |> wrapWithTicksIfNeeded
+                    let arg = x.TrimStart('_')
+
+                    let parameter = getPathParameter arg
+
+                    let formatnFn =
+                        routeParamTypes
+                        |> Map.tryFind parameter.Type
+                        |> Option.map snd
+                        |> Option.defaultValue ""
+
+                    $"%s{formatnFn} %s{arg |> toCamelCase |> wrapWithTicksIfNeeded}"
                 else
                     $"\"%s{wrapWithTicksIfNeeded x |> toCamelCase |> camelToKebabCase}\"")
+            |> fun xs -> if xs.Length = 0 then [| "\"\"" |] else xs
+            |> fun x ->
+                Array.append
+                    x
+                    (queryParameters
+                     |> List.toArray
+                     |> Array.map (fun qp ->
+                         let formatter = getQueryParamFormatter qp |> Option.defaultValue ""
+                         let name = $"%s{wrapWithTicksIfNeeded qp.Name |> toCamelCase |> camelToKebabCase}"
+
+                         if qp.Required then
+                             $"\"%s{name}\", %s{formatter} %s{name}"
+                         else
+                             $"match %s{name} with Some x -> \"%s{name}\", %s{formatter} x | None -> ()")
+                     |> String.concat ";"
+                     |> fun x -> [| $"[ %s{x} ]" |])
             |> String.concat ", "
 
-
-        let urlPattern includeQuery =
-            (if route = "/Home" then "/" else route)
+        let urlPattern =
+            if route = "/Home" then "/" else route
             |> String.split "/"
-            |> Array.map (fun x -> if x.StartsWith "_" then x.TrimStart('_') else x)
-            |> Array.map toCamelCase
-            |> Array.map wrapWithTicksIfNeeded
+            |> Array.map (fun x -> x.TrimStart('_') |> toCamelCase |> wrapWithTicksIfNeeded)
             |> String.concat "; "
             |> fun pattern ->
                 if pattern.Length > 0 then
-                    let query = if includeQuery then "; Query query" else ""
-                    $"[ %s{pattern}%s{query} ]"
+                    $"[ %s{pattern}; Query q ]"
                 else
-                    let query = if includeQuery then "Query query" else ""
-                    $"[ %s{query} ]"
+                    $"[ Query q ]"
 
         let urlPatternWhen =
             (if route = "/Home" then "/" else route)
             |> String.split "/"
-            |> Array.choose (fun x -> if x.StartsWith "_" then None else Some x)
-            |> Array.map (fun arg ->
-                $"eq %s{arg |> toCamelCase |> wrapWithTicksIfNeeded} \"%s{arg |> toCamelCase |> camelToKebabCase}\"")
+            |> Array.choose (fun arg ->
+                if arg.StartsWith "_" then
+                    let arg = arg.TrimStart('_')
+                    let parameter = getPathParameter arg
+
+                    getPathParamParser parameter
+                    |> Option.map (fun p -> $"(%s{p} %s{arg |> toCamelCase |> wrapWithTicksIfNeeded}).IsSome")
+                else
+                    Some
+                        $"eq %s{arg |> toCamelCase |> wrapWithTicksIfNeeded} \"%s{arg |> toCamelCase |> camelToKebabCase}\"")
+            |> fun xs ->
+                Array.append
+                    xs
+                    (queryParameters
+                     |> List.toArray
+                     |> Array.choose (fun arg ->
+                         if arg.Required then
+                             let parser = arg.Parser |> Option.defaultValue "Some"
+                             Some $"containsQuery \"%s{arg.Name}\" %s{parser} q"
+                         else
+                             None)
+
+                    )
+
             |> String.concat " && "
 
         {
@@ -306,12 +434,10 @@ let fileToRoute projectName absoluteProjectDir (FilePath file) =
             MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
             ModuleName = $"%s{projectName |> ProjectName.asString}.Pages.%s{moduleNamePart}.Page"
             RecordDefinition = recordDefinition
-            RecordConstructor = recordConstructor false
-            RecordConstructorWithQuery = recordConstructor true
+            RecordConstructor = recordConstructor
             RecordPattern = recordPattern
             UrlUsage = urlUsage
-            UrlPattern = urlPattern false
-            UrlPatternWithQuery = urlPattern true
+            UrlPattern = urlPattern
             UrlPatternWhen = urlPatternWhen
         }
 
@@ -354,7 +480,10 @@ let getTemplateData projectName absoluteProjectDir =
         return {
             ViewType = settings.ViewType
             RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
-            Routes = pageFiles |> Array.map (fileToRoute projectName absoluteProjectDir)
+            Routes =
+                pageFiles
+                |> Array.map (fun filePath ->
+                    fileToRoute projectName absoluteProjectDir settings.RouteSettings filePath)
             Layouts = layoutFiles |> Array.map (fileToLayout projectName absoluteProjectDir)
         }
     }

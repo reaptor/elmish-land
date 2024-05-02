@@ -12,6 +12,7 @@ namespace ElmishLand
 open Elmish
 open Feliz
 open ElmishLand.Routes
+open ElmishLand.Routes.Route
 
 [<RequireQualifiedAccess>]
 type Command<'msg, 'sharedMsg> private =
@@ -36,13 +37,7 @@ module Command =
 
     let ofShared msg = Command.SharedMsg msg
 
-    let navigate route =
-        match route with
-        {{#each Routes}}
-        | Route.{{Name}} {{#if RecordPattern}}{{RecordPattern}}{{/if}} -> Router.Cmd.navigate({{#if UrlUsage}}{{UrlUsage}}{{else}}""{{/if}}, query)
-        {{/each}}
-        | Route.NotFound -> Router.Cmd.navigate("notFound")
-        |> ofCmd
+    let navigate route = route |> format |> Router.Cmd.navigate |> ofCmd
 
     let rec map f command =
         match command with

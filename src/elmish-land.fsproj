@@ -61,6 +61,9 @@
         <EmbeddedResource Include="templates\App.template">
             <LogicalName>App.template</LogicalName>
         </EmbeddedResource>
+        <EmbeddedResource Include="templates\elmish-land.json">
+            <LogicalName>elmish-land.json</LogicalName>
+        </EmbeddedResource>
         <Compile Include="AppError.fs" />
         <Compile Include="Base.fs" />
         <Compile Include="Log.fs" />
@@ -90,7 +93,7 @@
         </PackageReference>
         <PackageReference Include="Handlebars.Net" Version="2.1.4" />
         <PackageReference Include="Orsak" Version="0.4.2" />
-        <PackageReference Include="Thoth.Json" Version="10.2.0" />
+        <PackageReference Include="Thoth.Json.Net" Version="11.0.0" />
     </ItemGroup>
 
 </Project>
