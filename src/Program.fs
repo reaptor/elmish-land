@@ -112,6 +112,10 @@ https://nodejs.org/
             log.Error
                 """Could not find any elmish-land projects. Create a new project with 'dotnet elmish-land init'.
 """
+        | InvalidSettings e ->
+            log.Error
+                $"""The elmish-land.json configuration file is invalid. %s{e}'.
+"""
 
         -1
 

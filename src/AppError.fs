@@ -12,3 +12,4 @@ type AppError =
     | ViteNotInstalled
     | PagesDirectoryMissing
     | ElmishLandProjectMissing
+    | InvalidSettings of string

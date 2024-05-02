@@ -4,7 +4,7 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
-open System.Text.Json
+open Thoth.Json.Net
 open System.Text.RegularExpressions
 open ElmishLand.AppError
 
@@ -102,6 +102,18 @@ type ResultBuilder() =
         __.Using(sequence.GetEnumerator(), (fun enum -> __.While(enum.MoveNext, __.Delay(fun () -> body enum.Current))))
 
 let result = ResultBuilder()
+
+module Result =
+    let inline sequence xs =
+        xs
+        |> List.fold
+            (fun (state: Result<List<_>, _>) (x: Result<_, _>) ->
+                result {
+                    let! state' = state
+                    let! x' = x
+                    return! Ok(x' :: state')
+                })
+            (Ok [])
 
 let getAppFilePath () =
     let location = Assembly.GetExecutingAssembly().Location
@@ -309,36 +321,35 @@ let npmDependencies = Set [ "react", "18"; "react-dom", "18" ]
 
 let npmDevDependencies = Set [ "vite", "5" ]
 
+type RoutePathParameter = { Type: string; Parser: string option }
+
+type RouteQueryParameter = {
+    Name: string
+    Type: string
+    Parser: string option
+    Required: bool
+}
+
+type RouteParameters = | RouteParameters of List<string * (RoutePathParameter option * RouteQueryParameter list)>
+
 type Settings = {
     ViewType: string
     ProjectReferences: string list
     DefaultLayoutTemplate: string option
     DefaultPageTemplate: string option
+    RouteSettings: RouteParameters
 }
-
-let getElmishLandPropertyGroup fsProjPath =
-    let doc = System.Xml.XmlDocument()
-    doc.Load(FsProjPath.asString fsProjPath)
-
-    doc.DocumentElement.SelectSingleNode("/Project/PropertyGroup[@Label='ElmishLand']")
-    |> Option.ofObj
 
 let getSettings absoluteProjectDir =
     result {
-        let! fsProjPath = FsProjPath.findExactlyOneFromProjectDir absoluteProjectDir
+        let settingsPath =
+            FilePath.appendParts [ "elmish-land.json" ] (AbsoluteProjectDir.asFilePath absoluteProjectDir)
 
-        let! settings =
-            getElmishLandPropertyGroup fsProjPath
-            |> function
-                | Some x -> Ok x
-                | None -> Error ElmishLandProjectMissing
-
-        let viewType = settings.SelectSingleNode("ViewType").InnerText
-
-        let projectReferences = [
-            for x in settings.SelectNodes("ProjectReference") do
-                $"../../%s{x.InnerText}"
-        ]
+        do!
+            if FilePath.exists settingsPath then
+                Ok()
+            else
+                Error ElmishLandProjectMissing
 
         let trimLeadingSpaces (s: string) =
             s.Split('\n')
@@ -357,20 +368,69 @@ let getSettings absoluteProjectDir =
             |> fun (xs, _) -> List.rev xs
             |> String.concat "\n"
 
-        let defaultLayoutTemplate =
-            settings.SelectSingleNode("DefaultLayoutTemplate")
-            |> Option.ofObj
-            |> Option.map (fun x -> trimLeadingSpaces x.InnerText)
+        let paramsDecoder =
+            Decode.object (fun get ->
+                get.Optional.Field
+                    "pathParameter"
+                    (Decode.object (fun get -> {
+                        Type = get.Required.Field "type" Decode.string
+                        Parser = get.Optional.Field "parser" Decode.string
+                    })),
+                get.Optional.Field
+                    "queryParameters"
+                    (Decode.list (
+                        Decode.object (fun get -> {
+                            Name = get.Required.Field "name" Decode.string
+                            Type = get.Required.Field "type" Decode.string
+                            Parser = get.Optional.Field "parser" Decode.string
+                            Required = get.Required.Field "required" Decode.bool
+                        })
+                    ))
+                |> Option.toList
+                |> List.collect id)
 
-        let defaultPageTemplate =
-            settings.SelectSingleNode("DefaultPageTemplate")
-            |> Option.ofObj
-            |> Option.map (fun x -> trimLeadingSpaces x.InnerText)
+        let! routeParameters =
+            Directory.GetFiles(
+                AbsoluteProjectDir.asString absoluteProjectDir,
+                "param.json",
+                SearchOption.AllDirectories
+            )
+            |> Array.map (fun file ->
+                File.ReadAllText(file)
+                |> Decode.fromString paramsDecoder
+                |> Result.mapError InvalidSettings
+                |> Result.map (fun x ->
+                    file
+                    |> canonicalizePath
+                    |> fun s ->
+                        s
+                            .Replace($"%s{AbsoluteProjectDir.asString absoluteProjectDir}/src/Pages/", "")
+                            .Replace("/param.json", "")
+                        |> fun s -> $"/%s{s}"
+                    , x))
+            |> Array.toList
+            |> Result.sequence
 
-        return {
-            ViewType = viewType
-            ProjectReferences = projectReferences
-            DefaultLayoutTemplate = defaultLayoutTemplate
-            DefaultPageTemplate = defaultPageTemplate
-        }
+        let decoder =
+            Decode.object (fun get -> {
+                ViewType =
+                    get.Optional.Field "viewType" Decode.string
+                    |> Option.defaultValue "Feliz.ReactElement"
+                ProjectReferences =
+                    get.Optional.Field "projectReferences" (Decode.list Decode.string)
+                    |> Option.defaultValue []
+                    |> List.map (fun x -> $"../../%s{x}")
+                DefaultLayoutTemplate =
+                    get.Optional.Field "defaultLayoutTemplate" Decode.string
+                    |> Option.map trimLeadingSpaces
+                DefaultPageTemplate =
+                    get.Optional.Field "defaultPageTemplate" Decode.string
+                    |> Option.map trimLeadingSpaces
+                RouteSettings = RouteParameters(routeParameters)
+            })
+
+        return!
+            File.ReadAllText(FilePath.asString settingsPath)
+            |> Decode.fromString decoder
+            |> Result.mapError InvalidSettings
     }

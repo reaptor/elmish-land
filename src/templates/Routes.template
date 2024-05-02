@@ -9,9 +9,11 @@
 
 namespace ElmishLand
 
+open System
+open Feliz.Router
+
 [<AutoOpen>]
 module Routes =
-    open Feliz.Router
 
     {{#each Routes}}
     type {{RouteName}} = {{#if RecordDefinition}}{{RecordDefinition}}{{/if}}
@@ -25,10 +27,47 @@ module Routes =
         | NotFound
 
     module Route =
+        let private formatGuid (x: Guid) = x.ToString()
+        let private formatInt (x: int) = x.ToString()
+        let private formatInt64 (x: int64) = x.ToString()
+        let private formatBool (x: bool) = x.ToString()
+        let private formatFloat (x: float) = x.ToString()
+        let private formatDecimal (x: Decimal) = x.ToString()
+
+        let private parseGuid (x: string) =
+            match Guid.TryParse x with
+            | true, x' -> Some x'
+            | _ -> None
+
+        let private parseInt (x: string) =
+            match Int32.TryParse x with
+            | true, x' -> Some x'
+            | _ -> None
+
+        let private parseInt64 (x: string) =
+            match Int64.TryParse x with
+            | true, x' -> Some x'
+            | _ -> None
+
+        let private parseBool (x: string) =
+            match bool.TryParse x with
+            | true, x' -> Some x'
+            | _ -> None
+
+        let private parseFloat (x: string) =
+            match Single.TryParse x with
+            | true, x' -> Some x'
+            | _ -> None
+
+        let private parseDecimal (x: string) =
+            match Decimal.TryParse x with
+            | true, x' -> Some x'
+            | _ -> None
+
         let format =
             function
             {{#each Routes}}
-            | Route.{{Name}} {{#if RecordPattern}}{{RecordPattern}}{{/if}} -> Router.format({{#if UrlUsage}}{{UrlUsage}}{{else}}""{{/if}}, query)
+            | Route.{{Name}} {{#if RecordPattern}}{{RecordPattern}}{{/if}} -> Router.format({{#if UrlUsage}}{{UrlUsage}}{{else}}""{{/if}})
             {{/each}}
             | Route.NotFound -> "notFound"
 
@@ -40,30 +79,33 @@ module Routes =
                     let urlParams = Router.createUrlSearchParams input
                     Some [ for entry in urlParams.entries() -> entry.[0], entry.[1] ]
                 else
-                    None
+                    Some []
             with
-            | _ -> None
+            | _ -> Some []
 
-        let eq x y =
-            System.String.Equals(x, y, System.StringComparison.InvariantCultureIgnoreCase)
+        let private eq x y =
+            String.Equals(x, y, StringComparison.InvariantCultureIgnoreCase)
+
+        let private containsQuery name (parser: string -> _ option) query =
+            query
+            |> List.exists (fun (name', value) -> name' = name && (parser value).IsSome)
+
+        let private tryGetQuery name (parser: string -> _ option) query =
+            query
+            |> List.tryPick (fun (name', value) ->
+                match parser value with
+                | Some value' when name' = name -> Some value'
+                | _ -> None
+            )
+
+        let private getQuery name (parser: string -> _ option) query =
+            tryGetQuery name parser query |> Option.defaultWith (fun () -> failwith $"Query parameter '%s{name}' not found")
 
         let parse (xs: string list) =
             match xs with
-            {{#each Routes}}
-            | {{UrlPatternWithQuery}}{{#if UrlPatternWhen}} when {{UrlPatternWhen}}{{/if}} -> Route.{{Name}} {{#if RecordConstructorWithQuery}}{{RecordConstructorWithQuery}}{{/if}}
-            {{/each}}
             {{#each Routes}}
             | {{UrlPattern}}{{#if UrlPatternWhen}} when {{UrlPatternWhen}}{{/if}} -> Route.{{Name}} {{#if RecordConstructor}}{{RecordConstructor}}{{/if}}
             {{/each}}
             | other ->
                 printfn "Route not found: '%A'" other
                 Route.NotFound
-
-    let tryGetQueryParam (name: string) (query: list<string * string>): string option =
-        query
-        |> List.tryPick (fun (name', value') ->
-            if name = name' then
-                (Some value')
-            else
-                None
-        )

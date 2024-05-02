@@ -15,20 +15,19 @@ let restore absoluteProjectDir =
         let! dotnetSdkVersion = getDotnetSdkVersion ()
         log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
-        let fsProjFiles =
+        let settingsFiles =
             Directory.EnumerateFiles(
                 AbsoluteProjectDir.asString absoluteProjectDir,
-                "*.fsproj",
+                "elmish-land.json",
                 SearchOption.AllDirectories
             )
-            |> Seq.filter (fun x -> (x |> FilePath.fromString |> FsProjPath |> getElmishLandPropertyGroup).IsSome)
 
-        if Seq.isEmpty fsProjFiles then
+        if Seq.isEmpty settingsFiles then
             return! Error AppError.ElmishLandProjectMissing
         else
-            for fsProj in fsProjFiles do
+            for settingsFile in settingsFiles do
                 let subAbsoluteProjectDir =
-                    fsProj |> FilePath.fromString |> FilePath.directoryPath |> AbsoluteProjectDir
+                    settingsFile |> FilePath.fromString |> FilePath.directoryPath |> AbsoluteProjectDir
 
                 do! generate subAbsoluteProjectDir dotnetSdkVersion
                 do! validate subAbsoluteProjectDir

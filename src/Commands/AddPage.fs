@@ -32,15 +32,19 @@ let addPage absoluteProjectDir (url: string) =
 
         log.Debug("routeFilePath: {}", routeFilePath)
 
-        let route = fileToRoute projectName absoluteProjectDir routeFilePath
-        let! projectPath = absoluteProjectDir |> FsProjPath.findExactlyOneFromProjectDir
-        let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
         let! settings = getSettings absoluteProjectDir
 
+        let route =
+            fileToRoute projectName absoluteProjectDir settings.RouteSettings routeFilePath
+
+        let! projectPath = absoluteProjectDir |> FsProjPath.findExactlyOneFromProjectDir
+        let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
+
+        let writeResourceToProjectDir =
+            writeResource (AbsoluteProjectDir.asFilePath absoluteProjectDir) false
+
         do!
-            writeResource
-                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
-                false
+            writeResourceToProjectDir
                 "AddPage.template"
                 routeFileParts
                 (Some(
