@@ -1,6 +1,6 @@
 ﻿<component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Init" type="DotNetProject" factoryName=".NET Project">
-    <option name="EXE_PATH" value="$PROJECT_DIR$/src/bin/Debug/net8.0/elmish-land" />
+    <option name="EXE_PATH" value="$PROJECT_DIR$/src/bin/Debug/net8.0/elmish-land.exe" />
     <option name="PROGRAM_PARAMETERS" value="init --project-dir MyProject" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/bin/Debug/net8.0" />
     <option name="PASS_PARENT_ENVS" value="1" />
@@ -14,6 +14,7 @@
     <option name="PROJECT_KIND" value="DotNetCore" />
     <option name="PROJECT_TFM" value="net8.0" />
     <method v="2">
+      <option name="CleanSolution" enabled="true" />
       <option name="Build" />
     </method>
   </configuration>

@@ -321,12 +321,17 @@ let npmDependencies = Set [ "react", "18"; "react-dom", "18" ]
 
 let npmDevDependencies = Set [ "vite", "5" ]
 
-type RoutePathParameter = { Type: string; Parser: string option }
+type RoutePathParameter = {
+    Type: string
+    Parse: string option
+    Format: string option
+}
 
 type RouteQueryParameter = {
     Name: string
     Type: string
-    Parser: string option
+    Parse: string option
+    Format: string option
     Required: bool
 }
 
@@ -374,7 +379,8 @@ let getSettings absoluteProjectDir =
                     "pathParameter"
                     (Decode.object (fun get -> {
                         Type = get.Required.Field "type" Decode.string
-                        Parser = get.Optional.Field "parser" Decode.string
+                        Parse = get.Optional.Field "parse" Decode.string
+                        Format = get.Optional.Field "format" Decode.string
                     })),
                 get.Optional.Field
                     "queryParameters"
@@ -382,7 +388,8 @@ let getSettings absoluteProjectDir =
                         Decode.object (fun get -> {
                             Name = get.Required.Field "name" Decode.string
                             Type = get.Optional.Field "type" Decode.string |> Option.defaultValue "string"
-                            Parser = get.Optional.Field "parser" Decode.string
+                            Parse = get.Optional.Field "parse" Decode.string
+                            Format = get.Optional.Field "format" Decode.string
                             Required = get.Optional.Field "required" Decode.bool |> Option.defaultValue false
                         })
                     ))

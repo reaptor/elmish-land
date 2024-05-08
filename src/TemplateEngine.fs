@@ -291,18 +291,26 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters)
         let getPathParameter arg =
             pathParameters
             |> Map.tryFind arg
-            |> Option.defaultValue { Type = "string"; Parser = None }
+            |> Option.defaultValue {
+                Type = "string"
+                Parse = None
+                Format = None
+            }
 
         let getPathParamParser (parameter: RoutePathParameter) =
-            parameter.Parser
+            parameter.Parse
             |> Option.orElseWith (fun () -> routeParamTypes |> Map.tryFind parameter.Type |> Option.map fst)
 
+        let getPathParamFormatter (parameter: RoutePathParameter) =
+            parameter.Format
+            |> Option.orElseWith (fun () -> routeParamTypes |> Map.tryFind parameter.Type |> Option.map snd)
+
         let getQueryParamParser (parameter: RouteQueryParameter) =
-            parameter.Parser
+            parameter.Parse
             |> Option.orElseWith (fun () -> routeParamTypes |> Map.tryFind parameter.Type |> Option.map fst)
 
         let getQueryParamFormatter (parameter: RouteQueryParameter) =
-            parameter.Parser
+            parameter.Format
             |> Option.orElseWith (fun () -> routeParamTypes |> Map.tryFind parameter.Type |> Option.map snd)
 
         let recordDefinition =
@@ -360,12 +368,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters)
                     let arg = x.TrimStart('_')
 
                     let parameter = getPathParameter arg
-
-                    let formatnFn =
-                        routeParamTypes
-                        |> Map.tryFind parameter.Type
-                        |> Option.map snd
-                        |> Option.defaultValue ""
+                    let formatnFn = getPathParamFormatter parameter |> Option.defaultValue ""
 
                     $"%s{formatnFn} %s{arg |> toCamelCase |> wrapWithTicksIfNeeded}"
                 else
@@ -377,13 +380,13 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters)
                     (queryParameters
                      |> List.toArray
                      |> Array.map (fun qp ->
-                         let formatter = getQueryParamFormatter qp |> Option.defaultValue ""
+                         let format = getQueryParamFormatter qp |> Option.defaultValue ""
                          let name = $"%s{wrapWithTicksIfNeeded qp.Name |> toCamelCase |> camelToKebabCase}"
 
                          if qp.Required then
-                             $"\"%s{name}\", %s{formatter} %s{name}"
+                             $"\"%s{name}\", %s{format} %s{name}"
                          else
-                             $"match %s{name} with Some x -> \"%s{name}\", %s{formatter} x | None -> ()")
+                             $"match %s{name} with Some x -> \"%s{name}\", %s{format} x | None -> ()")
                      |> String.concat ";"
                      |> fun x -> if String.IsNullOrEmpty x then [||] else [| $"[ %s{x} ]" |])
             |> String.concat ", "
@@ -397,7 +400,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters)
                 if pattern.Length > 0 then
                     $"[ %s{pattern}; Query q ]"
                 else
-                    $"[ Query q ]"
+                    "[ Query q ]"
 
         let urlPatternWhen =
             (if route = "/Home" then "/" else route)
@@ -419,7 +422,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters)
                      |> List.toArray
                      |> Array.choose (fun arg ->
                          if arg.Required then
-                             let parser = arg.Parser |> Option.defaultValue "Some"
+                             let parser = arg.Parse |> Option.defaultValue "Some"
                              Some $"containsQuery \"%s{arg.Name}\" %s{parser} q"
                          else
                              None)
