@@ -11,6 +11,9 @@ namespace ElmishLand
 
 open System
 open Feliz.Router
+{{#each RouteParamModules}}
+open {{this}}
+{{/each}}
 
 [<AutoOpen>]
 module Routes =
@@ -27,12 +30,12 @@ module Routes =
         | NotFound
 
     module Route =
-        let internal formatGuid (x: Guid) = x.ToString()
-        let internal formatInt (x: int) = x.ToString()
-        let internal formatInt64 (x: int64) = x.ToString()
-        let internal formatBool (x: bool) = x.ToString()
-        let internal formatFloat (x: float) = x.ToString()
-        let internal formatDecimal (x: Decimal) = x.ToString()
+        let internal formatGuid (x: Guid) = string x
+        let internal formatInt (x: int) = string x
+        let internal formatInt64 (x: int64) = string x
+        let internal formatBool (x: bool) = string x
+        let internal formatFloat (x: float) = string x
+        let internal formatDecimal (x: Decimal) = string x
 
         let private parseGuid (x: string) =
             match Guid.TryParse x with

@@ -139,6 +139,7 @@ type TemplateData = {
     RootModule: string
     Routes: Route array
     Layouts: Layout array
+    RouteParamModules: string list
 } with
 
     member this.ViewTypeIsReact = this.ViewType = "Feliz.ReactElement"
@@ -292,6 +293,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters)
             pathParameters
             |> Map.tryFind arg
             |> Option.defaultValue {
+                Module = "System"
                 Type = "string"
                 Parse = None
                 Format = None
@@ -480,6 +482,16 @@ let getTemplateData projectName absoluteProjectDir =
         let! layoutFiles = getSortedLayoutFiles absoluteProjectDir
         let! settings = getSettings absoluteProjectDir
 
+        let routeParamModules =
+            (RouteParameters.value settings.RouteSettings)
+            |> List.collect (fun (_, (maybeRouteParam, queryParams)) -> [
+                match maybeRouteParam with
+                | Some routeParam -> routeParam.Module
+                | None -> ()
+                yield! queryParams |> List.map (fun x -> x.Module)
+            ])
+            |> List.distinct
+
         return {
             ViewType = settings.ViewType
             RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
@@ -488,6 +500,7 @@ let getTemplateData projectName absoluteProjectDir =
                 |> Array.map (fun filePath ->
                     fileToRoute projectName absoluteProjectDir settings.RouteSettings filePath)
             Layouts = layoutFiles |> Array.map (fileToLayout projectName absoluteProjectDir)
+            RouteParamModules = routeParamModules
         }
     }
 

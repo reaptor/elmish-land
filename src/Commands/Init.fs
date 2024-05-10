@@ -162,6 +162,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     RootModule = rootModuleName
                     Routes = [| homeRoute |]
                     Layouts = Array.empty
+                    RouteParamModules = []
                 }
 
                 eff {
