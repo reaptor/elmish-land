@@ -482,13 +482,20 @@ let getTemplateData projectName absoluteProjectDir =
         let! layoutFiles = getSortedLayoutFiles absoluteProjectDir
         let! settings = getSettings absoluteProjectDir
 
+        // Ignore modules that already exists in the template file.
+        // We don't wan't those types to shadowing the users own types.
+        let shouldIgnoreModule moduleName =
+            [ "System"; "Feliz.Router" ] |> List.contains moduleName |> not
+
         let routeParamModules =
             (RouteParameters.value settings.RouteSettings)
             |> List.collect (fun (_, (maybeRouteParam, queryParams)) -> [
                 match maybeRouteParam with
-                | Some routeParam -> routeParam.Module
-                | None -> ()
-                yield! queryParams |> List.map (fun x -> x.Module)
+                | Some routeParam when shouldIgnoreModule routeParam.Module -> routeParam.Module
+                | _ -> ()
+                yield!
+                    queryParams
+                    |> List.choose (fun x -> if shouldIgnoreModule x.Module then Some x.Module else None)
             ])
             |> List.distinct
 
