@@ -383,7 +383,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters)
                      |> List.toArray
                      |> Array.map (fun qp ->
                          let format = getQueryParamFormatter qp |> Option.defaultValue ""
-                         let name = $"%s{wrapWithTicksIfNeeded qp.Name |> toCamelCase |> camelToKebabCase}"
+                         let name = $"%s{wrapWithTicksIfNeeded qp.Name |> toCamelCase}"
 
                          if qp.Required then
                              $"\"%s{name}\", %s{format} %s{name}"
