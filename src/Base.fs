@@ -337,17 +337,20 @@ type RouteQueryParameter = {
     Required: bool
 }
 
-type RouteParameters = | RouteParameters of List<string * (RoutePathParameter option * RouteQueryParameter list)>
+type LayoutName = | LayoutName of string
 
-module RouteParameters =
-    let value (RouteParameters x) = x
+type PageSettings =
+    | PageSettings of List<string * (LayoutName option * RoutePathParameter option * RouteQueryParameter list)>
+
+module PageSettings =
+    let value (PageSettings x) = x
 
 type Settings = {
     ViewType: string
     ProjectReferences: string list
     DefaultLayoutTemplate: string option
     DefaultPageTemplate: string option
-    RouteSettings: RouteParameters
+    PageSettings: PageSettings
 }
 
 let getSettings absoluteProjectDir =
@@ -378,8 +381,9 @@ let getSettings absoluteProjectDir =
             |> fun (xs, _) -> List.rev xs
             |> String.concat "\n"
 
-        let paramsDecoder =
+        let pageSettingsDecoder =
             Decode.object (fun get ->
+                get.Optional.Field "layout" Decode.string |> Option.map LayoutName,
                 get.Optional.Field
                     "pathParameter"
                     (Decode.object (fun get -> {
@@ -403,15 +407,11 @@ let getSettings absoluteProjectDir =
                 |> Option.toList
                 |> List.collect id)
 
-        let! routeParameters =
-            Directory.GetFiles(
-                AbsoluteProjectDir.asString absoluteProjectDir,
-                "param.json",
-                SearchOption.AllDirectories
-            )
+        let! pageSettings =
+            Directory.GetFiles(AbsoluteProjectDir.asString absoluteProjectDir, "page.json", SearchOption.AllDirectories)
             |> Array.map (fun file ->
                 File.ReadAllText(file)
-                |> Decode.fromString paramsDecoder
+                |> Decode.fromString pageSettingsDecoder
                 |> Result.mapError InvalidSettings
                 |> Result.map (fun x ->
                     file
@@ -419,7 +419,7 @@ let getSettings absoluteProjectDir =
                     |> fun s ->
                         s
                             .Replace($"%s{AbsoluteProjectDir.asString absoluteProjectDir}/src/Pages/", "")
-                            .Replace("/param.json", "")
+                            .Replace("/page.json", "")
                         |> fun s -> $"/%s{s}"
                     , x))
             |> Array.toList
@@ -440,7 +440,7 @@ let getSettings absoluteProjectDir =
                 DefaultPageTemplate =
                     get.Optional.Field "defaultPageTemplate" Decode.string
                     |> Option.map trimLeadingSpaces
-                RouteSettings = RouteParameters(routeParameters)
+                PageSettings = PageSettings(pageSettings)
             })
 
         return!

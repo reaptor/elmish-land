@@ -35,7 +35,7 @@ let addPage absoluteProjectDir (url: string) =
         let! settings = getSettings absoluteProjectDir
 
         let route =
-            fileToRoute projectName absoluteProjectDir settings.RouteSettings routeFilePath
+            fileToRoute projectName absoluteProjectDir settings.PageSettings routeFilePath
 
         let! projectPath = absoluteProjectDir |> FsProjPath.findExactlyOneFromProjectDir
         let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded

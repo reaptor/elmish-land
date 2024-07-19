@@ -4,6 +4,7 @@ open System
 open System.IO
 open System.Text.RegularExpressions
 open System.Xml
+open ElmishLand.Log
 open HandlebarsDotNet
 open ElmishLand.Base
 open Microsoft.FSharp.Collections
@@ -118,6 +119,7 @@ let handlebars model (src: string) =
 type Route = {
     Name: string
     RouteName: string
+    LayoutModuleName: string
     MsgName: string
     ModuleName: string
     RecordDefinition: string
@@ -210,7 +212,7 @@ let routeParamTypes =
         "Decimal", ("parseDecimal", "formatDecimal")
     ]
 
-let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters) (FilePath file) =
+let fileToRoute projectName absoluteProjectDir (PageSettings pageSettings) (FilePath file) =
     let route =
         file[0 .. file.Length - "Page.fs".Length - 2]
         |> String.replace
@@ -247,9 +249,15 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters)
             |> String.concat "."
             |> fun name -> if name = "" then "Home" else name
 
+        let layoutName =
+            pageSettings
+            |> List.tryPick (fun (route', (layoutName, _, _)) ->
+                if route.StartsWith(route') then Some layoutName else None)
+            |> Option.bind id
+
         let queryParameters =
-            routeParameters
-            |> List.tryPick (fun (route', (_, queryParameters)) ->
+            pageSettings
+            |> List.tryPick (fun (route', (_, _, queryParameters)) ->
                 if route.StartsWith(route') then
                     Some queryParameters
                 else
@@ -276,8 +284,8 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters)
                 $"{{ %s{argString} }}"
 
         let pathParameters =
-            routeParameters
-            |> List.choose (fun (route', (pathParameter, _)) ->
+            pageSettings
+            |> List.choose (fun (route', (_, pathParameter, _)) ->
                 pathParameter
                 |> Option.bind (fun pathParameter' ->
                     if route.StartsWith(route') then
@@ -436,6 +444,11 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters routeParameters)
         {
             Name = wrapWithTicksIfNeeded name
             RouteName = wrapWithTicksIfNeeded $"%s{name}Route"
+            LayoutModuleName =
+                match layoutName with
+                | Some(LayoutName x) ->
+                    $"%s{projectName |> ProjectName.asString}.Layouts.%s{wrapWithTicksIfNeeded x}.Layout"
+                | None -> ""
             MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
             ModuleName = $"%s{projectName |> ProjectName.asString}.Pages.%s{moduleNamePart}.Page"
             RecordDefinition = recordDefinition
@@ -488,8 +501,8 @@ let getTemplateData projectName absoluteProjectDir =
             [ "System"; "Feliz.Router" ] |> List.contains moduleName |> not
 
         let routeParamModules =
-            (RouteParameters.value settings.RouteSettings)
-            |> List.collect (fun (_, (maybeRouteParam, queryParams)) -> [
+            (PageSettings.value settings.PageSettings)
+            |> List.collect (fun (_, (_, maybeRouteParam, queryParams)) -> [
                 match maybeRouteParam with
                 | Some routeParam when shouldIgnoreModule routeParam.Module -> routeParam.Module
                 | _ -> ()
@@ -504,8 +517,7 @@ let getTemplateData projectName absoluteProjectDir =
             RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
             Routes =
                 pageFiles
-                |> Array.map (fun filePath ->
-                    fileToRoute projectName absoluteProjectDir settings.RouteSettings filePath)
+                |> Array.map (fun filePath -> fileToRoute projectName absoluteProjectDir settings.PageSettings filePath)
             Layouts = layoutFiles |> Array.map (fileToLayout projectName absoluteProjectDir)
             RouteParamModules = routeParamModules
         }

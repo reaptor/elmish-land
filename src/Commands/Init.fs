@@ -146,6 +146,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 let homeRoute = {
                     Name = "Home"
                     RouteName = "HomeRoute"
+                    LayoutModuleName = ""
                     MsgName = "HomeMsg"
                     ModuleName = $"%s{rootModuleName}.Pages.Home.Page"
                     RecordDefinition = ""
