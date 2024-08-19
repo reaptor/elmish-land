@@ -58,9 +58,12 @@ type Msg =
     | LayoutMsg of LayoutMsg
 
 {{#each Layouts}}
-let init{{Name}}Layout sharedModel =
-    let m, cmd = (Layouts.{{Name}}.Layout.layout sharedModel).Init ()
-    m, Command.map (LayoutMsg.{{MsgName}} >> LayoutMsg) cmd
+let init{{Name}}Layout (currentLayout, sharedModel) =
+    match currentLayout with
+    | Some (LayoutModel.{{Name}} m) -> m, Command.none
+    | _ ->
+        let m, cmd = ({{ModuleName}}.layout sharedModel).Init ()
+        m, Command.map (LayoutMsg.{{MsgName}} >> LayoutMsg) cmd
 {{/each}}
 
 let init () =
@@ -88,7 +91,7 @@ let init () =
     match initialUrl with
     {{#each Routes}}
     | Route.{{Name}} route ->
-        let layoutModel, layoutCmd = init{{LayoutName}}Layout sharedModel
+        let layoutModel, layoutCmd = init{{LayoutName}}Layout (None, sharedModel)
         initPage ({{ModuleName}}.page sharedModel layoutModel route) PageModel.{{Name}} (LayoutModel.{{LayoutName}} layoutModel) layoutCmd (PageMsg.{{MsgName}} >> PageMsg)
     {{/each}}
     | Route.NotFound ->
@@ -134,7 +137,7 @@ let update (msg: Msg) (model: Model) =
         match nextRoute with
         {{#each Routes}}
         | Route.{{Name}} route ->
-            let layoutModel, layoutCmd = init{{LayoutName}}Layout model.Shared
+            let layoutModel, layoutCmd = init{{LayoutName}}Layout (Some model.CurrentLayout, model.Shared)
             changeRoute ({{ModuleName}}.page model.Shared layoutModel route) PageModel.{{Name}} (LayoutModel.{{LayoutName}} layoutModel) layoutCmd (PageMsg.{{MsgName}} >> PageMsg)
         {{/each}}
         | Route.NotFound ->

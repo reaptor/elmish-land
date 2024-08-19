@@ -1,4 +1,4 @@
-﻿module {{RootModule}}.Layouts.{{Layout.Name}}.Layout
+﻿module {{Layout.ModuleName}}
 
 open Feliz
 open ElmishLand

@@ -3,7 +3,6 @@
 open Feliz
 open ElmishLand
 open {{RootModule}}.Shared
-open {{RootModule}}.Layouts
 
 type Model = unit
 
@@ -20,5 +19,5 @@ let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
 let view (model: Model) (dispatch: Msg -> unit): {{ViewType}} =
     Html.text "{{Route.Name}}"
 
-let page (shared: SharedModel) (layout: {{Route.LayoutName}}.Layout.Model) (route: {{Route.RouteName}}) =
+let page (shared: SharedModel) (layout: {{Route.LayoutModuleName}}.Model) (route: {{Route.RouteName}}) =
     Page.from init update view
