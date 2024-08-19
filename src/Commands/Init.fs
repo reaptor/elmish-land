@@ -146,7 +146,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 let homeRoute = {
                     Name = "Home"
                     RouteName = "HomeRoute"
-                    LayoutModuleName = ""
+                    LayoutName = "Main"
                     MsgName = "HomeMsg"
                     ModuleName = $"%s{rootModuleName}.Pages.Home.Page"
                     RecordDefinition = ""
@@ -157,12 +157,17 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     UrlPatternWhen = ""
                 }
 
+                let mainLayout = {
+                    Name = "Main"
+                    MsgName = "MainLayoutMsg"
+                    ModuleName = $"%s{rootModuleName}.Layouts.Main.Layout"
+                }
 
                 let routeData = {
                     ViewType = settings.ViewType
                     RootModule = rootModuleName
                     Routes = [| homeRoute |]
-                    Layouts = Array.empty
+                    Layouts = [| mainLayout |]
                     RouteParamModules = []
                 }
 
@@ -176,6 +181,20 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                                     ViewType = settings.ViewType
                                     RootModule = rootModuleName
                                     Route = homeRoute
+                                |}
+                            ))
+
+                    do!
+                        writeResource
+                            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                            false
+                            "AddLayout.template"
+                            [ "src"; "Layouts"; "Main"; "Layout.fs" ]
+                            (Some(
+                                handlebars {|
+                                    ViewType = settings.ViewType
+                                    RootModule = rootModuleName
+                                    Layout = mainLayout
                                 |}
                             ))
 

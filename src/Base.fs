@@ -339,8 +339,11 @@ type RouteQueryParameter = {
 
 type LayoutName = | LayoutName of string
 
+module LayoutName =
+    let asString (LayoutName x) = x
+
 type PageSettings =
-    | PageSettings of List<string * (LayoutName option * RoutePathParameter option * RouteQueryParameter list)>
+    | PageSettings of List<string * (LayoutName * RoutePathParameter option * RouteQueryParameter list)>
 
 module PageSettings =
     let value (PageSettings x) = x
@@ -383,7 +386,7 @@ let getSettings absoluteProjectDir =
 
         let pageSettingsDecoder =
             Decode.object (fun get ->
-                get.Optional.Field "layout" Decode.string |> Option.map LayoutName,
+                get.Required.Field "layout" Decode.string |> LayoutName,
                 get.Optional.Field
                     "pathParameter"
                     (Decode.object (fun get -> {

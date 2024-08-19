@@ -11,6 +11,7 @@
 
     <ItemGroup>
         <Compile Include="src/Shared.fs"/>
+        <Compile Include="src/Layouts/Main/Layout.fs"/>
         <Compile Include="src/Pages/Home/Page.fs"/>
     </ItemGroup>
 

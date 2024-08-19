@@ -21,7 +21,6 @@ type Page<'sharedMsg, 'pageModel, 'pageMsg> =
         Update: 'pageMsg -> 'pageModel -> 'pageModel * Command<'pageMsg, 'sharedMsg>
         View: 'pageModel -> ('pageMsg -> unit) -> {{ViewType}}
         Subscriptions: 'pageModel -> (string list * (('pageMsg -> unit) -> System.IDisposable)) list
-        Layout: Layout
     }
 
 module Page =
@@ -31,12 +30,7 @@ module Page =
             Update = update
             View = view
             Subscriptions = fun _ -> []
-            Layout = Layout.None
         }
 
     let withSubscriptions subscriptions (page: Page<'sharedMsg, 'pageModel, 'pageMsg>) =
         { page with Subscriptions = subscriptions }
-
-    /// NOTE! This function should only be used from the 'withXXXLayout' helper function in the layout file (src/Layouts/XXX/Layout.fs)
-    let withUntypedLayout (layout: Layout) (page: Page<_, _, _>) =
-        { page with Layout = layout }

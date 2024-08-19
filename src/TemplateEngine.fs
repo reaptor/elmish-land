@@ -119,7 +119,7 @@ let handlebars model (src: string) =
 type Route = {
     Name: string
     RouteName: string
-    LayoutModuleName: string
+    LayoutName: string
     MsgName: string
     ModuleName: string
     RecordDefinition: string
@@ -253,7 +253,6 @@ let fileToRoute projectName absoluteProjectDir (PageSettings pageSettings) (File
             pageSettings
             |> List.tryPick (fun (route', (layoutName, _, _)) ->
                 if route.StartsWith(route') then Some layoutName else None)
-            |> Option.bind id
 
         let queryParameters =
             pageSettings
@@ -444,11 +443,7 @@ let fileToRoute projectName absoluteProjectDir (PageSettings pageSettings) (File
         {
             Name = wrapWithTicksIfNeeded name
             RouteName = wrapWithTicksIfNeeded $"%s{name}Route"
-            LayoutModuleName =
-                match layoutName with
-                | Some(LayoutName x) ->
-                    $"%s{projectName |> ProjectName.asString}.Layouts.%s{wrapWithTicksIfNeeded x}.Layout"
-                | None -> ""
+            LayoutName = layoutName |> Option.map LayoutName.asString |> Option.defaultValue "Main"
             MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
             ModuleName = $"%s{projectName |> ProjectName.asString}.Pages.%s{moduleNamePart}.Page"
             RecordDefinition = recordDefinition
