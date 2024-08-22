@@ -8,16 +8,16 @@ type Model = unit
 
 type Msg = | NoOp
 
-let init (): Model * Command<Msg, SharedMsg> =
+let init (): Model * Command<Msg, SharedMsg, {{Route.LayoutModuleName}}.Msg> =
     (),
     Command.none
 
-let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
+let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg, {{Route.LayoutModuleName}}.Msg> =
     match msg with
     | NoOp -> model, Command.none
 
 let view (model: Model) (dispatch: Msg -> unit): {{ViewType}} =
-    Html.text "{{Route.Name}}"
+    Html.text "{{Route.Name}} Page"
 
 let page (shared: SharedModel) (layout: {{Route.LayoutModuleName}}.Model) (route: {{Route.RouteName}}) =
     Page.from init update view

@@ -15,11 +15,11 @@ open Feliz
 [<assembly: InternalsVisibleTo("ElmishLand.{{RootModule}}.App")>]
 do()
 
-type Page<'sharedMsg, 'pageModel, 'pageMsg> =
+type Page<'sharedMsg, 'pageModel, 'pageMsg, 'layoutMsg> =
     internal {
-        Init: unit -> 'pageModel * Command<'pageMsg, 'sharedMsg>
-        Update: 'pageMsg -> 'pageModel -> 'pageModel * Command<'pageMsg, 'sharedMsg>
-        View: 'pageModel -> ('pageMsg -> unit) -> {{ViewType}}
+        Init: unit -> 'pageModel * Command<'pageMsg, 'sharedMsg, 'layoutMsg>
+        Update: 'pageMsg -> 'pageModel -> 'pageModel * Command<'pageMsg, 'sharedMsg, 'layoutMsg>
+        View: 'pageModel -> ('pageMsg -> unit) -> Feliz.ReactElement
         Subscriptions: 'pageModel -> (string list * (('pageMsg -> unit) -> System.IDisposable)) list
     }
 
@@ -32,5 +32,5 @@ module Page =
             Subscriptions = fun _ -> []
         }
 
-    let withSubscriptions subscriptions (page: Page<'sharedMsg, 'pageModel, 'pageMsg>) =
+    let withSubscriptions subscriptions (page: Page<'sharedMsg, 'pageModel, 'pageMsg, 'layoutMsg>) =
         { page with Subscriptions = subscriptions }

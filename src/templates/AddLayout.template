@@ -8,18 +8,20 @@ type Model = unit
 
 type Msg = | NoOp
 
-let init (): Model * Command<Msg, SharedMsg> =
+let init (): Model * Command<Msg, SharedMsg, Msg> =
     (),
     Command.none
 
-let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
+let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg, Msg> =
     match msg with
     | NoOp -> model, Command.none
 
 let view (model: Model) (content: {{ViewType}}) (dispatch: Msg -> unit): {{ViewType}} =
     Html.div [
-        Html.text "{{Layout.Name}}"
-        content
+        Html.text "{{Layout.Name}} Layout"
+        Html.div [
+            content
+        ]
     ]
 
 let layout (shared: SharedModel) =

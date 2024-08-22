@@ -25,9 +25,9 @@ type Layout =
 
 type Layout<'sharedMsg, 'layoutModel, 'layoutMsg> =
     internal {
-        Init: unit -> 'layoutModel * Command<'layoutMsg, 'sharedMsg>
-        Update: 'layoutMsg -> 'layoutModel -> 'layoutModel * Command<'layoutMsg, 'sharedMsg>
-        View: 'layoutModel -> {{ViewType}} -> ('layoutMsg -> unit) -> {{ViewType}}
+        Init: unit -> 'layoutModel * Command<'layoutMsg, 'sharedMsg, 'layoutMsg>
+        Update: 'layoutMsg -> 'layoutModel -> 'layoutModel * Command<'layoutMsg, 'sharedMsg, 'layoutMsg>
+        View: 'layoutModel -> Feliz.ReactElement -> ('layoutMsg -> unit) -> Feliz.ReactElement
         Subscriptions: 'layoutModel -> (string list * (('layoutMsg -> unit) -> System.IDisposable)) list
     }
 
