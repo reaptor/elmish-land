@@ -6,9 +6,9 @@ type SharedModel = unit
 
 type SharedMsg = | NoOp
 
-let init (): SharedModel * Command<'msg, SharedMsg> =
+let init (): SharedModel * Command<'msg, SharedMsg, 'layoutMsg> =
     (), Command.none
 
-let update (msg: SharedMsg) (model: SharedModel): SharedModel * Command<'msg, SharedMsg> =
+let update (msg: SharedMsg) (model: SharedModel): SharedModel * Command<'msg, SharedMsg, 'layoutMsg> =
     match msg with
     | NoOp -> model, Command.none

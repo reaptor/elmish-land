@@ -1,4 +1,4 @@
-﻿module {{RootModule}}.Layouts.{{Layout.Name}}.Layout
+﻿module {{Layout.ModuleName}}
 
 open Feliz
 open ElmishLand
@@ -8,24 +8,21 @@ type Model = unit
 
 type Msg = | NoOp
 
-type Props = unit
-
-let init (): Model * Command<Msg, SharedMsg> =
+let init (): Model * Command<Msg, SharedMsg, Msg> =
     (),
     Command.none
 
-let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
+let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg, Msg> =
     match msg with
     | NoOp -> model, Command.none
 
 let view (model: Model) (content: {{ViewType}}) (dispatch: Msg -> unit): {{ViewType}} =
     Html.div [
-        Html.text "{{Layout.Name}}"
-        content
+        Html.text "{{Layout.Name}} Layout"
+        Html.div [
+            content
+        ]
     ]
 
-let layout (props: Props) (shared: SharedModel) =
+let layout (shared: SharedModel) =
     Layout.from init update view
-
-let with{{Layout.Name}}Layout (props: Props) page =
-    page |> Page.withUntypedLayout (Layout.untyped{{Layout.Name}} props)

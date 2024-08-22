@@ -144,10 +144,12 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 getTemplateData projectName absoluteProjectDir
             else
                 let homeRoute = {
-                    Name = "Home"
+                    Name = ""
                     RouteName = "HomeRoute"
+                    LayoutName = ""
+                    LayoutModuleName = $"%s{rootModuleName}.Pages.Layout"
                     MsgName = "HomeMsg"
-                    ModuleName = $"%s{rootModuleName}.Pages.Home.Page"
+                    ModuleName = $"%s{rootModuleName}.Pages.Page"
                     RecordDefinition = ""
                     RecordConstructor = "[]"
                     RecordPattern = ""
@@ -156,12 +158,17 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     UrlPatternWhen = ""
                 }
 
+                let mainLayout = {
+                    Name = "Main"
+                    MsgName = "MainLayoutMsg"
+                    ModuleName = $"%s{rootModuleName}.Pages.Layout"
+                }
 
                 let routeData = {
                     ViewType = settings.ViewType
                     RootModule = rootModuleName
                     Routes = [| homeRoute |]
-                    Layouts = Array.empty
+                    Layouts = [| mainLayout |]
                     RouteParamModules = []
                 }
 
@@ -169,12 +176,26 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     do!
                         writeResourceToProjectDir
                             "AddPage.template"
-                            [ "src"; "Pages"; "Home"; "Page.fs" ]
+                            [ "src"; "Pages"; "Page.fs" ]
                             (Some(
                                 handlebars {|
                                     ViewType = settings.ViewType
                                     RootModule = rootModuleName
                                     Route = homeRoute
+                                |}
+                            ))
+
+                    do!
+                        writeResource
+                            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                            false
+                            "AddLayout.template"
+                            [ "src"; "Pages"; "Layout.fs" ]
+                            (Some(
+                                handlebars {|
+                                    ViewType = settings.ViewType
+                                    RootModule = rootModuleName
+                                    Layout = mainLayout
                                 |}
                             ))
 

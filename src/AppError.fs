@@ -13,3 +13,4 @@ type AppError =
     | PagesDirectoryMissing
     | ElmishLandProjectMissing
     | InvalidSettings of string
+    | MissingMainLayout

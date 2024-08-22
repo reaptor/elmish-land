@@ -15,11 +15,12 @@ open ElmishLand.Routes
 open ElmishLand.Routes.Route
 
 [<RequireQualifiedAccess>]
-type Command<'msg, 'sharedMsg> private =
+type Command<'msg, 'sharedMsg, 'layoutMsg> private =
     | None
-    | Batch of Command<'msg, 'sharedMsg> list
+    | Batch of Command<'msg, 'sharedMsg, 'layoutMsg> list
     | Cmd of Cmd<'msg>
     | SharedMsg of 'sharedMsg
+    | LayoutMsg of 'layoutMsg
 
 module Command =
     let none = Command.None
@@ -37,18 +38,6 @@ module Command =
 
     let ofShared msg = Command.SharedMsg msg
 
+    let ofLayout msg = Command.LayoutMsg (msg)
+
     let navigate route = route |> format |> Router.Cmd.navigate |> ofCmd
-
-    let rec map f command =
-        match command with
-        | Command.None -> Command.None
-        | Command.Batch cmds -> Command.Batch (cmds |> List.map (map f))
-        | Command.Cmd cmd -> Command.Cmd (Cmd.map f cmd)
-        | Command.SharedMsg msg -> Command.SharedMsg msg
-
-    let rec toCmd fromSharedMsg command =
-        match command with
-        | Command.None -> Cmd.none
-        | Command.Batch cmds -> Cmd.batch (List.map (toCmd fromSharedMsg) cmds)
-        | Command.Cmd cmd -> cmd
-        | Command.SharedMsg msg -> Cmd.ofMsg (fromSharedMsg msg)

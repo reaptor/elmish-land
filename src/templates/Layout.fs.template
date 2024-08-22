@@ -25,18 +25,13 @@ type Layout =
 
 type Layout<'sharedMsg, 'layoutModel, 'layoutMsg> =
     internal {
-        Init: unit -> 'layoutModel * Command<'layoutMsg, 'sharedMsg>
-        Update: 'layoutMsg -> 'layoutModel -> 'layoutModel * Command<'layoutMsg, 'sharedMsg>
-        View: 'layoutModel -> {{ViewType}} -> ('layoutMsg -> unit) -> {{ViewType}}
+        Init: unit -> 'layoutModel * Command<'layoutMsg, 'sharedMsg, 'layoutMsg>
+        Update: 'layoutMsg -> 'layoutModel -> 'layoutModel * Command<'layoutMsg, 'sharedMsg, 'layoutMsg>
+        View: 'layoutModel -> Feliz.ReactElement -> ('layoutMsg -> unit) -> Feliz.ReactElement
         Subscriptions: 'layoutModel -> (string list * (('layoutMsg -> unit) -> System.IDisposable)) list
     }
 
 module Layout =
-    {{#each Layouts}}
-    /// NOTE! This function should only be used from the 'with{{Name}}Layout' helper function in you layout (src/Layouts/{{Name}}/Layout.fs)
-    let untyped{{Name}} (props: obj) = Layout.{{Name}} props
-    {{/each}}
-
     let from init update view =
         {
             Init = init

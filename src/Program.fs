@@ -116,6 +116,10 @@ https://nodejs.org/
             log.Error
                 $"""The elmish-land.json configuration file is invalid. %s{e}'.
 """
+        | MissingMainLayout ->
+            log.Error
+                """The main layout file is missing. Create it with "dotnet elmish-land add layout /"'.
+"""
 
         -1
 

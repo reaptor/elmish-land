@@ -337,6 +337,11 @@ type RouteQueryParameter = {
     Required: bool
 }
 
+type LayoutName = | LayoutName of string
+
+module LayoutName =
+    let asString (LayoutName x) = x
+
 type RouteParameters = | RouteParameters of List<string * (RoutePathParameter option * RouteQueryParameter list)>
 
 module RouteParameters =
@@ -403,12 +408,8 @@ let getSettings absoluteProjectDir =
                 |> Option.toList
                 |> List.collect id)
 
-        let! routeParameters =
-            Directory.GetFiles(
-                AbsoluteProjectDir.asString absoluteProjectDir,
-                "param.json",
-                SearchOption.AllDirectories
-            )
+        let! pageSettings =
+            Directory.GetFiles(AbsoluteProjectDir.asString absoluteProjectDir, "page.json", SearchOption.AllDirectories)
             |> Array.map (fun file ->
                 File.ReadAllText(file)
                 |> Decode.fromString paramsDecoder
@@ -419,7 +420,7 @@ let getSettings absoluteProjectDir =
                     |> fun s ->
                         s
                             .Replace($"%s{AbsoluteProjectDir.asString absoluteProjectDir}/src/Pages/", "")
-                            .Replace("/param.json", "")
+                            .Replace("/route.json", "")
                         |> fun s -> $"/%s{s}"
                     , x))
             |> Array.toList
@@ -440,7 +441,7 @@ let getSettings absoluteProjectDir =
                 DefaultPageTemplate =
                     get.Optional.Field "defaultPageTemplate" Decode.string
                     |> Option.map trimLeadingSpaces
-                RouteSettings = RouteParameters(routeParameters)
+                RouteSettings = RouteParameters(pageSettings)
             })
 
         return!

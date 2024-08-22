@@ -23,7 +23,7 @@ let addLayout absoluteProjectDir (url: string) =
             url
             |> String.split "/"
             |> Array.map (fun x -> $"%s{x[0..0].ToUpper()}%s{x[1..]}")
-            |> fun x -> [ "src"; "Layouts"; yield! x; "Layout.fs" ]
+            |> fun x -> [ "src"; "Pages"; yield! x; "Layout.fs" ]
 
         let layoutFilePath =
             absoluteProjectDir
