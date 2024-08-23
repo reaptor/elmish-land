@@ -4,6 +4,7 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
+open System.Threading
 open Thoth.Json.Net
 open System.Text.RegularExpressions
 open ElmishLand.AppError
@@ -216,8 +217,11 @@ module FilePath =
         let appendPath = append |> String.concat "/"
         $"%s{basePath}/%s{appendPath}" |> fromString
 
-    let appendFilePath append (FilePath basePath) =
-        $"%s{basePath}/%s{asString append}" |> fromString
+    let appendFilePath (FilePath append) (FilePath basePath) =
+        if String.IsNullOrWhiteSpace append then
+            FilePath basePath
+        else
+            $"%s{basePath}/%s{asString <| FilePath append}" |> fromString
 
     let startsWithParts parts (FilePath path) =
         path.StartsWith(parts |> String.concat "/")
