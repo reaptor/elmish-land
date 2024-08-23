@@ -86,7 +86,7 @@ type Page'<'msg, 'pageModel, 'layoutMsg> =
     {
         Init: unit -> 'pageModel * Command<Msg, SharedMsg, Msg>
         Update: 'msg -> 'pageModel -> 'pageModel * Command<Msg, SharedMsg, Msg>
-        View: 'pageModel -> ('msg -> unit) -> Feliz.ReactElement
+        View: 'pageModel -> ('msg -> unit) -> {{ViewType}}
         Subscriptions: 'pageModel -> (string list * (('msg -> unit) -> System.IDisposable)) list
     }
 

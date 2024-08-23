@@ -5,10 +5,6 @@
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
-    <PropertyGroup Label="ElmishLand">
-        <ViewType>Feliz.ReactElement</ViewType>
-    </PropertyGroup>
-
     <ItemGroup>
         <Compile Include="src/Shared.fs"/>
         <Compile Include="src/Pages/Layout.fs"/>
