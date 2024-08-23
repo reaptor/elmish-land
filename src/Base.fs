@@ -424,8 +424,8 @@ let getSettings absoluteProjectDir =
                     |> fun s ->
                         s
                             .Replace($"%s{AbsoluteProjectDir.asString absoluteProjectDir}/src/Pages/", "")
-                            .Replace("/route.json", "")
-                        |> fun s -> $"/%s{s}"
+                            .Replace("page.json", "")
+                        |> fun s -> if String.IsNullOrWhiteSpace s then s else $"/%s{s}"
                     , x))
             |> Array.toList
             |> Result.sequence
