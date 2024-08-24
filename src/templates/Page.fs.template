@@ -19,7 +19,7 @@ type Page<'sharedMsg, 'pageModel, 'pageMsg, 'layoutMsg> =
     internal {
         Init: unit -> 'pageModel * Command<'pageMsg, 'sharedMsg, 'layoutMsg>
         Update: 'pageMsg -> 'pageModel -> 'pageModel * Command<'pageMsg, 'sharedMsg, 'layoutMsg>
-        View: 'pageModel -> ('pageMsg -> unit) -> Feliz.ReactElement
+        View: 'pageModel -> ('pageMsg -> unit) -> {{ViewType}}
         Subscriptions: 'pageModel -> (string list * (('pageMsg -> unit) -> System.IDisposable)) list
     }
 
