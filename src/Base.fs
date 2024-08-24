@@ -182,7 +182,9 @@ let getCommandHeader s =
 %s{String.init header.Length (fun _ -> "-")}
 """
 
-let canonicalizePath (path: string) = path.Replace("\\", "/")
+let canonicalizePath (path: string) =
+    let p = path.Replace("\\", "/")
+    if p.EndsWith("/") then p[0 .. p.Length - 2] else p
 
 type FilePath = private | FilePath of string
 
@@ -342,8 +344,7 @@ type LayoutName = | LayoutName of string
 module LayoutName =
     let asString (LayoutName x) = x
 
-type RouteParameters =
-    | RouteParameters of List<string * (RoutePathParameter option * RouteQueryParameter list)>
+type RouteParameters = | RouteParameters of List<string * (RoutePathParameter option * RouteQueryParameter list)>
 
 module RouteParameters =
     let value (RouteParameters x) = x
@@ -409,8 +410,10 @@ let getSettings absoluteProjectDir =
                 |> Option.toList
                 |> List.collect id)
 
+        let pageJson = "page.json"
+
         let! pageSettings =
-            Directory.GetFiles(AbsoluteProjectDir.asString absoluteProjectDir, "page.json", SearchOption.AllDirectories)
+            Directory.GetFiles(AbsoluteProjectDir.asString absoluteProjectDir, pageJson, SearchOption.AllDirectories)
             |> Array.map (fun file ->
                 File.ReadAllText(file)
                 |> Decode.fromString paramsDecoder
@@ -421,7 +424,7 @@ let getSettings absoluteProjectDir =
                     |> fun s ->
                         s
                             .Replace($"%s{AbsoluteProjectDir.asString absoluteProjectDir}/src/Pages/", "")
-                            .Replace("/route.json", "")
+                            .Replace($"/%s{pageJson}", "")
                         |> fun s -> $"/%s{s}"
                     , x))
             |> Array.toList

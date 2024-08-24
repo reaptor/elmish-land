@@ -299,9 +299,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (F
                         if dirInfo.FullName = y then
                             return! Error AppError.MissingMainLayout
                         else
-                            let layoutFile =
-                                FilePath.fromString
-                                <| Path.Combine(dirInfo.FullName, "Layout.fs")
+                            let layoutFile = FilePath.fromString <| Path.Combine(dirInfo.FullName, "Layout.fs")
 
                             if FilePath.exists layoutFile then
                                 return! Ok <| fileToLayout projectName absoluteProjectDir layoutFile
