@@ -57,14 +57,14 @@ This command builds your Elmish Land app in production-mode. The result is a sta
 ## Add page
 
 ```bash
-dotnet elmish-land add page <url> --project-dir <folder-name> --verbose
+dotnet elmish-land add page <page> --project-dir <folder-name> --verbose
 ```
 
 #### Description
-This scaffolding command generates a new Elmish Land page in your src/Pages folder.
+This scaffolding command generates a new Elmish Land page.
 
 #### Arguments
-`<url>` – the URL you want this page to be available on.
+`<page>` – the folder path for the page.
 
 `--project-dir <folder-name>` – Optional name of the folder for your Elmish Land project.
 
@@ -73,11 +73,39 @@ This scaffolding command generates a new Elmish Land page in your src/Pages fold
 Here are some examples:
 ```bash
 dotnet elmish-land add page "/SignIn"      # Creates "src/Pages/SignIn/Page.fs"
-dotnet elmish-land add page "/Users/_id"   # Creates "src/Pages/Users/_id/Page.fs"
+dotnet elmish-land add page "/Users/_Id"   # Creates "src/Pages/Users/_Id/Page.fs"
 ```
 
 :::warning
 
 You need to manually add the new page to your project file.
+
+:::
+
+## Add layout
+
+```bash
+dotnet elmish-land add layout <layout> --project-dir <folder-name> --verbose
+```
+
+#### Description
+This scaffolding command generates a new Elmish Land layout.
+
+#### Arguments
+`<layout>` – the folder path for the layout.
+
+`--project-dir <folder-name>` – Optional name of the folder for your Elmish Land project.
+
+`--verbose` - Optional argument to display more output for the command.
+
+Here are some examples:
+```bash
+dotnet elmish-land add layout "/SignIn"      # Creates "src/Pages/SignIn/Layout.fs"
+dotnet elmish-land add layout "/Users/_Id"   # Creates "src/Pages/Users/_Id/Layout.fs"
+```
+
+:::warning
+
+You need to manually add the new layout to your project file.
 
 :::

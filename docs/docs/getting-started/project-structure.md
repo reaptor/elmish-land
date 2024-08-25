@@ -10,12 +10,14 @@ Every Elmish Land application has a folder structure that looks something like t
 MyProject
 ├── global.json
 ├── MyProject.fsproj
+├── elmish-land.json
 ├── MyProject.sln
 └── src
     ├── Shared.fs
     └── Pages
-        └── Home
-            └── Page.fs
+        ├── Layout.fs
+        ├── Page.fs
+        └── page.json
 ```
 
 You'll also find common files like .gitignore.
@@ -28,5 +30,7 @@ Here's a breakdown of what those files and folders are:
 * `/MyProject.fsproj` - The F# project file
 * `/elmish-land.json` –  The configuration file for Elmish Land.
 * `/src/Shared.fs` - Shared data between your pages. 
-* `/src/Pages/` – The home for your page files, which correspond to URLs in your app.
-* `/src/Layouts/` – Layouts allow you to nest pages within common UI.
+* `/src/Pages/` – The home for your page and layout files.
+  - `Layout.fs` – A layout file that allow you to share common UI for your pages.
+  - `Page.fs` – A page file, which correspond to URLs in your app.
+  - `page.json` – Configuration for the page in the folder. Makes it possible to specify type safe route parameters and query parameters.

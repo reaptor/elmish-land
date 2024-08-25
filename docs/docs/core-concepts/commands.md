@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 4
 ---
 
 # Commands
@@ -88,6 +88,9 @@ Send a msg as a Command.
 
 ### Command.ofShared
 Send a SharedMsg to the shared module from a page or layout.
+
+### Command.ofLayout
+Send a message to the layout of a page [Read more about layouts in the "Layouts" section](/docs/core-concepts/layouts).
 
 ### Command.navigate
 Navigates to a specified route. [Read more in the "Linking and Navigating" section](/docs/core-concepts/linking-and-navigating#command).

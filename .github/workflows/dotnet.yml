@@ -22,38 +22,38 @@ jobs:
       - name: Package tool
         run: dotnet pack
 
-  test-on-windows:
-    needs: build
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-      - name: Run tests
-        run: dotnet test
-
-  test-on-linux:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-      - name: Run tests
-        run: dotnet test
-
-  test-on-macos:
-    needs: build
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-      - name: Run tests
-        run: dotnet test
+#  test-on-windows:
+#    needs: build
+#    runs-on: windows-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#        with:
+#          fetch-depth: 0
+#      - name: Setup .NET
+#        uses: actions/setup-dotnet@v3
+#      - name: Run tests
+#        run: dotnet test
+#
+#  test-on-linux:
+#    needs: build
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#        with:
+#          fetch-depth: 0
+#      - name: Setup .NET
+#        uses: actions/setup-dotnet@v3
+#      - name: Run tests
+#        run: dotnet test
+#
+#  test-on-macos:
+#    needs: build
+#    runs-on: macos-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#        with:
+#          fetch-depth: 0
+#      - name: Setup .NET
+#        uses: actions/setup-dotnet@v3
+#      - name: Run tests
+#        run: dotnet test

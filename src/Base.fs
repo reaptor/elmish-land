@@ -410,10 +410,10 @@ let getSettings absoluteProjectDir =
                 |> Option.toList
                 |> List.collect id)
 
-        let pageJson = "page.json"
+        let routeJson = "route.json"
 
         let! pageSettings =
-            Directory.GetFiles(AbsoluteProjectDir.asString absoluteProjectDir, pageJson, SearchOption.AllDirectories)
+            Directory.GetFiles(AbsoluteProjectDir.asString absoluteProjectDir, routeJson, SearchOption.AllDirectories)
             |> Array.map (fun file ->
                 File.ReadAllText(file)
                 |> Decode.fromString paramsDecoder
@@ -424,7 +424,7 @@ let getSettings absoluteProjectDir =
                     |> fun s ->
                         s
                             .Replace($"%s{AbsoluteProjectDir.asString absoluteProjectDir}/src/Pages/", "")
-                            .Replace($"/%s{pageJson}", "")
+                            .Replace($"/%s{routeJson}", "")
                         |> fun s -> $"/%s{s}"
                     , x))
             |> Array.toList

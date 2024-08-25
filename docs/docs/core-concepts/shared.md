@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 # Shared state
@@ -87,7 +87,7 @@ For example, if you have edited the SharedModel, you'll see a compiler error mes
 
 ```fsharp
 // Shared.fs
-let init (): SharedModel * Command<'msg, SharedMsg> =
+let init (): SharedModel * Command<'msg, SharedMsg, 'layoutMsg> =
     {
         Username = None
     }
@@ -116,7 +116,7 @@ Here's a visual example of a Shared.update function responding from message you 
 
 ```fsharp
 // Shared.fs
-let update (msg: SharedMsg) (model: SharedModel): SharedModel * Command<'msg, SharedMsg> =
+let update (msg: SharedMsg) (model: SharedModel): SharedModel * Command<'msg, SharedMsg, 'layoutMsg> =
     match msg with
     | SignedIn user -> { model with user = Some user }, Command.none
     | SignOutClicked -> { model with user = None }, Command.none
@@ -138,7 +138,7 @@ When you need to send messages from a page to Shared you will use the `Command.o
 
 ```fsharp
 // A Page.fs file
-let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
+let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg, MyProject.Pages.Layout.Msg> =
     match msg with
     | SignOut -> model, Command.ofShared SharedMsg.SignOutClicked
 ```
