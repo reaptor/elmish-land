@@ -41,3 +41,11 @@ module Command =
     let ofLayout msg = Command.LayoutMsg (msg)
 
     let navigate route = route |> format |> Router.Cmd.navigate |> ofCmd
+
+    let rec map f mapLayout command =
+        match command with
+        | Command.None -> Command.None
+        | Command.Batch cmds -> Command.Batch (cmds |> List.map (map f mapLayout))
+        | Command.Cmd cmd -> Command.Cmd (Cmd.map f cmd)
+        | Command.SharedMsg msg -> Command.SharedMsg msg
+        | Command.LayoutMsg msg -> Command.LayoutMsg (mapLayout msg)

@@ -57,14 +57,6 @@ type Msg =
     | PageMsg of PageMsg
     | LayoutMsg of LayoutMsg
 
-let rec mapCommand f mapLayout command =
-    match command with
-    | Command.None -> Command.None
-    | Command.Batch cmds -> Command.Batch (cmds |> List.map (mapCommand f mapLayout))
-    | Command.Cmd cmd -> Command.Cmd (Cmd.map f cmd)
-    | Command.SharedMsg msg -> Command.SharedMsg msg
-    | Command.LayoutMsg msg -> Command.LayoutMsg (mapLayout msg)
-
 let rec commandToCmd fromSharedMsg fromLayoutMsg command =
     match command with
     | Command.None -> Cmd.none
@@ -79,7 +71,7 @@ let init{{Name}}Layout (currentLayout, sharedModel) =
     | Some (LayoutModel.{{Name}} m) -> m, Command.none
     | _ ->
         let m, cmd = ({{ModuleName}}.layout sharedModel).Init ()
-        m, mapCommand (LayoutMsg.{{MsgName}} >> LayoutMsg) (LayoutMsg.{{MsgName}} >> LayoutMsg) cmd
+        m, Command.map (LayoutMsg.{{MsgName}} >> LayoutMsg) (LayoutMsg.{{MsgName}} >> LayoutMsg) cmd
 
 {{/each}}
 type Page'<'msg, 'pageModel, 'layoutMsg> =
@@ -92,12 +84,12 @@ type Page'<'msg, 'pageModel, 'layoutMsg> =
 
 let mapPage (f: 'pageMsg -> Msg) (mapLayout: 'layoutMsg -> Msg) (p: Page<SharedMsg, 'pageModel, 'pageMsg, 'layoutMsg>)
     : Page'<'pageMsg, 'pageModel, 'layoutMsg> =
-    let init = p.Init >> fun (m, c) -> m, mapCommand f mapLayout c
+    let init = p.Init >> fun (m, c) -> m, Command.map f mapLayout c
     let update =
         p.Update >>
         fun f' -> f'
                 >> fun (m: 'pageModel, c: Command<'pageMsg, SharedMsg, 'layoutMsg>) ->
-                    (m, mapCommand f mapLayout c)
+                    (m, Command.map f mapLayout c)
     {
         Init = init
         Update = update
@@ -158,7 +150,7 @@ let update (msg: Msg) (model: Model) =
             model with
                 CurrentLayout = layoutModel model''
         },
-        mapCommand msg msg cmd |> commandToCmd SharedMsg id
+        Command.map msg msg cmd |> commandToCmd SharedMsg id
 
     match msg with
     | SharedMsg msg' ->
