@@ -4,7 +4,6 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
-open System.Threading
 open Thoth.Json.Net
 open System.Text.RegularExpressions
 open ElmishLand.AppError
@@ -183,7 +182,9 @@ let getCommandHeader s =
 %s{String.init header.Length (fun _ -> "-")}
 """
 
-let canonicalizePath (path: string) = path.Replace("\\", "/")
+let canonicalizePath (path: string) =
+    let p = path.Replace("\\", "/")
+    if p.EndsWith("/") then p[0 .. p.Length - 2] else p
 
 type FilePath = private | FilePath of string
 
@@ -217,11 +218,8 @@ module FilePath =
         let appendPath = append |> String.concat "/"
         $"%s{basePath}/%s{appendPath}" |> fromString
 
-    let appendFilePath (FilePath append) (FilePath basePath) =
-        if String.IsNullOrWhiteSpace append then
-            FilePath basePath
-        else
-            $"%s{basePath}/%s{asString <| FilePath append}" |> fromString
+    let appendFilePath append (FilePath basePath) =
+        $"%s{basePath}/%s{asString append}" |> fromString
 
     let startsWithParts parts (FilePath path) =
         path.StartsWith(parts |> String.concat "/")
@@ -412,8 +410,10 @@ let getSettings absoluteProjectDir =
                 |> Option.toList
                 |> List.collect id)
 
+        let pageJson = "page.json"
+
         let! pageSettings =
-            Directory.GetFiles(AbsoluteProjectDir.asString absoluteProjectDir, "page.json", SearchOption.AllDirectories)
+            Directory.GetFiles(AbsoluteProjectDir.asString absoluteProjectDir, pageJson, SearchOption.AllDirectories)
             |> Array.map (fun file ->
                 File.ReadAllText(file)
                 |> Decode.fromString paramsDecoder
@@ -424,8 +424,8 @@ let getSettings absoluteProjectDir =
                     |> fun s ->
                         s
                             .Replace($"%s{AbsoluteProjectDir.asString absoluteProjectDir}/src/Pages/", "")
-                            .Replace("page.json", "")
-                        |> fun s -> if String.IsNullOrWhiteSpace s then s else $"/%s{s}"
+                            .Replace($"/%s{pageJson}", "")
+                        |> fun s -> $"/%s{s}"
                     , x))
             |> Array.toList
             |> Result.sequence
