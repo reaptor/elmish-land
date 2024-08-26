@@ -4,19 +4,20 @@ open Feliz
 open ElmishLand
 open {{RootModule}}.Shared
 
+type Props = unit
+
 type Model = unit
 
 type Msg = | NoOp
 
-let init (): Model * Command<Msg, SharedMsg, Msg> =
-    (),
-    Command.none
+let init (_: Props) (_: Route): Model * Command<Msg, SharedMsg, Msg> =
+    (), Command.none
 
 let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg, Msg> =
     match msg with
     | NoOp -> model, Command.none
 
-let view (model: Model) (content: {{ViewType}}) (dispatch: Msg -> unit): {{ViewType}} =
+let view (_: Route) (_: Model) (content: {{ViewType}}) (_dispatch: Msg -> unit): {{ViewType}} =
     Html.div [
         Html.text "{{Layout.Name}} Layout"
         Html.div [
@@ -24,5 +25,5 @@ let view (model: Model) (content: {{ViewType}}) (dispatch: Msg -> unit): {{ViewT
         ]
     ]
 
-let layout (shared: SharedModel) =
+let layout (): Layout<SharedMsg, Model, Msg, Props> =
     Layout.from init update view

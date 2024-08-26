@@ -148,6 +148,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     RouteName = "HomeRoute"
                     LayoutName = ""
                     LayoutModuleName = $"%s{rootModuleName}.Pages.Layout"
+                    LayoutModuleNameWithoutLayout = $"%s{rootModuleName}.Pages"
                     MsgName = "HomeMsg"
                     ModuleName = $"%s{rootModuleName}.Pages.Page"
                     RecordDefinition = ""
@@ -162,6 +163,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     Name = "Main"
                     MsgName = "MainLayoutMsg"
                     ModuleName = $"%s{rootModuleName}.Pages.Layout"
+                    ModuleNameWithoutLayout = $"%s{rootModuleName}.Pages"
                 }
 
                 let routeData = {

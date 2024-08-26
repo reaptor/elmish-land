@@ -121,6 +121,7 @@ type Route = {
     RouteName: string
     LayoutName: string
     LayoutModuleName: string
+    LayoutModuleNameWithoutLayout: string
     MsgName: string
     ModuleName: string
     RecordDefinition: string
@@ -135,6 +136,7 @@ type Layout = {
     Name: string
     MsgName: string
     ModuleName: string
+    ModuleNameWithoutLayout: string
 }
 
 type TemplateData = {
@@ -251,6 +253,7 @@ let fileToLayout projectName absoluteProjectDir (FilePath file) =
             Name = wrapWithTicksIfNeeded name
             MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
             ModuleName = $"%s{projectName |> ProjectName.asString}.Pages%s{moduleNamePart}.Layout"
+            ModuleNameWithoutLayout = $"%s{projectName |> ProjectName.asString}.Pages%s{moduleNamePart}"
         }
 
 let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (FilePath file) =
@@ -500,6 +503,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (F
                 RouteName = wrapWithTicksIfNeeded $"%s{name}Route"
                 LayoutName = layout.Name
                 LayoutModuleName = layout.ModuleName
+                LayoutModuleNameWithoutLayout = layout.ModuleNameWithoutLayout
                 MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
                 ModuleName = $"%s{projectName |> ProjectName.asString}.Pages%s{moduleNamePart}.Page"
                 RecordDefinition = recordDefinition

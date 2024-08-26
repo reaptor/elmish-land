@@ -15,22 +15,24 @@ open Feliz
 [<assembly: InternalsVisibleTo("ElmishLand.{{RootModule}}.App")>]
 do()
 
-type Page<'sharedMsg, 'pageModel, 'pageMsg, 'layoutMsg> =
+type Page<'sharedMsg, 'sharedModel, 'route, 'pageModel, 'pageMsg, 'layoutModel, 'layoutMsg, 'layoutProps> =
     internal {
-        Init: unit -> 'pageModel * Command<'pageMsg, 'sharedMsg, 'layoutMsg>
-        Update: 'pageMsg -> 'pageModel -> 'pageModel * Command<'pageMsg, 'sharedMsg, 'layoutMsg>
-        View: 'pageModel -> ('pageMsg -> unit) -> {{ViewType}}
+        Init: 'sharedModel -> 'layoutModel -> 'route -> 'pageModel * Command<'pageMsg, 'sharedMsg, 'layoutMsg>
+        Update: 'sharedModel -> 'layoutModel -> 'pageMsg -> 'pageModel -> 'pageModel * Command<'pageMsg, 'sharedMsg, 'layoutMsg>
+        View: 'sharedModel -> 'layoutModel -> 'pageModel -> ('pageMsg -> unit) -> {{ViewType}}
         Subscriptions: 'pageModel -> (string list * (('pageMsg -> unit) -> System.IDisposable)) list
+        LayoutProps: 'layoutProps
     }
 
 module Page =
-    let from init update view =
+    let from init update view layoutProps: Page<'sharedMsg, 'sharedModel, 'route, 'pageModel, 'pageMsg, 'layoutModel, 'layoutMsg, 'layoutProps> =
         {
             Init = init
             Update = update
             View = view
             Subscriptions = fun _ -> []
+            LayoutProps = layoutProps
         }
 
-    let withSubscriptions subscriptions (page: Page<'sharedMsg, 'pageModel, 'pageMsg, 'layoutMsg>) =
+    let withSubscriptions subscriptions (page: Page<'sharedMsg, 'sharedModel, 'route, 'pageModel, 'pageMsg, 'layoutModel, 'layoutMsg, 'layoutProps>) =
         { page with Subscriptions = subscriptions }
