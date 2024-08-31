@@ -45,24 +45,27 @@ module MyProject.Pages.About.Page
 open Feliz
 open ElmishLand
 open MyProject.Shared
+open MyProject.Pages
 
 type Model = unit
 
-type Msg = | NoOp
+type Msg =
+    | LayoutMsg of Layout.Msg
 
-let init (): Model * Command<Msg, SharedMsg, MyProject.Pages.Layout.Msg> =
+let init () =
     (),
     Command.none
 
-let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg, MyProject.Pages.Layout.Msg> =
+let update (msg: Msg) (model: Model) =
     match msg with
-    | NoOp -> model, Command.none
+    | LayoutMsg _ -> model, Command.none
 
-let view (model: Model) (dispatch: Msg -> unit): Feliz.ReactElement =
+let view (_model: Model) (_dispatch: Msg -> unit) =
     Html.text "About Page"
 
-let page (shared: SharedModel) (layout: MyProject.Pages.Layout.Model) (route: AboutRoute) =
-    Page.from init update view
+let page (_shared: SharedModel) (_route: HomeRoute) =
+    Page.from init update view () LayoutMsg
+
 ```
 
 ### Understanding pages
@@ -83,16 +86,23 @@ The `Msg` contains all the possible events of our page. Examples of events can b
 * A timer event is triggered by the browser.
 
 ```fsharp
-type Msg = | NoOp
+type Msg =
+    | LayoutMsg of Layout.Msg
 ```
+
+:::info
+
+You can read more about `LayoutMsg` on the [Sending messages to pages](/docs/core-concepts/layouts#sending-messages-to-pages) section.
+
+:::
 
 #### `init`
 
 This function is called anytime your page loads for the first time.
 
 ```fsharp
-let init (): Model * Command<Msg, SharedMsg, MyProject.Pages.Layout.Msg> =
-    (), 
+let init () =
+    (),
     Command.none
 ```
 
@@ -107,9 +117,9 @@ You can read more about `Command.none` on the [Commands](/docs/core-concepts/com
 This function is called whenever a message is sent. An example of this is a user clicking a button.
 
 ```fsharp
-let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg, MyProject.Pages.Layout.Msg> =
+let update (msg: Msg) (model: Model) =
     match msg with
-    | NoOp -> model, Command.none
+    | LayoutMsg _ -> model, Command.none
 ```
 
 #### `view`
@@ -117,7 +127,7 @@ let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg, MyProject.
 This function converts the current model to the HTML you want to show to the user.
 
 ```fsharp
-let view (model: Model) (dispatch: Msg -> unit): Feliz.ReactElement =
+let view (_model: Model) (_dispatch: Msg -> unit) =
     Html.text "About Page"
 ```
 
@@ -125,13 +135,13 @@ let view (model: Model) (dispatch: Msg -> unit): Feliz.ReactElement =
 The `page` function is our starting point for the page. From this function we need to call the `Page.from` function to setup our page.
 
 ```fsharp
-let page (shared: SharedModel) (layout: MyProject.Pages.Layout.Model) (route: AboutRoute) =
-    Page.from init update view
+let page (_shared: SharedModel) (_route: HomeRoute) =
+    Page.from init update view () LayoutMsg
 ```
 
-### Working with `shared`, `layout` and `route`
+### Working with `shared` and `route`
 
-You may have noticed that every `page` is a function that receive three arguments, `shared`, `layout` and `route`:
+You may have noticed that every `page` is a function that receive two arguments, `shared` and `route`:
 
 ```fsharp
 let page (shared: SharedModel) (layout: MyProject.Pages.Layout.Model) (route: AboutRoute) =
@@ -142,27 +152,22 @@ But what are these arguments for?
 
 * `shared` – Stores any data you want to share across all your pages.
   * On [the Shared state page](/docs/core-concepts/shared), you'll learn how to customize what data should be available.
-* `layout` – Stores any data you want to share across all your pages that share the same layout.
-  * On [the Layouts page](/docs/core-concepts/layouts), you'll learn how to customize what data should be available.
 * `route` – Stores URL information, including things like URL parameters and query.
   * In [the Routing section](#routing), you'll learn more about the other values on the route field.
 
-All of these values are available to any function within `page`. That means `init`, `update` and `view` all can get access to shared, layout and route.
+All of these values are available to any function within `page`. That means `init`, `update` and `view` all can get access to shared and route.
 
 In the code example below, note how we pass the `shared` value as the first argument of the `view` function:
 
 ```fsharp
-let page (shared: SharedModel) (route: AboutRoute) =
-    Page.from
-        init
-        update
-        (view shared)
+let page (shared: SharedModel) (layout: MyProject.Pages.Layout.Model) (route: AboutRoute) =
+    Page.from init update (view shared)
 ```
 
 After we pass in the shared argument, we can update our view function to get access to shared in our view code:
 
 ```fsharp
-let view (shared: SharedModel) (model: Model) (dispatch: Msg -> unit): Feliz.ReactElement =
+let view (shared: SharedModel) (model: Model) (dispatch: Msg -> unit) =
     Html.text "About Page"
 ```
 
@@ -171,14 +176,14 @@ The same concept applies to `init`, `update`, and `subscriptions`.
 For example, you might want your `init` function to use a URL parameter to decide what API endpoint to call. In this case, we can pass `route` into our `init` function using the same process as before:
 
 ```fsharp
-let page (shared: SharedModel) (layout: MyProject.Pages.Layout.Model) (route: AboutRoute) =
+let page (shared: SharedModel) (route: AboutRoute) =
     Page.from (fun () -> init route) update view
 ```
 
 After we pass in the `route` argument, we can update our `init` function to get access to `route` in our view code:
 
 ```fsharp
-let init (route: AboutRoute): Model * Command<Msg, SharedMsg, MyProject.Pages.Layout.Msg> =
+let init (route: AboutRoute) =
     (),
     Command.none
 ```
