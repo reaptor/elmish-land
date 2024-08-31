@@ -15,22 +15,26 @@ open Feliz
 [<assembly: InternalsVisibleTo("ElmishLand.{{RootModule}}.App")>]
 do()
 
-type Page<'sharedMsg, 'pageModel, 'pageMsg, 'layoutMsg> =
+type Page<'sharedMsg, 'pageModel, 'pageMsg, 'layoutMsg, 'layoutProps> =
     internal {
         Init: unit -> 'pageModel * Command<'pageMsg, 'sharedMsg, 'layoutMsg>
         Update: 'pageMsg -> 'pageModel -> 'pageModel * Command<'pageMsg, 'sharedMsg, 'layoutMsg>
         View: 'pageModel -> ('pageMsg -> unit) -> {{ViewType}}
         Subscriptions: 'pageModel -> (string list * (('pageMsg -> unit) -> System.IDisposable)) list
+        LayoutProps: 'layoutProps
+        LayoutMsgToPageMsg: 'layoutMsg -> 'pageMsg
     }
 
 module Page =
-    let from init update view =
+    let from init update view layoutProps layoutMsgToPageMsg=
         {
             Init = init
             Update = update
             View = view
             Subscriptions = fun _ -> []
+            LayoutProps = layoutProps
+            LayoutMsgToPageMsg = layoutMsgToPageMsg
         }
 
-    let withSubscriptions subscriptions (page: Page<'sharedMsg, 'pageModel, 'pageMsg, 'layoutMsg>) =
+    let withSubscriptions subscriptions (page: Page<'sharedMsg, 'pageModel, 'pageMsg, 'layoutMsg, 'layoutProps>) =
         { page with Subscriptions = subscriptions }

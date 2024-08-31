@@ -3,21 +3,23 @@
 open Feliz
 open ElmishLand
 open {{RootModule}}.Shared
+open {{RootModule}}.Pages
 
 type Model = unit
 
-type Msg = | NoOp
+type Msg =
+    | LayoutMsg of Layout.Msg
 
-let init (): Model * Command<Msg, SharedMsg, {{Route.LayoutModuleName}}.Msg> =
+let init () =
     (),
     Command.none
 
-let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg, {{Route.LayoutModuleName}}.Msg> =
+let update (msg: Msg) (model: Model) =
     match msg with
-    | NoOp -> model, Command.none
+    | LayoutMsg _ -> model, Command.none
 
-let view (model: Model) (dispatch: Msg -> unit): {{ViewType}} =
+let view (_model: Model) (_dispatch: Msg -> unit) =
     Html.text "{{Route.Name}} Page"
 
-let page (shared: SharedModel) (layout: {{Route.LayoutModuleName}}.Model) (route: {{Route.RouteName}}) =
-    Page.from init update view
+let page (_shared: SharedModel) (_route: {{Route.RouteName}}) =
+    Page.from init update view () LayoutMsg

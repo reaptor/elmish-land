@@ -18,31 +18,11 @@ open {{RootModule}}
 open {{RootModule}}.Shared
 
 [<RequireQualifiedAccess>]
-type PageModel =
-    {{#each Routes}}
-    | {{Name}} of {{ModuleName}}.Model
-    {{/each}}
-    | NotFound
-
-[<RequireQualifiedAccess>]
-type LayoutModel =
+type Layout =
     {{#each Layouts}}
-    | {{Name}} of {{ModuleName}}.Model
+    | {{Name}} of {{ModuleName}}.Props * {{ModuleName}}.Model
     {{/each}}
     | None
-
-type Model = {
-    Shared: SharedModel
-    CurrentRoute: Route
-    CurrentPage: PageModel
-    CurrentLayout: LayoutModel
-}
-
-[<RequireQualifiedAccess>]
-type PageMsg =
-    {{#each Routes}}
-    | {{MsgName}} of {{ModuleName}}.Msg
-    {{/each}}
 
 [<RequireQualifiedAccess>]
 type LayoutMsg =
@@ -51,11 +31,51 @@ type LayoutMsg =
     {{/each}}
     | NoOp
 
+[<RequireQualifiedAccess>]
+type PageMsg =
+    {{#each Routes}}
+    | {{MsgName}} of {{ModuleName}}.Msg
+    {{/each}}
+
 type Msg =
     | SharedMsg of SharedMsg
     | RouteChanged of Route
     | PageMsg of PageMsg
     | LayoutMsg of LayoutMsg
+
+type MappedPage<'pageMsg, 'pageModel, 'layoutMsg, 'layoutProps> =
+    {
+        Init: unit -> 'pageModel * Command<Msg, SharedMsg, Msg>
+        Update: 'pageMsg -> 'pageModel -> 'pageModel * Command<Msg, SharedMsg, Msg>
+        View: 'pageModel -> ('pageMsg -> unit) -> Feliz.ReactElement
+        Subscriptions: 'pageModel -> (string list * (('pageMsg -> unit) -> System.IDisposable)) list
+        LayoutProps: 'layoutProps
+        LayoutMsgToPageMsg: 'layoutMsg -> 'pageMsg
+        LayoutMsgToMsg: 'layoutMsg -> Msg
+    }
+
+[<RequireQualifiedAccess>]
+type PageModel =
+    {{#each Routes}}
+    | {{Name}} of {{ModuleName}}.Model
+    {{/each}}
+    | NotFound
+
+[<RequireQualifiedAccess>]
+type Page =
+    {{#each Routes}}
+    | {{Name}} of MappedPage<{{ModuleName}}.Msg, {{ModuleName}}.Model, {{LayoutModuleName}}.Msg, {{LayoutModuleName}}.Props>
+    {{/each}}
+    | NotFound
+
+type Model = {
+    Shared: SharedModel
+    CurrentRoute: Route
+    CurrentPage: Page
+    CurrentPageModel: PageModel
+    CurrentLayout: Layout
+    PageModelByLayout: Map<Layout, Page>
+}
 
 let rec commandToCmd fromSharedMsg fromLayoutMsg command =
     match command with
@@ -66,37 +86,77 @@ let rec commandToCmd fromSharedMsg fromLayoutMsg command =
     | Command.LayoutMsg msg -> Cmd.ofMsg (fromLayoutMsg msg)
 
 {{#each Layouts}}
-let init{{Name}}Layout (currentLayout, sharedModel) =
+let get{{Name}}Layout currentLayout currentRoute sharedModel layoutProps =
+    let layout = {{ModuleName}}.layout layoutProps currentRoute sharedModel
     match currentLayout with
-    | Some (LayoutModel.{{Name}} m) -> m, Command.none
-    | _ ->
-        let m, cmd = ({{ModuleName}}.layout sharedModel).Init ()
-        m, Command.map (LayoutMsg.{{MsgName}} >> LayoutMsg) (LayoutMsg.{{MsgName}} >> LayoutMsg) cmd
+    | Some (Layout.Main (_, m)) -> layout.RouteChanged m
+    | _ -> layout.Init ()
 
 {{/each}}
-type Page'<'msg, 'pageModel, 'layoutMsg> =
-    {
-        Init: unit -> 'pageModel * Command<Msg, SharedMsg, Msg>
-        Update: 'msg -> 'pageModel -> 'pageModel * Command<Msg, SharedMsg, Msg>
-        View: 'pageModel -> ('msg -> unit) -> {{ViewType}}
-        Subscriptions: 'pageModel -> (string list * (('msg -> unit) -> System.IDisposable)) list
-    }
-
-let mapPage (f: 'pageMsg -> Msg) (mapLayout: 'layoutMsg -> Msg) (p: Page<SharedMsg, 'pageModel, 'pageMsg, 'layoutMsg>)
-    : Page'<'pageMsg, 'pageModel, 'layoutMsg> =
+let mapPage (f: 'pageMsg -> Msg) (mapLayout: 'layoutMsg -> Msg) (p: Page<SharedMsg, 'pageModel, 'pageMsg, 'layoutMsg, 'layoutProps>)
+    : MappedPage<'pageMsg, 'pageModel, 'layoutMsg, 'layoutProps> =
     let init = p.Init >> fun (m, c) -> m, Command.map f mapLayout c
     let update =
         p.Update >>
         fun f' -> f'
                 >> fun (m: 'pageModel, c: Command<'pageMsg, SharedMsg, 'layoutMsg>) ->
                     (m, Command.map f mapLayout c)
+    let layoutMsgToPageMsg layoutMsg =
+        p.LayoutMsgToPageMsg layoutMsg |> f
+
     {
         Init = init
         Update = update
         View = p.View
         Subscriptions = p.Subscriptions
+        LayoutProps = p.LayoutProps
+        LayoutMsgToPageMsg = p.LayoutMsgToPageMsg
+        LayoutMsgToMsg = layoutMsgToPageMsg
     }
 
+let layoutMsgToPageMsg page f layoutMsg = page.LayoutMsgToPageMsg layoutMsg |> f
+
+let initPage model route mappedPage pageFn modelFn layoutFn sharedCmd =
+    let pageModel, pageCmd = mappedPage.Init ()
+    let layoutModel, layoutCmd = layoutFn model.Shared mappedPage.LayoutProps
+    let layout = Layout.Main (mappedPage.LayoutProps, layoutModel)
+    {
+        model with
+            CurrentRoute = route
+            CurrentPage = pageFn mappedPage
+            CurrentPageModel = modelFn pageModel
+            CurrentLayout = layout
+            PageModelByLayout = Map.change layout (fun _ -> Some (pageFn mappedPage)) model.PageModelByLayout
+    },
+    Command.batch [
+        sharedCmd
+        pageCmd
+        Command.map mappedPage.LayoutMsgToMsg mappedPage.LayoutMsgToMsg layoutCmd
+        Command.map (LayoutMsg.MainMsg >> LayoutMsg) (LayoutMsg.MainMsg >> LayoutMsg) layoutCmd
+    ] |> commandToCmd SharedMsg id
+
+{{#each Routes}}
+let init{{Name}}Page model route sharedCmd =
+    let mappedPage = ({{ModuleName}}.page model.Shared route |> mapPage (PageMsg.{{Name}}Msg >> PageMsg) (LayoutMsg.{{LayoutName}}Msg >> LayoutMsg))
+    let pageModel, pageCmd = mappedPage.Init ()
+    let layoutModel, layoutCmd = (get{{LayoutName}}Layout None (Route.{{Name}} route)) model.Shared mappedPage.LayoutProps
+    let layout = Layout.{{LayoutName}} (mappedPage.LayoutProps, layoutModel)
+    {
+        model with
+            CurrentRoute = Route.{{Name}} route
+            CurrentPage = Page.{{Name}} mappedPage
+            CurrentPageModel = PageModel.{{Name}} pageModel
+            CurrentLayout = layout
+            PageModelByLayout = Map.change layout (fun _ -> Some (Page.{{Name}} mappedPage)) model.PageModelByLayout
+    },
+    Command.batch [
+        sharedCmd
+        pageCmd
+        Command.map mappedPage.LayoutMsgToMsg mappedPage.LayoutMsgToMsg layoutCmd
+        Command.map (LayoutMsg.{{LayoutName}}Msg >> LayoutMsg) (LayoutMsg.{{LayoutName}}Msg >> LayoutMsg) layoutCmd
+    ] |> commandToCmd SharedMsg id
+
+{{/each}}
 let init () =
     let initialUrl = Route.parse (Router.currentUrl ())
     let sharedModel, sharedCmd = Shared.init ()
@@ -104,128 +164,116 @@ let init () =
     let defaultModel = {
         Shared = sharedModel
         CurrentRoute = initialUrl
-        CurrentPage = PageModel.NotFound
-        CurrentLayout = LayoutModel.None
+        CurrentPage = Page.NotFound
+        CurrentPageModel = PageModel.NotFound
+        CurrentLayout = Layout.None
+        PageModelByLayout = Map.empty
     }
-
-    let initPage (page: Page'<'msg, 'model, 'layoutMsg>) pageModel layoutModel layoutCmd =
-        let nextModel, nextCmd = page.Init()
-        let nextPage = pageModel nextModel
-
-        {
-            defaultModel with
-                CurrentPage = nextPage
-                CurrentLayout = layoutModel
-        },
-        Command.batch [ sharedCmd; layoutCmd; nextCmd ] |> commandToCmd SharedMsg id
 
     match initialUrl with
     {{#each Routes}}
     | Route.{{Name}} route ->
-        let layoutModel, layoutCmd = init{{LayoutName}}Layout (None, sharedModel)
-        let p = mapPage (PageMsg.{{MsgName}} >> PageMsg) (LayoutMsg.{{LayoutName}}Msg >> LayoutMsg) ({{ModuleName}}.page sharedModel layoutModel route)
-        initPage p PageModel.{{Name}} (LayoutModel.{{LayoutName}} layoutModel) layoutCmd
+        initHomePage defaultModel route sharedCmd
     {{/each}}
     | Route.NotFound ->
         {
             defaultModel with
-                CurrentPage = PageModel.NotFound
+                CurrentPage = Page.NotFound
         },
         Cmd.none
 
 let update (msg: Msg) (model: Model) =
-    let updatePage (page: Page'<'model, 'msg, 'layoutMsg>) model' pageModel pageMsg =
-        let model'', cmd = page.Update pageMsg model'
-
-        {
-            model with
-                CurrentPage = pageModel model''
-        },
-        commandToCmd SharedMsg id cmd
-
-    let updateLayout (layout: Layout<_,_,_>) model' layoutModel layoutMsg msg =
+    let updateLayout (model: Model) (layout: Layout<_,_,_>) props model' mapLayout layoutMsg msg pageCmd =
         let model'', cmd = layout.Update layoutMsg model'
 
         {
             model with
-                CurrentLayout = layoutModel model''
+                CurrentLayout = mapLayout (props, model'')
         },
-        Command.map msg msg cmd |> commandToCmd SharedMsg id
+        Command.batch [
+            Command.map msg msg cmd
+            pageCmd
+        ]
+        |> commandToCmd SharedMsg id
 
     match msg with
     | SharedMsg msg' ->
         let model'', cmd = Shared.update msg' model.Shared
         { model with Shared = model'' }, commandToCmd SharedMsg Unchecked.defaultof<_> cmd
     | RouteChanged nextRoute ->
-        let changeRoute (page: Page'<'model, 'msg, 'layoutMsg>) pageModel layoutModel layoutCmd =
-            let model', msg' = page.Init()
-            {
-                model with
-                    CurrentPage = pageModel model'
-                    CurrentRoute = nextRoute
-                    CurrentLayout = layoutModel
-            },
-            Command.batch [ layoutCmd; msg' ] |> commandToCmd SharedMsg id
         match nextRoute with
         {{#each Routes}}
         | Route.{{Name}} route ->
-            let layoutModel, layoutCmd = init{{LayoutName}}Layout (Some model.CurrentLayout, model.Shared)
-            let p = mapPage (PageMsg.{{Name}}Msg >> PageMsg) (LayoutMsg.{{LayoutName}}Msg >> LayoutMsg) ({{ModuleName}}.page model.Shared layoutModel route)
-            changeRoute p PageModel.{{Name}} (LayoutModel.{{LayoutName}} layoutModel) layoutCmd
+            init{{Name}}Page model route Command.none
         {{/each}}
         | Route.NotFound ->
             {
                 model with
-                    CurrentPage = PageModel.NotFound
+                    CurrentPage = Page.NotFound
                     CurrentRoute = Route.NotFound
-                    CurrentLayout = LayoutModel.None
+                    CurrentLayout = Layout.None
             },
             Cmd.none
     | PageMsg pageMsg ->
-        {{#each Layouts}}
-        let get{{Name}}Layout () =
-            match model.CurrentLayout with
-            | LayoutModel.{{Name}} m -> m
-            | _ -> failwith "CurrentLayout is not set to {{Name}}Layout"
-        {{/each}}
-
-        match pageMsg, model.CurrentPage, model.CurrentRoute, model.CurrentLayout with
+        match model.CurrentPage, pageMsg, model.CurrentPageModel with
         {{#each Routes}}
-        | PageMsg.{{MsgName}} msg', PageModel.{{Name}} model', Route.{{Name}} route, LayoutModel.{{LayoutName}} layout ->
-            let p = mapPage (PageMsg.{{Name}}Msg >> PageMsg) (LayoutMsg.{{LayoutName}}Msg >> LayoutMsg) ({{ModuleName}}.page model.Shared layout route)
-            updatePage p model' PageModel.{{Name}} msg'
+        | Page.{{Name}} mappedPage, PageMsg.{{Name}}Msg pageMsg', PageModel.{{Name}} pageModel ->
+            let pageModel, pageCmd = mappedPage.Update pageMsg' pageModel
+            {
+                model with
+                    CurrentPageModel = PageModel.{{Name}} pageModel
+            },
+            commandToCmd SharedMsg id pageCmd
         {{/each}}
-        | msg', model', route', layout' ->
-            printfn $"Unhandled PageMsg, CurrentPage.Model, CurrentRoute amd CurrentLayout. Got\nMsg:\n%A{msg'}\nCurrentPage.Model:\n%A{model'}\nCurrentRoute:\n%A{route'}\nCurrentLayout:\n%A{layout'}'"
+        | currentPage, pageMsg, currentPageModel ->
+            printfn $"Unhandled CurrentPage, PageMsg, CurrentPageModel, CurrentRoute. Got\nCurrentPage:\n%A{currentPage}\nPageMsg:\n%A{pageMsg}\nCurrentPageModel:\n%A{currentPageModel}"
             model, Cmd.none
     | LayoutMsg layoutMsg ->
+        let updatePage layoutMsg =
+            model.PageModelByLayout
+            |> Map.tryFind model.CurrentLayout
+            |> function
+                | Some p ->
+                    match p, model.CurrentPageModel, layoutMsg with
+                    | Page.Home mappedPage, PageModel.Home m, LayoutMsg.MainMsg layoutMsg' ->
+                        let pageMsg = mappedPage.LayoutMsgToPageMsg layoutMsg'
+                        let m, cmd = mappedPage.Update pageMsg m
+                        { model with
+                            CurrentPageModel = PageModel.Home m
+                        }
+                        , cmd
+                    | _ -> model, Command.none
+                | _ -> model, Command.none
+
         match layoutMsg, model.CurrentLayout with
         {{#each Layouts}}
-        | LayoutMsg.{{MsgName}} msg', LayoutModel.{{Name}} model' ->
-            updateLayout ({{ModuleName}}.layout model.Shared) model' LayoutModel.{{Name}} msg' (LayoutMsg.{{MsgName}} >> LayoutMsg)
+        | LayoutMsg.{{Name}}Msg layoutMsg', Layout.{{Name}} (props, model') ->
+            let model, pageCmd = updatePage (LayoutMsg.{{Name}}Msg layoutMsg')
+            let layout = ({{ModuleName}}.layout props model.CurrentRoute model.Shared)
+            updateLayout model layout props model' Layout.{{Name}} layoutMsg' (LayoutMsg.{{Name}}Msg >> LayoutMsg) pageCmd
         {{/each}}
-        | msg', model' ->
-            printfn $"Unhandled LayoutMsg, CurrentLayout.Model. Got\nMsg:\n%A{msg'}\nCurrentLayout.Model:\n%A{model'}"
+        | layoutMsg', layout ->
+            printfn $"Unhandled LayoutMsg and CurrentLayout. Got\nLayoutMsg:\n%A{layoutMsg'}\nCurrentLayout:\n%A{layout}"
             model, Cmd.none
 
 let inline (|Renderable|) (o: 'x when 'x: (member Render: unit -> ReactElement)) = o
 
 let view (model: Model) (dispatch: Msg -> unit) =
     let currentPageView =
-        match model.CurrentPage, model.CurrentRoute, model.CurrentLayout with
+        match model.CurrentPageModel, model.CurrentRoute with
         {{#each Routes}}
-        | PageModel.{{Name}} m, Route.{{Name}} route, LayoutModel.{{LayoutName}} layoutModel ->
-            ({{ModuleName}}.page model.Shared layoutModel route).View m (PageMsg.{{MsgName}} >> PageMsg >> dispatch)
+        | PageModel.{{Name}} m, Route.{{Name}} route ->
+            ({{ModuleName}}.page model.Shared route).View m (PageMsg.{{MsgName}} >> PageMsg >> dispatch)
         {{/each}}
         | _ -> failwith "Page not found"
 
     let currentView =
         match model.CurrentLayout with
         {{#each Layouts}}
-        | LayoutModel.{{Name}} m ->
-            ({{ModuleName}}.layout model.Shared).View m currentPageView (LayoutMsg.{{MsgName}} >> LayoutMsg >> dispatch)
+        | Layout.{{Name}} (props, m) ->
+            ({{ModuleName}}.layout props model.CurrentRoute model.Shared).View m currentPageView (LayoutMsg.{{MsgName}} >> LayoutMsg >> dispatch)
         {{/each}}
-        | LayoutModel.None -> currentPageView
+        | Layout.None -> currentPageView
 
     let currentReactElement =
         {{#if ViewTypeIsReact}}
@@ -244,13 +292,13 @@ let subscribe model =
     Sub.batch [
         match model.CurrentLayout with
         {{#each Layouts}}
-        | LayoutModel.{{Name}} m -> Sub.map "Layout{{Name}}" (LayoutMsg.{{MsgName}} >> LayoutMsg) (({{ModuleName}}.layout model.Shared).Subscriptions m)
+        | Layout.{{Name}} (props, m) -> Sub.map "Layout{{Name}}" (LayoutMsg.{{MsgName}} >> LayoutMsg) (({{ModuleName}}.layout props model.CurrentRoute model.Shared).Subscriptions m)
         {{/each}}
         | _ -> Sub.none
-        match model.CurrentPage, model.CurrentRoute, model.CurrentLayout with
+        match model.CurrentRoute, model.CurrentPageModel with
         {{#each Routes}}
-        | PageModel.{{Name}} m, Route.{{Name}} route, LayoutModel.{{LayoutName}} layoutModel ->
-            Sub.map "Page{{Name}}" (PageMsg.{{MsgName}} >> PageMsg) (({{ModuleName}}.page model.Shared layoutModel route).Subscriptions m)
+        | Route.{{Name}} route, PageModel.{{Name}} pageModel ->
+            Sub.map "Page{{Name}}" (PageMsg.{{MsgName}} >> PageMsg) (({{ModuleName}}.page model.Shared route).Subscriptions pageModel)
         {{/each}}
         | _ -> Sub.none
     ]
