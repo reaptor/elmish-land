@@ -6,7 +6,7 @@ sidebar_position: 1
 
 ## Overview
 
-Pages are the basic building blocks of your Elmish Land application. When a user visits a URL, Elmish Land will use the names of the folders
+Pages are the basic building blocks of your Elmish Land application. When a user visits an URL, Elmish Land will use the names of the folders
 in your src/Pages folder to decide which page to render. See [Routing](#routing) for more information.
 
 :::info
@@ -15,7 +15,7 @@ in your src/Pages folder to decide which page to render. See [Routing](#routing)
 
 In a standard Elmish project, all URL requests often go to one big routing file. In Elmish Land, this file is generated for you automatically.
 
-The big difference in Elmish Land is that all pages share data with via `SharedModel` and access type-safe URL information using the `Route` type.
+The big difference in Elmish Land is that all pages share data via `SharedModel` and access type-safe URL information using the `Route` type.
 
 No need to write your URL parsers by hand!
 
@@ -71,8 +71,8 @@ let page (_shared: SharedModel) (_route: HomeRoute) =
 ### Understanding pages
 
 #### `Model`
-The `Model` contains the state of or page. Everytime a value change on the page we need to update the `Model`. An example
-of this is typing text in a HTML `ìnput` element. For every change we need update the `Model` with the new value from the
+The `Model` contains the state of our page. Everytime a value changes on the page we need to update the `Model`. An example
+of this is typing text in a HTML `input` element. For every change we need update the `Model` with the new value from the
 `onChange` event of the element.
 
 ```fsharp
@@ -92,7 +92,7 @@ type Msg =
 
 :::info
 
-You can read more about `LayoutMsg` on the [Sending messages to pages](/docs/core-concepts/layouts#sending-messages-to-pages) section.
+You can read more about layouts on the [Layouts](/docs/core-concepts/layouts) page and more about `LayoutMsg` on the [Sending messages to pages](/docs/core-concepts/layouts#sending-messages-to-pages) section.
 
 :::
 
