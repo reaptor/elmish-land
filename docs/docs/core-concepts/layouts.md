@@ -46,7 +46,7 @@ let update (msg: Msg) (model: Model) =
     match msg with
     | NoOp -> model, Command.none
 
-let routeChanged (_route: Route) (model: Model) =
+let routeChanged (model: Model) =
     model, Command.none
 
 let view (_model: Model) (content: Feliz.ReactElement) (_dispatch: Msg -> unit) =
@@ -57,7 +57,7 @@ let view (_model: Model) (content: Feliz.ReactElement) (_dispatch: Msg -> unit) 
         ]
     ]
 
-let layout (_props: Props) (_shared: SharedModel) =
+let layout (_props: Props) (_route: Route) (_shared: SharedModel) =
     Layout.from init update routeChanged view
 ```
 
