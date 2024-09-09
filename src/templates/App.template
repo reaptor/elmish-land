@@ -18,6 +18,13 @@ open {{RootModule}}
 open {{RootModule}}.Shared
 
 [<RequireQualifiedAccess>]
+type LayoutName =
+    {{#each Layouts}}
+    | {{Name}}
+    {{/each}}
+    | None
+
+[<RequireQualifiedAccess>]
 type Layout =
     {{#each Layouts}}
     | {{Name}} of {{ModuleName}}.Props * {{ModuleName}}.Model
@@ -74,7 +81,8 @@ type Model = {
     CurrentPage: Page
     CurrentPageModel: PageModel
     CurrentLayout: Layout
-    PageModelByLayout: Map<Layout, Page>
+    CurrentLayoutName: LayoutName
+    PageModelByLayout: Map<LayoutName, Page>
 }
 
 let rec commandToCmd fromSharedMsg fromLayoutMsg command =
@@ -89,7 +97,7 @@ let rec commandToCmd fromSharedMsg fromLayoutMsg command =
 let get{{Name}}Layout currentLayout currentRoute sharedModel layoutProps =
     let layout = {{ModuleName}}.layout layoutProps currentRoute sharedModel
     match currentLayout with
-    | Some (Layout.Main (_, m)) -> layout.RouteChanged m
+    | Some (Layout.{{Name}} (_, m)) -> layout.RouteChanged m
     | _ -> layout.Init ()
 
 {{/each}}
@@ -116,25 +124,6 @@ let mapPage (f: 'pageMsg -> Msg) (mapLayout: 'layoutMsg -> Msg) (p: Page<SharedM
 
 let layoutMsgToPageMsg page f layoutMsg = page.LayoutMsgToPageMsg layoutMsg |> f
 
-let initPage model route mappedPage pageFn modelFn layoutFn sharedCmd =
-    let pageModel, pageCmd = mappedPage.Init ()
-    let layoutModel, layoutCmd = layoutFn model.Shared mappedPage.LayoutProps
-    let layout = Layout.Main (mappedPage.LayoutProps, layoutModel)
-    {
-        model with
-            CurrentRoute = route
-            CurrentPage = pageFn mappedPage
-            CurrentPageModel = modelFn pageModel
-            CurrentLayout = layout
-            PageModelByLayout = Map.change layout (fun _ -> Some (pageFn mappedPage)) model.PageModelByLayout
-    },
-    Command.batch [
-        sharedCmd
-        pageCmd
-        Command.map mappedPage.LayoutMsgToMsg mappedPage.LayoutMsgToMsg layoutCmd
-        Command.map (LayoutMsg.MainMsg >> LayoutMsg) (LayoutMsg.MainMsg >> LayoutMsg) layoutCmd
-    ] |> commandToCmd SharedMsg id
-
 {{#each Routes}}
 let init{{Name}}Page model route sharedCmd =
     let mappedPage = ({{ModuleName}}.page model.Shared route |> mapPage (PageMsg.{{Name}}Msg >> PageMsg) (LayoutMsg.{{LayoutName}}Msg >> LayoutMsg))
@@ -147,7 +136,8 @@ let init{{Name}}Page model route sharedCmd =
             CurrentPage = Page.{{Name}} mappedPage
             CurrentPageModel = PageModel.{{Name}} pageModel
             CurrentLayout = layout
-            PageModelByLayout = Map.change layout (fun _ -> Some (Page.{{Name}} mappedPage)) model.PageModelByLayout
+            CurrentLayoutName = LayoutName.{{LayoutName}}
+            PageModelByLayout = Map.change LayoutName.{{LayoutName}} (fun _ -> Some (Page.{{Name}} mappedPage)) model.PageModelByLayout
     },
     Command.batch [
         sharedCmd
@@ -167,6 +157,7 @@ let init () =
         CurrentPage = Page.NotFound
         CurrentPageModel = PageModel.NotFound
         CurrentLayout = Layout.None
+        CurrentLayoutName = LayoutName.None
         PageModelByLayout = Map.empty
     }
 
@@ -212,6 +203,7 @@ let update (msg: Msg) (model: Model) =
                     CurrentPage = Page.NotFound
                     CurrentRoute = Route.NotFound
                     CurrentLayout = Layout.None
+                    CurrentLayoutName = LayoutName.None
             },
             Cmd.none
     | PageMsg pageMsg ->
@@ -231,7 +223,7 @@ let update (msg: Msg) (model: Model) =
     | LayoutMsg layoutMsg ->
         let updatePage layoutMsg =
             model.PageModelByLayout
-            |> Map.tryFind model.CurrentLayout
+            |> Map.tryFind model.CurrentLayoutName
             |> function
                 | Some p ->
                     match p, model.CurrentPageModel, layoutMsg with
