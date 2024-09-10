@@ -54,7 +54,7 @@ type MappedPage<'pageMsg, 'pageModel, 'layoutMsg, 'layoutProps> =
     {
         Init: unit -> 'pageModel * Command<Msg, SharedMsg, Msg>
         Update: 'pageMsg -> 'pageModel -> 'pageModel * Command<Msg, SharedMsg, Msg>
-        View: 'pageModel -> ('pageMsg -> unit) -> Feliz.ReactElement
+        View: 'pageModel -> ('pageMsg -> unit) -> {{ViewType}}
         Subscriptions: 'pageModel -> (string list * (('pageMsg -> unit) -> System.IDisposable)) list
         LayoutProps: 'layoutProps
         LayoutMsgToPageMsg: 'layoutMsg -> 'pageMsg
