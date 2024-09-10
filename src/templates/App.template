@@ -192,20 +192,23 @@ let update (msg: Msg) (model: Model) =
         let model'', cmd = Shared.update msg' model.Shared
         { model with Shared = model'' }, commandToCmd SharedMsg Unchecked.defaultof<_> cmd
     | RouteChanged nextRoute ->
-        match nextRoute with
-        {{#each Routes}}
-        | Route.{{Name}} route ->
-            init{{Name}}Page model route Command.none
-        {{/each}}
-        | Route.NotFound ->
-            {
-                model with
-                    CurrentPage = Page.NotFound
-                    CurrentRoute = Route.NotFound
-                    CurrentLayout = Layout.None
-                    CurrentLayoutName = LayoutName.None
-            },
-            Cmd.none
+        if model.CurrentRoute = nextRoute then
+            model, Cmd.none
+        else
+            match nextRoute with
+            {{#each Routes}}
+            | Route.{{Name}} route ->
+                init{{Name}}Page model route Command.none
+            {{/each}}
+            | Route.NotFound ->
+                {
+                    model with
+                        CurrentPage = Page.NotFound
+                        CurrentRoute = Route.NotFound
+                        CurrentLayout = Layout.None
+                        CurrentLayoutName = LayoutName.None
+                },
+                Cmd.none
     | PageMsg pageMsg ->
         match model.CurrentPage, pageMsg, model.CurrentPageModel with
         {{#each Routes}}
