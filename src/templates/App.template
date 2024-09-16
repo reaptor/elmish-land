@@ -235,7 +235,7 @@ let update (msg: Msg) (model: Model) =
                         let pageMsg = mappedPage.LayoutMsgToPageMsg layoutMsg'
                         let m, cmd = mappedPage.Update pageMsg m
                         { model with
-                            CurrentPageModel = PageModel.Home m
+                            CurrentPageModel = PageModel.{{Name}} m
                         }
                         , cmd
                     {{/each}}
