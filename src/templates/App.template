@@ -230,13 +230,15 @@ let update (msg: Msg) (model: Model) =
             |> function
                 | Some p ->
                     match p, model.CurrentPageModel, layoutMsg with
-                    | Page.Home mappedPage, PageModel.Home m, LayoutMsg.MainMsg layoutMsg' ->
+                    {{#each Routes}}
+                    | Page.{{Name}} mappedPage, PageModel.{{Name}} m, LayoutMsg.{{LayoutName}}Msg layoutMsg' ->
                         let pageMsg = mappedPage.LayoutMsgToPageMsg layoutMsg'
                         let m, cmd = mappedPage.Update pageMsg m
                         { model with
                             CurrentPageModel = PageModel.Home m
                         }
                         , cmd
+                    {{/each}}
                     | _ -> model, Command.none
                 | _ -> model, Command.none
 
