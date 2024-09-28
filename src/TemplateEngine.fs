@@ -548,7 +548,7 @@ let getTemplateData projectName absoluteProjectDir =
 
 
         return {
-            ViewType = settings.ViewType
+            ViewType = settings.View.Type
             RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
             Routes = routes
             Layouts = layoutFiles |> Array.map (fileToLayout projectName absoluteProjectDir)

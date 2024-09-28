@@ -350,7 +350,10 @@ module RouteParameters =
     let value (RouteParameters x) = x
 
 type Settings = {
-    ViewType: string
+    View: {|
+        Type: string
+        ScaffoldTextElement: string
+    |}
     ProjectReferences: string list
     DefaultLayoutTemplate: string option
     DefaultPageTemplate: string option
@@ -432,9 +435,23 @@ let getSettings absoluteProjectDir =
 
         let decoder =
             Decode.object (fun get -> {
-                ViewType =
-                    get.Optional.Field "viewType" Decode.string
-                    |> Option.defaultValue "Feliz.ReactElement"
+                View =
+                    get.Optional.Field
+                        "view"
+                        (Decode.object (fun get -> {|
+                            Type =
+                                get.Optional.Field "type" Decode.string
+                                |> Option.defaultValue "Feliz.ReactElement"
+                            ScaffoldTextElement =
+                                get.Optional.Field "scaffoldTextElement" Decode.string
+                                |> Option.defaultValue "Html.text"
+                        |}))
+                    |> Option.defaultWith (fun () -> {|
+                        Type =
+                            get.Optional.Field "viewType" Decode.string
+                            |> Option.defaultValue "Feliz.ReactElement"
+                        ScaffoldTextElement = "Html.text"
+                    |})
                 ProjectReferences =
                     get.Optional.Field "projectReferences" (Decode.list Decode.string)
                     |> Option.defaultValue []

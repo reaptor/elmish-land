@@ -19,7 +19,7 @@ let update (msg: Msg) (model: Model) =
     | LayoutMsg _ -> model, Command.none
 
 let view (_model: Model) (_dispatch: Msg -> unit) =
-    Html.text "{{Route.Name}} Page"
+    {{ScaffoldTextElement}} "{{Route.Name}} Page"
 
 let page (_shared: SharedModel) (_route: {{Route.RouteName}}) =
     Page.from init update view () LayoutMsg

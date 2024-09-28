@@ -22,12 +22,7 @@ let routeChanged (model: Model) =
     model, Command.none
 
 let view (_model: Model) (content: {{ViewType}}) (_dispatch: Msg -> unit) =
-    Html.div [
-        Html.text "{{Layout.Name}} Layout"
-        Html.div [
-            content
-        ]
-    ]
+    content
 
 let layout (_props: Props) (_route: Route) (_shared: SharedModel) =
     Layout.from init update routeChanged view

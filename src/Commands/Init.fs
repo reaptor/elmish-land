@@ -165,7 +165,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 }
 
                 let routeData = {
-                    ViewType = settings.ViewType
+                    ViewType = settings.View.Type
                     RootModule = rootModuleName
                     Routes = [| homeRoute |]
                     Layouts = [| mainLayout |]
@@ -179,7 +179,8 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                             [ "src"; "Pages"; "Page.fs" ]
                             (Some(
                                 handlebars {|
-                                    ViewType = settings.ViewType
+                                    ViewType = settings.View.Type
+                                    ScaffoldTextElement = settings.View.ScaffoldTextElement
                                     RootModule = rootModuleName
                                     Route = homeRoute
                                 |}
@@ -193,7 +194,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                             [ "src"; "Pages"; "Layout.fs" ]
                             (Some(
                                 handlebars {|
-                                    ViewType = settings.ViewType
+                                    ViewType = settings.View.Type
                                     RootModule = rootModuleName
                                     Layout = mainLayout
                                 |}

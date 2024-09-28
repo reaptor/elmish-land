@@ -45,7 +45,7 @@ let addLayout absoluteProjectDir (url: string) =
                 layoutFileParts
                 (Some(
                     handlebars {|
-                        ViewType = settings.ViewType
+                        ViewType = settings.View.Type
                         RootModule = rootModuleName
                         Layout = layout
                     |}

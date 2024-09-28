@@ -117,3 +117,10 @@ module Routes =
             | other ->
                 printfn "Route not found: '%A'" other
                 Route.NotFound
+
+        let isEqualWithoutPathAndQuery route1 route2 =
+            match route1, route2 with
+            {{#each Routes}}
+            | Route.{{Name}} _, Route.{{Name}} _ -> true
+            {{/each}}
+            | _ -> false
