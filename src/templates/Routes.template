@@ -102,7 +102,7 @@ module Routes =
             )
 
         let private getQuery name (parser: string -> _ option) query =
-            tryGetQuery name parser query |> Option.defaultWith (fun () -> failwith $"Query parameter '%s{name}' not found")
+            tryGetQuery name parser query |> Option.defaultWith (fun () -> failwithf "Query parameter '%s' not found" name)
 
         let parse (xs: string list) =
             let xs =
