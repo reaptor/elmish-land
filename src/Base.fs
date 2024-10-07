@@ -311,12 +311,12 @@ let getDotnetToolDependencies () = [ "fable", "--version 4.*" ]
 
 let nugetDependencies =
     Set [
-        "Elmish", "4.*"
-        "Fable.Promise", "3.*"
-        "Fable.Elmish.HMR", "7.*"
-        "Fable.Elmish.React", "4.*"
-        "Feliz", "2.*"
-        "Feliz.Router", "4.*"
+        "Elmish", "4.2.0"
+        "Fable.Promise", "3.2.0"
+        "Fable.Elmish.HMR", "7.0.0"
+        "Fable.Elmish.React", "4.0.0"
+        "Feliz", "2.8.0"
+        "Feliz.Router", "4.0.0"
     ]
 
 let npmDependencies = Set [ "react", "18"; "react-dom", "18" ]

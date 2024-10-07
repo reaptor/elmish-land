@@ -14,7 +14,6 @@ open ElmishLand.AppError
 open ElmishLand.FsProj
 open ElmishLand.Resource
 open ElmishLand.Generate
-open ElmishLand.Paket
 
 let getNodeVersion () =
     runProcess false workingDirectory "node" [| "-v" |] CancellationToken.None ignore
@@ -90,6 +89,18 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
 
         do! writeResourceToProjectDir "settings.json" [ ".vscode"; "settings.json" ] None
         do! writeResourceToProjectDir "elmish-land.json" [ "elmish-land.json" ] None
+
+        do!
+            writeResource
+                workingDirectory
+                false
+                "Directory.Packages.props.template"
+                [ "Directory.Packages.props" ]
+                (Some(
+                    handlebars {|
+                        PackageVersions = getNugetPackageVersions ()
+                    |}
+                ))
 
         do!
             writeResourceToProjectDir
@@ -229,12 +240,6 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
             |> List.map (fun (cmd, args) ->
                 true, AbsoluteProjectDir.asFilePath absoluteProjectDir, cmd, args, CancellationToken.None, ignore)
             |> runProcesses
-
-        match! getPaketDependencies absoluteProjectDir with
-        | [] -> ()
-        | paketDependencies ->
-            do! writePaketReferences absoluteProjectDir paketDependencies
-            do! ensurePaketInstalled absoluteProjectDir
 
         do!
             runProcess

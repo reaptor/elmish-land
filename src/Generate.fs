@@ -8,7 +8,6 @@ open ElmishLand.Base
 open ElmishLand.TemplateEngine
 open ElmishLand.Resource
 open ElmishLand.Log
-open ElmishLand.Paket
 open ElmishLand.Process
 
 let dotElmishLandDirectory absoluteProjectDir =
@@ -16,27 +15,17 @@ let dotElmishLandDirectory absoluteProjectDir =
     |> AbsoluteProjectDir.asFilePath
     |> FilePath.appendParts [ ".elmish-land" ]
 
-let getNugetDependencies absoluteProjectDir =
-    eff {
-        match! getPaketDependencies absoluteProjectDir with
-        | [] ->
-            return
-                nugetDependencies
-                |> Seq.map (fun (name, ver) -> $"        <PackageReference Include=\"%s{name}\" Version=\"%s{ver}\" />")
-                |> String.concat "\n"
-                |> fun deps -> $"<ItemGroup>\n%s{deps}\n    </ItemGroup>"
-        | _ -> return ""
-    }
+let getNugetPackageVersions () =
+    nugetDependencies
+    |> Seq.map (fun (name, ver) -> $"        <PackageVersion Include=\"%s{name}\" Version=\"%s{ver}\" />")
+    |> String.concat "\n"
+    |> fun deps -> $"<ItemGroup>\n%s{deps}\n    </ItemGroup>"
 
-let ensurePaketInstalled absoluteProjectDir =
-    eff {
-        match! getPaketDependencies absoluteProjectDir with
-        | [] -> ()
-        | paketDependencies ->
-            do! writePaketReferences absoluteProjectDir paketDependencies
-            do! doPaketInstall absoluteProjectDir
-            return ()
-    }
+let getNugetPackageReferences () =
+    nugetDependencies
+    |> Seq.map (fun (name, _) -> $"        <PackageReference Include=\"%s{name}\" />")
+    |> String.concat "\n"
+    |> fun deps -> $"<ItemGroup>\n%s{deps}\n    </ItemGroup>"
 
 let ensureViteInstalled () =
     eff {
@@ -67,7 +56,7 @@ let generate absoluteProjectDir dotnetSdkVersion =
         if Environment.CommandLine.Contains("--clean") then
             Directory.Delete(FilePath.asString dotElmishLandDirectory)
 
-        let! nugetDependencies = getNugetDependencies absoluteProjectDir
+        let nugetDependencies = getNugetPackageReferences ()
         let! settings = getSettings absoluteProjectDir
 
         do!
@@ -106,8 +95,4 @@ let generate absoluteProjectDir dotnetSdkVersion =
         let! templateData = getTemplateData projectName absoluteProjectDir
         logger.Debug("Using template data: {}", templateData)
         do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) templateData
-
-        match! getPaketDependencies absoluteProjectDir with
-        | [] -> ()
-        | _ -> do! ensurePaketInstalled absoluteProjectDir
     }

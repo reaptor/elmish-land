@@ -84,21 +84,6 @@ https://dotnet.microsoft.com/
 https://nodejs.org/
 """
 
-        | DepsMissingFromPaket ->
-            let dependenies =
-                nugetDependencies
-                |> Set.map (fun (name, _) -> $"nuget %s{name}")
-                |> String.concat "\n"
-
-            log.Error
-                $"""Some or all of the following dependencies are missing from paket.dependencies:
-
-%s{dependenies}
-"""
-        | PaketNotInstalled ->
-            log.Error
-                """Found paket.dependencies but paket is not installed. Please install paket.
-"""
         | PagesDirectoryMissing ->
             log.Error
                 """src/Pages directory is missing. Please run 'elmish-land init'.

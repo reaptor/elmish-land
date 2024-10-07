@@ -7,8 +7,6 @@ type AppError =
     | FsProjValidationError of string list
     | DotnetSdkNotFound
     | NodeNotFound
-    | DepsMissingFromPaket
-    | PaketNotInstalled
     | ViteNotInstalled
     | PagesDirectoryMissing
     | ElmishLandProjectMissing
