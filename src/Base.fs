@@ -311,6 +311,7 @@ let getDotnetToolDependencies () = [ "fable", "--version 4.*" ]
 
 let nugetDependencies =
     Set [
+        "FSharp.Core", "8.0.401"
         "Elmish", "4.2.0"
         "Fable.Promise", "3.2.0"
         "Fable.Elmish.HMR", "7.0.0"
@@ -351,8 +352,9 @@ module RouteParameters =
 
 type Settings = {
     View: {|
+        Module: string
         Type: string
-        ScaffoldTextElement: string
+        TextElement: string
     |}
     ProjectReferences: string list
     DefaultLayoutTemplate: string option
@@ -439,18 +441,18 @@ let getSettings absoluteProjectDir =
                     get.Optional.Field
                         "view"
                         (Decode.object (fun get -> {|
-                            Type =
-                                get.Optional.Field "type" Decode.string
-                                |> Option.defaultValue "Feliz.ReactElement"
-                            ScaffoldTextElement =
-                                get.Optional.Field "scaffoldTextElement" Decode.string
+                            Module = get.Optional.Field "module" Decode.string |> Option.defaultValue "Feliz"
+                            Type = get.Optional.Field "type" Decode.string |> Option.defaultValue "ReactElement"
+                            TextElement =
+                                get.Optional.Field "textElement" Decode.string
                                 |> Option.defaultValue "Html.text"
                         |}))
                     |> Option.defaultWith (fun () -> {|
+                        Module = "Feliz"
                         Type =
                             get.Optional.Field "viewType" Decode.string
-                            |> Option.defaultValue "Feliz.ReactElement"
-                        ScaffoldTextElement = "Html.text"
+                            |> Option.defaultValue "ReactElement"
+                        TextElement = "Html.text"
                     |})
                 ProjectReferences =
                     get.Optional.Field "projectReferences" (Decode.list Decode.string)

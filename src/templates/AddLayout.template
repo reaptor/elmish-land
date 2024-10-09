@@ -1,6 +1,6 @@
 ﻿module {{Layout.ModuleName}}
 
-open Feliz
+open {{ViewModule}}
 open ElmishLand
 open {{RootModule}}.Shared
 

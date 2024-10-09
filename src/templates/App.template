@@ -13,6 +13,7 @@ open Elmish
 open Elmish.HMR
 open Feliz
 open Feliz.Router
+open {{ViewModule}}
 open ElmishLand
 open {{RootModule}}
 open {{RootModule}}.Shared
@@ -262,7 +263,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
         | PageModel.{{Name}} m, Route.{{Name}} route ->
             ({{ModuleName}}.page model.Shared route).View m (PageMsg.{{MsgName}} >> PageMsg >> dispatch)
         {{/each}}
-        | _ -> failwith "Page not found"
+        | _ -> {{RootModule}}.Pages.NotFound.view ()
 
     let currentView =
         match model.CurrentLayout with

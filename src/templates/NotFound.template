@@ -1,0 +1,6 @@
+﻿module {{RootModule}}.Pages.NotFound
+
+open Feliz
+
+let view () =
+    {{ScaffoldTextElement}} "Page not found"

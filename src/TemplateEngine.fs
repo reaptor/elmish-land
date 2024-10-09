@@ -138,6 +138,7 @@ type Layout = {
 }
 
 type TemplateData = {
+    ViewModule: string
     ViewType: string
     RootModule: string
     Routes: Route array
@@ -145,7 +146,7 @@ type TemplateData = {
     RouteParamModules: string list
 } with
 
-    member this.ViewTypeIsReact = this.ViewType = "Feliz.ReactElement"
+    member this.ViewTypeIsReact = this.ViewType = "ReactElement"
 
 let getSortedPageFiles absoluteProjectDir =
     let pageFilesDir =
@@ -548,6 +549,7 @@ let getTemplateData projectName absoluteProjectDir =
 
 
         return {
+            ViewModule = settings.View.Module
             ViewType = settings.View.Type
             RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
             Routes = routes
