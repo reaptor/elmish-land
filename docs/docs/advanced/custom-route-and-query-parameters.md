@@ -30,7 +30,7 @@ module Age =
         match Int32.Parse value with
         | true, i -> Some (Age i)
         | _ -> None
-        
+
     let format (Age age) = string age
 ```
 
@@ -44,8 +44,8 @@ lastly you need to add it to the page's `route.json`:
             "name": "age",
             "type": "Age",
             "required": true,
-            "parse": "parseAge",
-            "format": "formatAge"
+            "parse": "Age.parse",
+            "format": "Age.format"
         }
     ]
 }
