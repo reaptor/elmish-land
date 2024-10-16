@@ -98,7 +98,7 @@ let rec commandToCmd fromSharedMsg fromLayoutMsg command =
 let get{{Name}}Layout currentLayout currentRoute sharedModel layoutProps =
     let layout = {{ModuleName}}.layout layoutProps currentRoute sharedModel
     match currentLayout with
-    | Some (Layout.{{Name}} (_, m)) -> layout.RouteChanged m
+    | Layout.{{Name}} (_, m) -> layout.RouteChanged m
     | _ -> layout.Init ()
 
 {{/each}}
@@ -129,7 +129,7 @@ let layoutMsgToPageMsg page f layoutMsg = page.LayoutMsgToPageMsg layoutMsg |> f
 let init{{Name}}Page model route sharedCmd =
     let mappedPage = ({{ModuleName}}.page model.Shared route |> mapPage (PageMsg.{{Name}}Msg >> PageMsg) (LayoutMsg.{{LayoutName}}Msg >> LayoutMsg))
     let pageModel, pageCmd = mappedPage.Init ()
-    let layoutModel, layoutCmd = (get{{LayoutName}}Layout None (Route.{{Name}} route)) model.Shared mappedPage.LayoutProps
+    let layoutModel, layoutCmd = (get{{LayoutName}}Layout model.CurrentLayout (Route.{{Name}} route)) model.Shared mappedPage.LayoutProps
     let layout = Layout.{{LayoutName}} (mappedPage.LayoutProps, layoutModel)
     {
         model with
