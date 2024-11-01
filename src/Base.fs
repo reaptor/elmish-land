@@ -430,6 +430,7 @@ let getSettings absoluteProjectDir =
                         s
                             .Replace($"%s{AbsoluteProjectDir.asString absoluteProjectDir}/src/Pages/", "")
                             .Replace($"/%s{routeJson}", "")
+                            .Replace($"%s{routeJson}", "")
                         |> fun s -> $"/%s{s}"
                     , x))
             |> Array.toList
