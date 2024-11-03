@@ -288,6 +288,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
 
 let subscribe model =
     Sub.batch [
+        Sub.map "Shared" SharedMsg (Shared.subscriptions model.Shared)
         match model.CurrentLayout with
         {{#each Layouts}}
         | Layout.{{Name}} (props, m) -> Sub.map "Layout{{Name}}" (LayoutMsg.{{MsgName}} >> LayoutMsg) (({{ModuleName}}.layout props model.CurrentRoute model.Shared).Subscriptions m)
