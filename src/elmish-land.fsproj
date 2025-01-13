@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
         <RootNamespace>ElmishLand</RootNamespace>
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>elmish-land</ToolCommandName>
@@ -89,13 +89,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Handlebars.Net" Version="2.1.4" />
-        <PackageReference Include="Orsak" Version="0.4.2" />
-        <PackageReference Include="Thoth.Json.Net" Version="11.0.0" />
+        <PackageReference Include="GitVersion.MsBuild" />
+        <PackageReference Include="Handlebars.Net" />
+        <PackageReference Include="Orsak" />
+        <PackageReference Include="Thoth.Json.Net" />
     </ItemGroup>
 
 </Project>

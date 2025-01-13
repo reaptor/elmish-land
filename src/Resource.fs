@@ -6,7 +6,7 @@ open ElmishLand.Base
 open ElmishLand.Log
 open Orsak
 
-let writeResource (workingDir: FilePath) overwrite (resourceName: string) dst replace =
+let writeResource (workingDir: FilePath) overwrite (resourceName: string) dst (replace: (string -> string) option) =
     eff {
         let! log = Log().Get()
 

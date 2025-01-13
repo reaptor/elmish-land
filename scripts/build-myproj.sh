@@ -1,1 +1,1 @@
-dotnet run --framework net8.0 --project src/elmish-land.fsproj -- build --project-dir MyProject --verbose
+dotnet run --framework net9.0 --project src/elmish-land.fsproj -- build --project-dir ../ElmishLandMyProject --verbose
