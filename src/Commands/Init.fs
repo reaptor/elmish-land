@@ -176,6 +176,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 }
 
                 let routeData = {
+                    ViewModule = settings.View.Module
                     ViewType = settings.View.Type
                     RootModule = rootModuleName
                     Routes = [| homeRoute |]
@@ -186,12 +187,24 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 eff {
                     do!
                         writeResourceToProjectDir
+                            "NotFound.template"
+                            [ "src"; "Pages"; "NotFound.fs" ]
+                            (Some(
+                                handlebars {|
+                                    ScaffoldTextElement = settings.View.TextElement
+                                    RootModule = rootModuleName
+                                |}
+                            ))
+
+                    do!
+                        writeResourceToProjectDir
                             "AddPage.template"
                             [ "src"; "Pages"; "Page.fs" ]
                             (Some(
                                 handlebars {|
+                                    ViewModule = settings.View.Module
                                     ViewType = settings.View.Type
-                                    ScaffoldTextElement = settings.View.ScaffoldTextElement
+                                    ScaffoldTextElement = settings.View.TextElement
                                     RootModule = rootModuleName
                                     Route = homeRoute
                                 |}
@@ -205,6 +218,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                             [ "src"; "Pages"; "Layout.fs" ]
                             (Some(
                                 handlebars {|
+                                    ViewModule = settings.View.Module
                                     ViewType = settings.View.Type
                                     RootModule = rootModuleName
                                     Layout = mainLayout

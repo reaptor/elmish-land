@@ -1,5 +1,6 @@
 ﻿module {{RootModule}}.Shared
 
+open System
 open ElmishLand
 
 type SharedModel = unit
@@ -12,3 +13,6 @@ let init () =
 let update (msg: SharedMsg) (model: SharedModel) =
     match msg with
     | NoOp -> model, Command.none
+
+// https://elmish.github.io/elmish/docs/subscription.html
+let subscriptions _model : (string list * ((SharedMsg -> unit) -> IDisposable)) list = []

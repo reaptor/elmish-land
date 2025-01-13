@@ -61,6 +61,9 @@
         <EmbeddedResource Include="templates\App.template">
             <LogicalName>App.template</LogicalName>
         </EmbeddedResource>
+        <EmbeddedResource Include="templates\NotFound.template">
+          <LogicalName>NotFound.template</LogicalName>
+        </EmbeddedResource>
         <EmbeddedResource Include="templates\elmish-land.json">
             <LogicalName>elmish-land.json</LogicalName>
         </EmbeddedResource>

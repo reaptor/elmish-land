@@ -48,8 +48,9 @@ let addPage absoluteProjectDir (url: string) =
                 routeFileParts
                 (Some(
                     handlebars {|
+                        ViewModule = settings.View.Module
                         ViewType = settings.View.Type
-                        ScaffoldTextElement = settings.View.ScaffoldTextElement
+                        ScaffoldTextElement = settings.View.TextElement
                         RootModule = rootModuleName
                         Route = route
                     |}

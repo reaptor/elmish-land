@@ -1,7 +1,8 @@
 {
   "view": {
-    "type": "Feliz.ReactElement",
-    "scaffoldTextElement": "Html.text"
+    "module": "Feliz",
+    "type": "ReactElement",
+    "textElement": "Html.text"
   },
   "projectReferences": []
 }

@@ -10,7 +10,7 @@
 namespace ElmishLand
 
 open System.Runtime.CompilerServices
-open Feliz
+open {{ViewModule}}
 
 [<assembly: InternalsVisibleTo("ElmishLand.{{RootModule}}.App")>]
 do()

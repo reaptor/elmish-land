@@ -138,6 +138,7 @@ type Layout = {
 }
 
 type TemplateData = {
+    ViewModule: string
     ViewType: string
     RootModule: string
     Routes: Route array
@@ -145,7 +146,7 @@ type TemplateData = {
     RouteParamModules: string list
 } with
 
-    member this.ViewTypeIsReact = this.ViewType = "Feliz.ReactElement"
+    member this.ViewTypeIsReact = this.ViewType = "ReactElement"
 
 let getSortedPageFiles absoluteProjectDir =
     let pageFilesDir =
@@ -311,13 +312,20 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (F
 
             let queryParameters =
                 pageSettings
-                |> List.tryPick (fun (route', (_, queryParameters)) ->
-                    if route.StartsWith(route') then
-                        Some queryParameters
-                    else
-                        None)
-                |> Option.toList
-                |> List.collect id
+                |> List.sortByDescending (fun (path, _) -> path.Split("/")) // Ensure the most deep folders are sorted first
+                |> List.fold
+                    (fun (state: RouteQueryParameter list) (route', (_, queryParameters)) ->
+                        // if route' = "/" ensures that root level route.json file are included when getting query parameters.
+                        if route' = "/" || route.StartsWith(route') then
+                            (queryParameters
+                             |> List.filter (fun x ->
+                                 // Ensures that we only take query params from the deepest route.json file.
+                                 // Eg. deeper files will override previous.
+                                 state |> List.exists (fun y -> y.Name <> x.Name) |> not))
+                            @ state
+                        else
+                            state)
+                    []
 
             let recordPattern =
                 let argString =
@@ -546,8 +554,8 @@ let getTemplateData projectName absoluteProjectDir =
                 (eff { return! Ok [] })
             |> Effect.map List.toArray
 
-
         return {
+            ViewModule = settings.View.Module
             ViewType = settings.View.Type
             RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
             Routes = routes
