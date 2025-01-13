@@ -48,7 +48,7 @@ let getFolder () =
 let ``Init, generates project`` () =
     task {
         let cts = new CancellationTokenSource()
-        cts.CancelAfter(TimeSpan.FromSeconds 30)
+        cts.CancelAfter(TimeSpan.FromSeconds 30L)
         let rootFolder = getFolder ()
 
         try
@@ -68,7 +68,7 @@ let ``Init, generates project`` () =
 let ``Build, builds project`` () =
     task {
         let cts = new CancellationTokenSource()
-        cts.CancelAfter(TimeSpan.FromSeconds 30)
+        cts.CancelAfter(TimeSpan.FromSeconds 30L)
         let folder = getFolder ()
 
         try
