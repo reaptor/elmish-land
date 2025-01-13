@@ -428,7 +428,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (F
                              |> List.map (fun x ->
                                  let parser = x |> getQueryParamParser |> Option.defaultValue "Some"
                                  let getter = if x.Required then "getQuery" else "tryGetQuery"
-                                 $"%s{x.Name |> toPascalCase |> wrapWithTicksIfNeeded} = %s{getter} \"%s{x.Name}\" %s{parser} q"))
+                                 $"%s{x.Name |> toPascalCase |> wrapWithTicksIfNeeded} = %s{getter} \"%s{toCamelCase x.Name}\" %s{parser} q"))
                     |> String.concat "; "
 
                 if argString.Length = 0 then
@@ -462,8 +462,8 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (F
                              if qp.Required then
                                  $"\"%s{name}\", %s{format} %s{name}"
                              else
-                                 $"[ match %s{name} with Some x -> \"%s{name}\", %s{format} x | None -> () ]")
-                         |> String.concat "@"
+                                 $"[ match %s{name} with Some x -> \"%s{toCamelCase qp.Name}\", %s{format}x | None -> () ]")
+                         |> String.concat " @ "
                          |> fun x -> if String.IsNullOrEmpty x then [||] else [| x |])
                 |> String.concat ", "
 
