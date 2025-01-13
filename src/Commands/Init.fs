@@ -4,6 +4,8 @@ open System
 open System.IO
 open System.Reflection
 open System.Threading
+open ElmishLand.Effect
+open ElmishLand.Settings
 open Orsak
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
@@ -243,9 +245,11 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
             let filepath = FilePath.asString dotnetToolsJsonPath
             File.Exists filepath && (File.ReadAllText filepath).Contains($"\"%s{name}\"")
 
+        let! dotnetToolJsonExists = FileSystem.filePathExists dotnetToolsJsonPath
+
         do!
             [
-                if not (FilePath.exists dotnetToolsJsonPath) then
+                if not dotnetToolJsonExists then
                     "dotnet", [| "new"; "tool-manifest" |]
                 for name, version in getDotnetToolDependencies () do
                     if not <| hasDotnetTool name then

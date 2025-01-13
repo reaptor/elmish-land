@@ -3,6 +3,7 @@ module ElmishLand.Build
 open System.IO
 open System.Threading
 open ElmishLand.Base
+open ElmishLand.Effect
 open ElmishLand.Log
 open ElmishLand.DotNetCli
 open ElmishLand.FsProj

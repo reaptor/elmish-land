@@ -4,7 +4,9 @@ open System
 open System.IO
 open System.Text.RegularExpressions
 open System.Xml
+open ElmishLand.Effect
 open ElmishLand.Log
+open ElmishLand.Settings
 open HandlebarsDotNet
 open ElmishLand.Base
 open Microsoft.FSharp.Collections
@@ -302,7 +304,9 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (F
                         else
                             let layoutFile = FilePath.fromString <| Path.Combine(dirInfo.FullName, "Layout.fs")
 
-                            if FilePath.exists layoutFile then
+                            let! layoutExists = FileSystem.filePathExists layoutFile
+
+                            if layoutExists then
                                 return! Ok <| fileToLayout projectName absoluteProjectDir layoutFile
                             else
                                 return! findLayoutRecurse dirInfo.Parent.FullName
@@ -458,9 +462,9 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (F
                              if qp.Required then
                                  $"\"%s{name}\", %s{format} %s{name}"
                              else
-                                 $"match %s{name} with Some x -> \"%s{name}\", %s{format} x | None -> ()")
-                         |> String.concat ";"
-                         |> fun x -> if String.IsNullOrEmpty x then [||] else [| $"[ %s{x} ]" |])
+                                 $"[ match %s{name} with Some x -> \"%s{name}\", %s{format} x | None -> () ]")
+                         |> String.concat "@"
+                         |> fun x -> if String.IsNullOrEmpty x then [||] else [| x |])
                 |> String.concat ", "
 
             let urlPattern =

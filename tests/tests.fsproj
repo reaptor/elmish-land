@@ -11,6 +11,8 @@
   <ItemGroup>
     <Compile Include="Expects.fs" />
     <Compile Include="Tests.fs" />
+    <Compile Include="Runner.fs" />
+    <Compile Include="TemplateEngineTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

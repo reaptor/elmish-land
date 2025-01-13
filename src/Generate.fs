@@ -3,6 +3,8 @@ module ElmishLand.Generate
 open System
 open System.IO
 open System.Threading
+open ElmishLand.Effect
+open ElmishLand.Settings
 open Orsak
 open ElmishLand.Base
 open ElmishLand.TemplateEngine

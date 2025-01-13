@@ -1,6 +1,7 @@
 ﻿module ElmishLand.Program
 
 open System
+open ElmishLand.Effect
 open Orsak
 open ElmishLand.Log
 open ElmishLand.Base
@@ -115,8 +116,9 @@ let main argv =
         let! result =
             run argv
             |> Effect.run
-                { new ILogProvider with
+                { new IEffectEnv with
                     member _.GetLogger(memberName, path, line) = ConsoleLogger(memberName, path, line)
+                    member _.FilePathExists(filePath) = FilePath.exists filePath
                 }
 
         return handleAppResult (ConsoleLogger("", "", 0)) ignore result

@@ -1,5 +1,6 @@
 module ElmishLand.FsProj
 
+open ElmishLand.Effect
 open Orsak
 open System.IO
 open System.Text.RegularExpressions
