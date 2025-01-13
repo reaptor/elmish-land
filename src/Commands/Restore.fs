@@ -1,6 +1,7 @@
 ﻿module ElmishLand.Restore
 
 open System.IO
+open ElmishLand.Effect
 open Orsak
 open ElmishLand.Log
 open ElmishLand.DotNetCli

@@ -1,5 +1,7 @@
 module ElmishLand.AddLayout
 
+open ElmishLand.Effect
+open ElmishLand.Settings
 open Orsak
 open ElmishLand.Base
 open ElmishLand.Log

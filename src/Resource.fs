@@ -3,6 +3,7 @@ module ElmishLand.Resource
 open System.IO
 open System.Reflection
 open ElmishLand.Base
+open ElmishLand.Effect
 open ElmishLand.Log
 open Orsak
 

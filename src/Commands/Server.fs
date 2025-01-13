@@ -3,6 +3,7 @@ module ElmishLand.Server
 open System.IO
 open System.Threading
 open ElmishLand.Base
+open ElmishLand.Effect
 open ElmishLand.Log
 open ElmishLand.FsProj
 open ElmishLand.Process

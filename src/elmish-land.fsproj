@@ -73,6 +73,8 @@
         <Compile Include="AppError.fs" />
         <Compile Include="Base.fs" />
         <Compile Include="Log.fs" />
+        <Compile Include="Effect.fs" />
+        <Compile Include="Settings.fs" />
         <Compile Include="Resource.fs" />
         <Compile Include="Process.fs" />
         <Compile Include="DotNetCli.fs" />
