@@ -2,6 +2,7 @@ module Expects
 
 open System.Text
 open ElmishLand.Base
+open Xunit
 
 type LogOutput = {
     Info: StringBuilder
@@ -28,11 +29,11 @@ let ok logs (x: Result<'a, 'e>) : 'a =
 
 let equals logs expected actual =
     if expected <> actual then
-        failwithf $"Expected %A{expected}. Got %A{actual}\n%s{LogOutput.asString logs}"
+        failwithf $"Expected %A{expected}.\n\nActual %A{actual}\n\nLogs:\n%s{LogOutput.asString logs}"
 
 let equalsIgnoringWhitespace logs expected actual =
     if
         (expected |> String.eachLine String.trimWhitespace)
         <> (actual |> String.eachLine String.trimWhitespace)
     then
-        failwithf $"Expected %A{expected}. Got %A{actual}\n%s{LogOutput.asString logs}"
+        failwithf $"Expected %A{expected}.\n\nActual %A{actual}\n\nLogs:\n%s{LogOutput.asString logs}"

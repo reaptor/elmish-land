@@ -1,4 +1,4 @@
-﻿<component name="ProjectRunConfigurationManager">
+<component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Add page" type="DotNetProject" factoryName=".NET Project">
     <option name="EXE_PATH" value="$PROJECT_DIR$/src/bin/Debug/net9.0/elmish-land.exe" />
     <option name="PROGRAM_PARAMETERS" value="add page &quot;/AnotherPage&quot;" />
@@ -12,7 +12,7 @@
     <option name="PROJECT_ARGUMENTS_TRACKING" value="1" />
     <option name="PROJECT_WORKING_DIRECTORY_TRACKING" value="0" />
     <option name="PROJECT_KIND" value="DotNetCore" />
-    <option name="PROJECT_TFM" value="net8.0" />
+    <option name="PROJECT_TFM" value="net9.0" />
     <method v="2">
       <option name="Build" />
     </method>
