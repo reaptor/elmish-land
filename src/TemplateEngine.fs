@@ -459,7 +459,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                              let name = $"%s{wrapWithTicksIfNeeded qp.Name |> toCamelCase}"
 
                              if qp.Required then
-                                 $"\"%s{name}\", %s{format} %s{name}"
+                                 $"[ \"%s{name}\", %s{format} %s{name} ]"
                              else
                                  $"[ match %s{name} with Some x -> \"%s{toCamelCase qp.Name}\", %s{format} x | None -> () ]")
                          |> String.concat " @ "

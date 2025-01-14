@@ -171,3 +171,41 @@ let ``Ensure query param parse and format are generated correctly`` () =
 
         result |> Expects.ok logs |> Expects.equals logs expectedRoute
     }
+
+[<Fact>]
+let ``Ensure required query params is generated correctly`` () =
+    let queryParam1 = {
+        Name = "order"
+        Module = "Common"
+        Type = "InternalRevocationListOrder"
+        Parse = Some "InternalRevocationListOrder.fromQueryString"
+        Format = Some "InternalRevocationListOrder.asQueryString"
+        Required = true
+    }
+
+    let routeParams = RouteParameters [ "/Test", (None, [ queryParam1 ]) ]
+
+    let expectedRoute = {
+        Name = "Test"
+        RouteName = "TestRoute"
+        LayoutName = "Test"
+        LayoutModuleName = "TestProject.Pages.Test.Layout"
+        MsgName = "TestMsg"
+        ModuleName = "TestProject.Pages.Test.Page"
+        RecordDefinition = "{ Order: InternalRevocationListOrder  }"
+        RecordConstructor = """{ Order = getQuery "order" InternalRevocationListOrder.fromQueryString q; }"""
+        RecordPattern = "{ Order = order }"
+        UrlUsage = """"test", [ "order", InternalRevocationListOrder.asQueryString order ]"""
+        UrlPattern = "[ test; Query q ]"
+        UrlPatternWhen =
+            """eq test "test" && containsQuery "order" InternalRevocationListOrder.fromQueryString q """
+                .Trim()
+    }
+
+    task {
+        let! result, logs =
+            fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
+            |> runEff
+
+        result |> Expects.ok logs |> Expects.equals logs expectedRoute
+    }
