@@ -16,7 +16,7 @@ Elmish Land comes with a single dotnet tool to help you create new projects, add
 mkdir MyProject
 cd MyProject
 dotnet new tool-manifest
-dotnet tool install elmish-land --prerelease
+dotnet tool install elmish-land
 dotnet elmish-land init
 dotnet elmish-land server
 ```
