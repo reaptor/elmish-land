@@ -1,8 +1,0 @@
-next-version: 1.0.0
-branches:
-  main:
-    tag:
-ignore:
-  sha: []
-merge-message-formats: {}
-mode: ContinuousDelivery

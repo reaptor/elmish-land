@@ -8,6 +8,7 @@
         <ToolCommandName>elmish-land</ToolCommandName>
         <PackageOutputPath>./nupkg</PackageOutputPath>
         <LangVersion>latest</LangVersion>
+        <Version>1.0.2</Version>
     </PropertyGroup>
     <ItemGroup>
         <EmbeddedResource Include="templates\vite.config.js">
@@ -94,7 +95,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="GitVersion.MsBuild" />
         <PackageReference Include="Handlebars.Net" />
         <PackageReference Include="Orsak" />
         <PackageReference Include="Thoth.Json.Net" />
