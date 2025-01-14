@@ -1,8 +1,8 @@
 next-version: 1.0.0
 branches:
   main:
-    tag: beta
+    tag:
 ignore:
   sha: []
 merge-message-formats: {}
-mode: ContinuousDeployment
+mode: ContinuousDelivery
