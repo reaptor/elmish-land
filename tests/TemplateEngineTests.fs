@@ -50,7 +50,7 @@ let ``Ensure multiple query params are included in UrlUsage (Route.format)`` () 
         RecordConstructor = """{ First = tryGetQuery "first" Some q; Second = tryGetQuery "second" Some q; }"""
         RecordPattern = "{ First = first; Second = second }"
         UrlUsage =
-            """"test", [ match first with Some x -> "first", x | None -> () ] @ [ match second with Some x -> "second", x | None -> () ]"""
+            """"test", [ match first with Some x -> "first",  x | None -> () ] @ [ match second with Some x -> "second",  x | None -> () ]"""
         UrlPattern = "[ test; Query q ]"
         UrlPatternWhen = """eq test "test" """.Trim()
     }
@@ -86,7 +86,7 @@ let ``Ensure all query params with reserved names are generated correctly`` () =
         RecordDefinition = "{ To: string option }"
         RecordConstructor = """{ To = tryGetQuery "to" Some q; }"""
         RecordPattern = "{ To = ``to`` }"
-        UrlUsage = """"test", [ match ``to`` with Some x -> "to", x | None -> () ]"""
+        UrlUsage = """"test", [ match ``to`` with Some x -> "to",  x | None -> () ]"""
         UrlPattern = "[ test; Query q ]"
         UrlPatternWhen = """eq test "test" """.Trim()
     }
@@ -122,7 +122,44 @@ let ``Ensure query params are camel cased`` () =
         RecordDefinition = "{ QueryParam: string option }"
         RecordConstructor = """{ QueryParam = tryGetQuery "queryParam" Some q; }"""
         RecordPattern = "{ QueryParam = queryParam }"
-        UrlUsage = """"test", [ match queryParam with Some x -> "queryParam", x | None -> () ]"""
+        UrlUsage = """"test", [ match queryParam with Some x -> "queryParam",  x | None -> () ]"""
+        UrlPattern = "[ test; Query q ]"
+        UrlPatternWhen = """eq test "test" """.Trim()
+    }
+
+    task {
+        let! result, logs =
+            fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
+            |> runEff
+
+        result |> Expects.ok logs |> Expects.equals logs expectedRoute
+    }
+
+[<Fact>]
+let ``Ensure query param parse and format are generated correctly`` () =
+    let queryParam1 = {
+        Name = "fromDate"
+        Module = "Common"
+        Type = "ApplicationDate"
+        Parse = Some "ApplicationDate.fromQueryparam"
+        Format = Some "ApplicationDate.asQueryparam"
+        Required = false
+    }
+
+    let routeParams = RouteParameters [ "/Test", (None, [ queryParam1 ]) ]
+
+    let expectedRoute = {
+        Name = "Test"
+        RouteName = "TestRoute"
+        LayoutName = "Test"
+        LayoutModuleName = "TestProject.Pages.Test.Layout"
+        MsgName = "TestMsg"
+        ModuleName = "TestProject.Pages.Test.Page"
+        RecordDefinition = "{ FromDate: ApplicationDate option }"
+        RecordConstructor = """{ FromDate = tryGetQuery "fromDate" ApplicationDate.fromQueryparam q; }"""
+        RecordPattern = "{ FromDate = fromDate }"
+        UrlUsage =
+            """"test", [ match fromDate with Some x -> "fromDate", ApplicationDate.asQueryparam x | None -> () ]"""
         UrlPattern = "[ test; Query q ]"
         UrlPatternWhen = """eq test "test" """.Trim()
     }

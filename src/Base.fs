@@ -233,6 +233,10 @@ module FilePath =
 
     let parts (FilePath path) = String.split "/" path
 
+    let parent path =
+        let segments = parts path
+        segments |> Array.take (segments.Length - 1) |> String.concat "/" |> FilePath
+
 let workingDirectory = FilePath.fromString Environment.CurrentDirectory
 
 let relativeProjectDir commandLineArgs =

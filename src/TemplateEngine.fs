@@ -256,9 +256,11 @@ let fileToLayout projectName absoluteProjectDir (FilePath file) =
             ModuleName = $"%s{projectName |> ProjectName.asString}.Pages%s{moduleNamePart}.Layout"
         }
 
-let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (FilePath file) =
+let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (file: FilePath) =
     let route =
-        file[0 .. file.Length - "Page.fs".Length - 2]
+        let fileAsString = FilePath.asString file
+
+        fileAsString[0 .. fileAsString.Length - "Page.fs".Length - 2]
         |> String.replace
             (absoluteProjectDir
              |> AbsoluteProjectDir.asFilePath
@@ -294,25 +296,22 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (F
                     |> fun x -> $".%s{x}"
 
             let! layout =
-                let rec findLayoutRecurse (dir: string) =
+                let rec findLayoutRecurse (dir: FilePath) =
                     eff {
-                        let dirInfo = DirectoryInfo(dir)
-                        let y = DirectoryInfo(AbsoluteProjectDir.asString absoluteProjectDir).FullName
-
-                        if dirInfo.FullName = y then
+                        if dir = AbsoluteProjectDir.asFilePath absoluteProjectDir then
                             return! Error AppError.MissingMainLayout
                         else
-                            let layoutFile = FilePath.fromString <| Path.Combine(dirInfo.FullName, "Layout.fs")
+                            let layoutFile = FilePath.appendParts [ "Layout.fs" ] dir
 
                             let! layoutExists = FileSystem.filePathExists layoutFile
 
                             if layoutExists then
                                 return! Ok <| fileToLayout projectName absoluteProjectDir layoutFile
                             else
-                                return! findLayoutRecurse dirInfo.Parent.FullName
+                                return! findLayoutRecurse (FilePath.parent dir)
                     }
 
-                findLayoutRecurse (Path.GetDirectoryName(file))
+                findLayoutRecurse (FilePath.directoryPath file)
 
             let queryParameters =
                 pageSettings
@@ -462,7 +461,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (F
                              if qp.Required then
                                  $"\"%s{name}\", %s{format} %s{name}"
                              else
-                                 $"[ match %s{name} with Some x -> \"%s{toCamelCase qp.Name}\", %s{format}x | None -> () ]")
+                                 $"[ match %s{name} with Some x -> \"%s{toCamelCase qp.Name}\", %s{format} x | None -> () ]")
                          |> String.concat " @ "
                          |> fun x -> if String.IsNullOrEmpty x then [||] else [| x |])
                 |> String.concat ", "
