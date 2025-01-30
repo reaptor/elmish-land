@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # Commands
 
-Commands let us send messages, navigate to another page, run a promise and more.  
+Commands let us send messages, navigate to another page, run a promise and more.
 
 ## An example
 
@@ -93,7 +93,7 @@ Send a SharedMsg to the shared module from a page or layout.
 Send a message to the layout of a page [Read more about layouts in the "Layouts" section](/docs/core-concepts/layouts).
 
 ### Command.navigate
-Navigates to a specified route. [Read more in the "Linking and Navigating" section](/docs/core-concepts/linking-and-navigating#command).
+Navigates to a specified route. [Read more in the "Linking and Navigating" section](/docs/core-concepts/linking-and-navigating#command-navigate).
 
 ### Command.ofPromise
 Run a promise that will send the specified message when completed. Throws an exception if it fails.

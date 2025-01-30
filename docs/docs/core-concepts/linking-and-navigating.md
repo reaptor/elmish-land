@@ -24,7 +24,7 @@ type FooBarBazRoute =
         Baz: string
         Query: list<string * string>
     }
-    
+
 type Route =
     | FooBarBaz of FooBarBazRoute
 ```
@@ -39,7 +39,7 @@ which will point to the URL: `#/Foo/bar/baz?name=John`
 
 ## Anchor element (\<a\>)
 
-The `Route.format` function is used to get the URL for a specific route. 
+The `Route.format` function is used to get the URL for a specific route.
 ```fsharp
 Html.a [
     prop.text "Click me"
@@ -50,12 +50,12 @@ Html.a [
 ]
 ```
 
-## Command.navigate
+## Command navigate
 
 The `Command.navigate` function creates a command that navigates to a specified route.
 
 ```fsharp
-open Elmish 
+open Elmish
 
 let init (): Model * Command<Msg, SharedMsg> =
     (),
@@ -66,6 +66,6 @@ Will automatically redirect the page to the `#/Foo/bar/baz?name=John` when loade
 
 :::info
 
-These examples uses [dynamic routes](/docs/core-concepts/pages#dynamic-routes).
+These examples uses [route parameters](/docs/core-concepts/pages#route-parameters).
 
 :::
