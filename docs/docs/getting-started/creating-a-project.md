@@ -5,7 +5,7 @@ sidebar_position: 2
 # Creating a project
 
 ## Requirements
-* [.NET SDK](https://dotnet.microsoft.com/en-us/) version 6.0 or above (version 8.0 is recommended).
+* [.NET SDK](https://dotnet.microsoft.com/en-us/) version 6.0 or above (version 9.0 is recommended).
 * [Node.js](https://nodejs.org/en) version 18.0 or above. You can use nvm for managing multiple Node versions on a single machine installed.
   - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
 
