@@ -9,9 +9,3 @@
   height: 200px;
   width: 200px;
 }
-
-.featureLink, .featureLink:hover {
-    color: white;
-    text-decoration: none;
-    cursor: pointer;
-}

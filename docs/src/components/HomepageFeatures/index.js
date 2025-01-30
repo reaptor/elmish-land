@@ -45,7 +45,7 @@ function Feature({url, title, description}) {
         <Svg className={styles.featureSvg} role="img" />
       </div> */}
       <div className="text--center padding-horiz--md">
-        <a href={url} className={clsx(styles.featureLink)}>
+        <a href={url} className='featureLink'>
             <Heading as="h3">{title}</Heading>
             <p>{description}</p>
         </a>

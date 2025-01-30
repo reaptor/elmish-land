@@ -28,3 +28,31 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+.hero {
+    background-color: white;
+    color: black;
+}
+
+.hero h1 {
+    color: #444;
+
+}
+
+.featureLink, .featureLink:hover {
+    color: #333;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+[data-theme='dark'] .hero {
+    background-color: #2b3137;
+}
+
+[data-theme='dark'] .hero h1 {
+    color: white;
+}
+
+[data-theme='dark'] .featureLink, [data-theme='dark'] .featureLink:hover {
+    color: white;
+}
