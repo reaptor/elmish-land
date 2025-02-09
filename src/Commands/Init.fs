@@ -245,7 +245,8 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
             let filepath = FilePath.asString dotnetToolsJsonPath
             File.Exists filepath && (File.ReadAllText filepath).Contains($"\"%s{name}\"")
 
-        let! dotnetToolJsonExists = FileSystem.filePathExists dotnetToolsJsonPath
+        let! fs = FileSystem.get ()
+        let dotnetToolJsonExists = fs.FilePathExists dotnetToolsJsonPath
 
         do!
             [

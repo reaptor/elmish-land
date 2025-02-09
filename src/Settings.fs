@@ -52,7 +52,8 @@ let getSettings absoluteProjectDir =
         let settingsPath =
             FilePath.appendParts [ "elmish-land.json" ] (AbsoluteProjectDir.asFilePath absoluteProjectDir)
 
-        let! settingsPathExists = FileSystem.filePathExists settingsPath
+        let! fs = FileSystem.get ()
+        let settingsPathExists = fs.FilePathExists settingsPath
 
         do!
             if settingsPathExists then

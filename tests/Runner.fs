@@ -30,6 +30,7 @@ let env (logOutput: Expects.LogOutput) =
             }
 
         member _.FilePathExists(fp) = true
+        member _.GetParentDirectory(filePath) = FilePath.fromString "" |> Some
     }
 
 let runEff (e: Effect<IEffectEnv, _, _>) =

@@ -25,10 +25,11 @@ type Log
 
 type IFileSystem =
     abstract member FilePathExists: FilePath -> bool
+    abstract member GetParentDirectory: FilePath -> FilePath option
 
 module FileSystem =
-    let filePathExists filePath =
-        Effect.Create(fun (provider: #IFileSystem) -> provider.FilePathExists(filePath))
+    let get () =
+        Effect.Create(fun (fs: #IFileSystem) -> fs)
 
 type IEffectEnv =
     inherit ILogProvider

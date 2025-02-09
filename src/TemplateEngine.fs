@@ -295,6 +295,8 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                     |> String.concat "."
                     |> fun x -> $".%s{x}"
 
+            let! fs = FileSystem.get ()
+
             let! layout =
                 let rec findLayoutRecurse (dir: FilePath) =
                     eff {
@@ -303,12 +305,14 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                         else
                             let layoutFile = FilePath.appendParts [ "Layout.fs" ] dir
 
-                            let! layoutExists = FileSystem.filePathExists layoutFile
+                            let layoutExists = fs.FilePathExists layoutFile
 
                             if layoutExists then
                                 return! Ok <| fileToLayout projectName absoluteProjectDir layoutFile
                             else
-                                return! findLayoutRecurse (FilePath.parent dir)
+                                match FilePath.parent dir with
+                                | Some path -> return! findLayoutRecurse path
+                                | None -> return! Error AppError.MissingMainLayout
                     }
 
                 findLayoutRecurse (FilePath.directoryPath file)

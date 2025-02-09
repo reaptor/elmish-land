@@ -119,6 +119,7 @@ let main argv =
                 { new IEffectEnv with
                     member _.GetLogger(memberName, path, line) = ConsoleLogger(memberName, path, line)
                     member _.FilePathExists(filePath) = FilePath.exists filePath
+                    member _.GetParentDirectory(filePath) = FilePath.parent filePath
                 }
 
         return handleAppResult (ConsoleLogger("", "", 0)) ignore result
