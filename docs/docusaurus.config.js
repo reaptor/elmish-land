@@ -77,7 +77,7 @@ const config = {
                     },
                 },
                 gtag: {
-                    trackingID: 'GTM-KBZWMQLZ',
+                    trackingID: 'G-55K91WBHDK',
                     anonymizeIP: true,
                 },
             }),
