@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Introduction
 
-Welcome to Elmish Land, a framework designed to help you build reliable web apps. Heavily inspired by [Elm Land](https://elm.land).
+Welcome to Elmish Land, a framework designed to help you easily build scalable web apps. Heavily inspired by [Elm Land](https://elm.land).
 
 ## What is Elmish Land?
 

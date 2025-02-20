@@ -13,12 +13,32 @@
 .hero__title {
     color: white;
     margin-inline: 20%;
+    font-size: 3rem;
 }
 
 .logo {
     width: 200px;
     height: 200px;
 }
+
+@media screen and (max-width: 1500px) {
+    .hero__title {
+      font-size: 2rem;
+    }
+  }
+
+@media screen and (max-width: 950px) {
+ .hero__title {
+    font-size: 1.8rem;
+ }
+}
+
+@media screen and (max-width: 800px) {
+    .hero__title {
+       font-size: 1.5rem;
+       margin-inline: 0;
+    }
+   }
 
 @media screen and (max-width: 996px) {
   .heroBanner {

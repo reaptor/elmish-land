@@ -1,10 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
         <OutputType>Exe</OutputType>
-        <TargetFrameworks>net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
+        <TargetFramework>net6.0</TargetFramework>
+        <!-- Allow users with newer dotnet SDK to run Elmish Land -->
+        <RollForward>Major</RollForward>
         <RootNamespace>ElmishLand</RootNamespace>
         <PackAsTool>true</PackAsTool>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <PackageId>ElmishLand</PackageId>
+        <AssemblyName>elmish-land</AssemblyName>
         <ToolCommandName>elmish-land</ToolCommandName>
         <PackageOutputPath>./nupkg</PackageOutputPath>
         <LangVersion>latest</LangVersion>

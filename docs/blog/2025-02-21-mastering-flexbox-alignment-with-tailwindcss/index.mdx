@@ -1,0 +1,155 @@
+---
+slug: mastering-flexbox-alignment-with-tailwindcss
+title: Mastering Flexbox Alignment with Tailwind CSS
+authors: [klofberg]
+---
+
+Flexbox is one of the most powerful tools in modern CSS, enabling developers to create flexible and
+responsive layouts with ease. One of its greatest strengths lies in its alignment capabilities,
+allowing precise control over how elements are positioned within a container.
+
+In this guide, I’ll break down Flexbox alignment properties with [Tailwind CSS](https://tailwindcss.com),
+ensuring you understand not just how they work, but when to use them effectively. If you're using
+[Elmish Land](/) and need help setting it up for Tailwind, you can [read this blog post first](/blog/using-tailwind-css-with-fable-and-elmish)
+before continuing.
+
+A great place to try and explore the tailwind utility classes is [the Tailwind Play site](https://play.tailwindcss.com).
+
+<!-- truncate -->
+
+## Understanding the Flexbox Axes
+
+Before diving into alignment classes, it’s essential to understand how Flexbox operates:
+
+* **Main Axis** → The direction items flow (`flex-row` = left to right, `flex-col` = top to bottom).
+* **Cross Axis** → The perpendicular direction (vertical if `flex-row`, horizontal if `flex-col`).
+
+You can read more about `flex-direction` [in the Tailwind documentation](https://tailwindcss.com/docs/flex-direction).
+
+Now, let’s explore how to align items using Tailwind’s Flexbox utilities.
+
+
+## 1. Aligning Items on the Main Axis: `justify-*`
+
+The `justify-*` classes control horizontal alignment in a row (`flex-row`) and vertical alignment in a column (`flex-col`).
+
+### Common Justification Classes:
+
+| Class             | Effect
+| ------------------|-----------------------------------------------------------------
+| `justify-start`   | Align items to the start (left in `flex-row`, top in `flex-col`)
+| `justify-end`     | Align items to the end (right in `flex-row`, bottom in `flex-col`)
+| `justify-center`  | Center items on any axis
+| `justify-between` | Spread items evenly, first item at the start, last at the end
+| `justify-around`  | Equal space around items
+| `justify-evenly`  | Equal space between and outside items
+
+✅ **Use Case**: Centering navigation links in a navbar. [Preview at tailwind play](https://play.tailwindcss.com/vvBhX50fcn)
+
+```html
+<nav class="flex justify-between px-4 py-2 bg-gray-800 text-white">
+  <a href="#">Home</a>
+  <a href="#">About</a>
+  <a href="#">Contact</a>
+</nav>
+```
+
+You can read more about `justify-content` [in the Tailwind documentation](https://tailwindcss.com/docs/justify-content).
+
+
+## 2. Aligning Items on the Cross Axis: `items-*`
+
+The `items-*` classes control **vertical alignment** in a row (`flex-row`) and **horizontal alignment** in a column (`flex-col`).
+
+**Common Items Classes:**
+
+| Class	         | Effect
+| -------------- | -----------------------------------------------
+| `items-start`  | Items align at the top (left in `flex-col`)
+| `items-end`    | Items align at the bottom (right in `flex-col`)
+| `items-center` | Items align in the middle
+| `items-stretch`| Items stretch to fill the container
+
+✅ **Use Case**: Centering content inside a hero section (no wrapping). [Preview at tailwind play](https://play.tailwindcss.com/W6LAqDq6k0)
+
+```html
+<section class="flex items-center justify-center h-screen bg-gray-200">
+  <h1 class="text-4xl font-bold">Welcome</h1>
+</section>
+````
+
+You can read more about `align-items` [in the Tailwind documentation](https://tailwindcss.com/docs/align-items).
+
+
+## 3. Aligning a Single Item Differently: `self-*`
+
+If you want only one item to have a different alignment than the rest, use `self-*`.
+
+**Common Self Classes:**
+
+| Class	         | Effect
+| -------------- | ---------------
+| `self-start`   | Aligns one item at the start
+| `self-end`     | Aligns one item at the end
+| `self-center`  | Centers one item
+| `self-stretch` | Stretches one item
+
+✅ *Use Case*: A single item in a list behaving differently. [Preview at tailwind play](https://play.tailwindcss.com/rnWafb78IZ)
+
+```html
+<ul class="flex gap-2 h-50 bg-amber-100">
+  <li class="bg-blue-500 p-2">Item 1</li>
+  <li class="bg-red-500 p-2 self-end">Item 2</li>
+</ul>
+````
+
+You can read more about `align-self` [in the Tailwind documentation](https://tailwindcss.com/docs/align-self).
+
+
+## 4. Controlling Multi-Row Alignment: `content-*`
+
+If you have multiple rows or columns (when using `flex-wrap`), use `content-*` to align them.
+
+#### Common Multi-Row Alignment Classes:
+
+| Class	            | Effect
+| ----------------- | --------------------------
+| `content-start`   | Rows stack at the top
+| `content-end`     | Rows stack at the bottom
+| `content-center`  | Rows are centered
+| `content-between` | Rows spread out evenly
+| `content-around`  | Rows get equal space around them
+
+✅ *Use Case*: Aligning Wrapped Flex Items in the Center. [Preview at tailwind play](https://play.tailwindcss.com/OArJZRVBMD)
+
+```html
+<div class="flex flex-wrap content-center h-96 bg-gray-300">
+  <div class="w-32 h-32 bg-blue-500"></div>
+  <div class="w-32 h-32 bg-red-500"></div>
+  <div class="w-32 h-32 bg-green-500"></div>
+</div>
+```
+
+You can read more about `align-content` [in the Tailwind documentation](https://tailwindcss.com/docs/align-content).
+
+
+## Cheat Sheet
+
+| Tailwind Class | Axis                   | Effect
+| -------------- | ---------------------- | -------------------------------------
+| `justify-*`    | Main Axis              | Controls **left-to-right** (or **top-to-bottom** in column mode) alignment
+| `items-*`      | Cross Axis             | Controls **vertical alignment** (or **horizontal in column mode**)
+| `self-*`       | Cross Axis             | Controls **alignment of a single item**
+| `content-*`    | Cross Axis (with wrap) | Controls **multi-row or multi-column spacing**
+
+
+## Final Thoughts
+
+Many developers find Flexbox confusing at first, but once you break it down into ***alignment along two axes***, it becomes
+much easier to understand. Tailwind CSS simplifies this process by [providing intuitive utility classes](https://tailwindcss.com/docs/flex-direction)
+that eliminate the need to memorize complex CSS rules. Instead of struggling with `display: flex;` and various alignment properties,
+you can quickly apply `justify-*`, `items-*`, and `self-*` to get the exact layout you need.
+
+The key to mastering Flexbox is practice—experiment with different alignment classes, play around with `flex-row` vs. `flex-col`,
+and observe how items behave. Once it clicks, you’ll realize how powerful and flexible it really is. And with Tailwind,
+you can skip the frustration and focus on building responsive, clean layouts faster than ever.

@@ -1,0 +1,65 @@
+---
+slug: understanding-routing-and-linking-in-elmish-land
+title: Understanding Routing and Linking in Elmish Land
+authors: [klofberg]
+draft: true
+---
+
+Elmish Land takes Elmish’s elegant Model–View–Update architecture and removes much of the boilerplate you’d normally
+write when handling routing and page navigation. In this post, we’ll explore how to build a simple multi-page application
+using Elmish Land’s built‐in routing capabilities. We’ll create a two–page application (Home and About) and see
+how Elmish Land automatically wires up URL parsing and navigation for you.
+
+You can learn more and dive deeper in the [documentation](/docs/core-concepts/pages).
+
+<!-- truncate -->
+
+## File-based routing
+
+With Elmish Land’s file-based routing, your pages are determined by their location and name in your project.
+For example, if you create a file structure like this:
+
+```bash
+src/
+ └── Pages/
+      ├── Home.fs
+      └── About.fs
+```
+
+Elmish Land will automatically use:
+*	Pages/Home.fs -> Route: /
+*	Pages/About.fs -> Route: /about
+
+That’s it! No attributes, no union type for pages - just plain file organization. The framework will generate the code
+that parses the URL and calls the correct page initialization, update, and view functions.
+
+## Defining the about page
+
+Let’s start by adding our `About` page. In a real application, you might add more logic or styling, but for our example we’ll keep it simple.
+
+The following command will scaffold the page for you:
+
+```bash
+dotnet elmish-land add page "/About"
+```
+
+We need to manually add the about page to the project file `PagesAndNavigation.fsproj`:
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+    ...
+    <ItemGroup>
+        <Compile Include="src/Shared.fs"/>
+        <Compile Include="src/Pages/NotFound.fs"/>
+        <Compile Include="src/Pages/Layout.fs"/>
+        <Compile Include="src/Pages/Page.fs"/>
+        // highlight-start
+        <Compile Include="src/Pages/About/Page.fs" />
+        // highlight-end
+    </ItemGroup>
+    ...
+</Project>
+```
+
+Elmish Land automatically associates the `/about` route with the About page.
+
+## Navigating to the abount page

@@ -16,7 +16,7 @@ function HomepageHeader() {
       <div className="container">
         <Logo className={clsx(styles.logo)} />
         <Heading as="h1" className={clsx('hero__title', styles.hero__title)}>
-            Easily build reliable web apps with F#, Fable and Elmish
+            Easily build scalable web apps with F#, Fable and Elmish
         </Heading>
         <div className={styles.buttons}>
           <Link

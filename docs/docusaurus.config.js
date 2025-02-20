@@ -9,7 +9,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
     title: 'Elmish Land',
-    tagline: 'Easy and reliable web apps for F# developers',
+    tagline: 'Easy and scalable web apps for F# developers',
     favicon: 'img/favicon.ico',
 
     // Set the production url of your site here
