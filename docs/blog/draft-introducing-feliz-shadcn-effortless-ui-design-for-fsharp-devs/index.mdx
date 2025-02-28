@@ -1,19 +1,194 @@
 ---
 slug: introducing-feliz-shadcn-effortless-ui-design-for-fsharp-devs
-title: Introducing Feliz.Shadcn: Effortless UI Design for F# devs
+title: "Introducing Feliz.Shadcn: Effortless UI without CSS"
 authors: [klofberg]
 draft: true
 ---
 
-In today’s fast-paced development landscape, creating modern, responsive user interfaces can be difficult. 
-With the release of Feliz.Shadcn, developers can now leverage the powerful capabilities of F# and Fable while tapping 
-into the rich ecosystem of the [shadcn/ui component library](https://ui.shadcn.com/). This new dotnet 
-package provides type-safe bindings for Shadcn’s pre-styled components, enabling F# developers to craft elegant UIs 
+![EIntro](./image1.png)
+
+In today’s fast-paced development landscape, creating modern, responsive user interfaces can be difficult.
+With the release of [Feliz.Shadcn](https://github.com/reaptor/feliz.shadcn), developers can now leverage the powerful capabilities of F# and Fable while tapping
+into the rich ecosystem of the [shadcn/ui component library](https://ui.shadcn.com/). This new dotnet
+package provides type-safe bindings for Shadcn’s pre-styled components, enabling F# developers to craft elegant UIs
 without the steep learning curve often associated with CSS and traditional frontend design.
+
+<!-- truncate -->
 
 ## What is Feliz.Shadcn?
 
-Feliz.Shadcn is a new library with [Feliz](https://zaid-ajaj.github.io/Feliz/) style typings allowing you to build F#/Fable 
-apps that utilize the shadcn/ui component library. By providing F#-friendly typings, Feliz.Shadcn makes it simple to use 
+[Feliz.Shadcn](https://github.com/reaptor/feliz.shadcn) is a new library that allow you to build F#/Fable
+apps that utilize the shadcn/ui component library. By providing F#-friendly typings, Feliz.Shadcn makes it simple to use
 Shadcn components directly in your code. This not only accelerates development but also ensures that your UIs are consistent, modern, and maintainable.
 
+## An Overview of the shadcn/ui components
+
+At its core, the Shadcn component library is a collection of well-crafted, customizable UI components built on Tailwind CSS.
+These components encapsulate best practices in design and responsiveness, making them ideal for projects where aesthetics and functionality
+are equally important. For backend developers or those new to frontend development, Shadcn offers the following benefits:
+    * Ease of Use: With pre-styled components, you can avoid the intricacies of CSS, focusing instead on the application logic.
+    * Consistency: Uniform design patterns across your application help maintain a professional look and feel.
+    * Customization: Despite their out-of-the-box styling, components are highly customizable, allowing you to adjust designs to your project’s specific needs.
+
+By abstracting away the complexities of CSS, Shadcn empowers developers who are more comfortable with backend technologies to quickly deliver
+polished and responsive user interfaces.
+
+## Why Feliz.Shadcn is a Game-Changer for Backend Developers
+
+Backend developers often have extensive experience with F# but may find frontend technologies daunting, especially when it comes to styling with CSS.
+Feliz.Shadcn provides an elegant solution by bridging F# with a robust UI component library. With type-safe access to Shadcn components,
+you can build UIs that not only function well but also look professional, all while working within a familiar F# environment. This lowers
+the barrier to entry for creating full-stack applications and promotes a smoother transition into frontend development.
+
+## Setting Up Feliz.Shadcn with Elmish Land
+
+Integrating Feliz.Shadcn into your Elmish Land application is straightforward. The following example demonstrates how to set up a basic Elmish Land app
+that incorporates Shadcn components.
+
+### 1. Create a new Elmish Land project in needed
+
+```bash
+mkdir FelizShadcnIntro
+cd FelizShadcnIntro
+dotnet new tool-manifest
+dotnet tool install elmish-land
+dotnet elmish-land init
+```
+
+### 2. Install Tailwind CSS
+
+```bash
+npm install tailwindcss @tailwindcss/vite
+```
+
+### 3. Configure the Tailwind CSS Vite plugin
+
+Add the @tailwindcss/vite plugin to your Vite configuration `vite.config.js`:
+
+```javascript
+import { defineConfig } from 'vite'
+// highlight-start
+import tailwindcss from '@tailwindcss/vite'
+// highlight-end
+
+export default defineConfig({
+    // highlight-start
+    plugins: [
+        tailwindcss(),
+    ],
+    // highlight-end
+    build: {
+        outDir: "dist"
+    }
+})
+```
+
+### 4. Import Tailwind CSS
+
+Create a file named `styles.css` in the root folder of your project and add an `@import` for Tailwind CSS.
+
+```css
+@import "tailwindcss";
+```
+
+### 5. Add your CSS file to index.html
+
+Add a link to your `styles.css` in the `<head>` section of your `index.html`.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta charset="UTF-8">
+        // highlight-start
+        <link href="/styles.css" rel="stylesheet">
+        // highlight-end
+        <title>TailwindElmishLand</title>
+    </head>
+    <body>
+        <div id="app"></div>
+        <script type="module" src=".elmish-land/App/App.fs.js"></script>
+    </body>
+</html>
+```
+
+### 6. Configure import alias
+
+Create a file named `tsconfig.json` in the root folder of your project and add the following:
+
+```json
+{
+    "files": [],
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ]
+        }
+    }
+}
+```
+
+### 7. Install shadcn/ui
+
+```bash
+npx shadcn@latest init
+```
+
+You will be asked a few questions to configure components.json.
+
+### 8. Add Feliz.Shadcn
+```bash
+dotnet add package Feliz.Shadcn
+```
+
+### 9. That's it
+
+You can now start adding components to your project.
+
+```bash
+npx shadcn@latest add button
+```
+
+The command above will add the Button component to your project. You can then use it in your pages like this:
+
+```fsharp
+module FelizShadcnIntro.Pages.Page
+
+open Feliz
+open ElmishLand
+open FelizShadcnIntro.Shared
+open FelizShadcnIntro.Pages
+// highlight-start
+open Feliz.Shadcn
+// highlight-end
+
+type Model = unit
+
+type Msg =
+    | LayoutMsg of Layout.Msg
+
+let init () =
+    (),
+    Command.none
+
+let update (msg: Msg) (model: Model) =
+    match msg with
+    | LayoutMsg _ -> model, Command.none
+
+let view (_model: Model) (_dispatch: Msg -> unit) =
+    // highlight-start
+    Html.div [
+        Shadcn.button [
+            prop.text "Click me"
+            prop.onClick (fun _ -> Browser.Dom.window.alert "Hello, shadcn/ui!")
+        ]
+    ]
+    // highlight-end
+
+let page (_shared: SharedModel) (_route: HomeRoute) =
+    Page.from init update view () LayoutMsg
+```
