@@ -2,7 +2,6 @@
 slug: introducing-feliz-shadcn-effortless-ui-without-css
 title: "Introducing Feliz.Shadcn: Effortless UI without CSS"
 authors: [klofberg]
-draft: true
 ---
 
 ![EIntro](./image1.png)
@@ -19,7 +18,7 @@ without the steep learning curve often associated with CSS and traditional front
 
 At its core, the Shadcn component library is a collection of beautifully-designed and customizable UI components built on Tailwind CSS.
 These components encapsulate best practices in design and responsiveness, making them ideal for projects where aesthetics and functionality
-are equally important. For backend developers or those new to frontend development, Shadcn offers the following benefits:
+are equally important. Shadcn offers the following benefits:
     * Ease of Use: With pre-styled components, you can avoid the intricacies of CSS, focusing instead on the application logic.
     * Consistency: Uniform design patterns across your application help maintain a professional look and feel.
     * Customization: Despite their out-of-the-box styling, components are highly customizable, allowing you to adjust designs to your project’s specific needs.
@@ -64,13 +63,14 @@ dotnet elmish-land init
 npm install tailwindcss @tailwindcss/vite
 ```
 
-### 3. Configure the Tailwind CSS Vite plugin
+### 3. Configure Vite
 
-Add the @tailwindcss/vite plugin to your Vite configuration `vite.config.js`:
+Add the @tailwindcss/vite plugin and shadcn's component alias to your Vite configuration `vite.config.js`:
 
 ```javascript
 import { defineConfig } from 'vite'
 // highlight-start
+import path from "path"
 import tailwindcss from '@tailwindcss/vite'
 // highlight-end
 
@@ -82,7 +82,14 @@ export default defineConfig({
     // highlight-end
     build: {
         outDir: "dist"
-    }
+    },
+    // highlight-start
+    resolve: {
+        alias: {
+            "@": path.resolve(__dirname, "./src"),
+        },
+    },
+    // highlight-end
 })
 ```
 
@@ -117,7 +124,7 @@ Add a link to your `styles.css` in the `<head>` section of your `index.html`.
 </html>
 ```
 
-### 6. Configure import alias
+### 6. Configure import alias in tsconfig
 
 Create a file named `tsconfig.json` in the root folder of your project and add the following:
 
@@ -134,6 +141,7 @@ Create a file named `tsconfig.json` in the root folder of your project and add t
     }
 }
 ```
+
 
 ### 7. Install shadcn/ui
 
@@ -195,3 +203,11 @@ let view (_model: Model) (_dispatch: Msg -> unit) =
 let page (_shared: SharedModel) (_route: HomeRoute) =
     Page.from init update view () LayoutMsg
 ```
+
+Run:
+
+```bash
+dotnet elmish-land server
+```
+
+to start your application.
