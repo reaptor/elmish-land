@@ -1,36 +1,51 @@
 ---
 slug: introducing-elmish-land
-title: Introducing Elmish Land
+title: "Introducing Elmish Land: A Scalable Frontend Framework for F#"
 authors: [klofberg]
 ---
 
 ![EIntro](./intro.webp)
 
-Elmish Land is a framework for F# designed to help you easily build scalable frontend web applications,
-drawing heavy inspiration from [Elm Land](https://elm.land/). It simplifies many of the manual steps
-usually present when developing with F#, [Fable](https://fable.io/) and [Elmish](https://zaid-ajaj.github.io/the-elmish-book/).
+Elmish Land is a modern framework designed for F# developers who want to build scalable, maintainable, and type-safe frontend web applications with ease.
+Inspired by [Elm Land](https://elm.land/), it abstracts away many of the complexities often associated with using F#, [Fable](https://fable.io/), and 
+[Elmish](https://zaid-ajaj.github.io/the-elmish-book/), allowing developers to focus on 
+building great user experiences with minimal boilerplate.
 
 <!-- truncate -->
 
-## Pages as Building Blocks
+## Pages as the Building Blocks
 
-In Elmish Land, pages are the fundamental components of your application. The framework uses a file-system-based router where
-folders in the `src/Pages` directory correspond to URL routes. For instance, creating a folder `src/Pages/About` with a `Page.fs` file
-maps to the `/about` URL. This structure simplifies routing and enhances code organization.
+In Elmish Land, [pages](/docs/core-concepts/pages) serve as the core components of your application. The framework features a file-system-based router, where directories inside 
+the `src/Pages` folder define URL routes automatically. For example, adding a folder named `src/Pages/About` with a `Page.fs` file will map directly 
+to the `/about` route.
+
+This structure provides a clear, intuitive way to organize your code, eliminating the need for manually defining route mappings and ensuring 
+consistency across your application.
 
 ## Type-Safe Routing
 
-Elmish Land supports type-safe route and query parameters through the use of a `route.json` file.
-This approach ensures that route parameters are correctly typed and parsed, reducing runtime errors and improving code reliability.
+Elmish Land brings [type safety to route and query parameters](/docs/core-concepts/pages#type-safe-routing) through a `route.json` file. This approach guarantees that all parameters are correctly 
+typed and parsed, reducing runtime errors and improving overall code reliability. By enforcing compile-time safety, developers can confidently 
+refactor routes without introducing breaking changes.
+
 
 ## Shared State Management
 
-The framework allows for a SharedModel that stores data accessible across all pages. This shared state facilitates consistent
-data management and simplifies the process of passing information between different parts of the application.
+Managing global application state is simplified with [SharedModel](/docs/core-concepts/shared), which acts as a central store for data accessible across all pages. This shared state 
+approach helps maintain consistency, reduces redundant data fetching, and makes it easier to share information between different components of the application.
 
 ## Layouts and Commands
 
-Elmish Land provides mechanisms for defining layouts and handling commands, enabling developers to structure their applications
-effectively and manage side effects in a predictable manner.
-By leveraging these features, Elmish Land aims to streamline the development of frontend web applications, making the process
-more intuitive and the resulting applications more robust.
+Elmish Land provides built-in support for [layouts](/docs/core-concepts/layouts), enabling developers to create reusable UI structures for different sections of their application. 
+Additionally, its approach to command handling ensures that side effects, such as API calls or state updates, are managed predictably.
+
+By combining these features, Elmish Land streamlines frontend development in F#, making it more intuitive, efficient, and robust.
+
+
+## Why Choose Elmish Land?
+
+Whether you're an experienced F# developer or just starting with frontend development, Elmish Land provides a structured and scalable approach 
+to building web applications. With type safety, built-in state management, and predictable routing, it removes much of the friction in frontend development, 
+allowing you to focus on creating great user experiences rather than fighting with configuration.
+
+[Give Elmish Land a try](/docs/getting-started/creating-a-project), and experience a more organized, scalable, and enjoyable way to build frontend applications with F#! 🚀
