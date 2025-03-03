@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Project structure
 
-Every Elmish Land application has a folder structure that looks something like this:
+​Understanding the structure of an Elmish Land project is essential for efficient development and maintenance. A typical Elmish Land application is organized as follows:
 
 ```
 MyProject
@@ -22,15 +22,16 @@ MyProject
 
 You'll also find common files like .gitignore.
 
-## Project files
-Here's a breakdown of what those files and folders are:
+### Overview of files and directories
 
-* `/global.json` - Specify which version of .NET to use.
-* `/MyProject.sln` - The F# solution file for working from an IDE
-* `/MyProject.fsproj` - The F# project file
-* `/elmish-land.json` –  The configuration file for Elmish Land.
-* `/src/Shared.fs` - Shared data between your pages. 
-* `/src/Pages/` – The home for your page and layout files.
-  - `Layout.fs` – A layout file that allow you to share common UI for your pages.
-  - `Page.fs` – A page file, which correspond to URLs in your app.
-  - `route.json` – Configuration for the route of the folder. Makes it possible to specify type safe route parameters and query parameters.
+* `/global.json` - Specifies the .NET SDK version to ensure consistency across development environments.
+* `/MyProject.sln` - The solution file facilitating project management within Integrated Development Environments (IDEs).
+* `/MyProject.fsproj` - The F# project file containing build configurations and dependencies.
+* `/elmish-land.json` –  Holds Elmish Land-specific configurations, allowing customization of framework behaviors.
+* `/src/Shared.fs` - Contains shared data and utilities accessible across multiple pages.
+* `/src/Pages/` – Directory dedicated to page and layout files.
+  - `Layout.fs` – Defines common UI elements and structures shared among various pages, ensuring a consistent user experience.
+  - `Page.fs` – Represents individual pages, each corresponding to specific URLs within the application.​
+  - `route.json` – Configures routing parameters, enabling type-safe route and query parameter definitions.
+
+This structured approach ensures that Elmish Land projects are organized, maintainable, and scalable, facilitating a seamless development process.

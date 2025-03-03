@@ -4,10 +4,7 @@ sidebar_position: 1
 
 # Pages
 
-## Overview
-
-Pages are the basic building blocks of your Elmish Land application. When a user visits an URL, Elmish Land will use the names of the folders
-in your src/Pages folder to decide which page to render. See [Routing](#routing) for more information.
+​In Elmish Land, pages serve as the fundamental components of your application, each corresponding to a specific URL route. When a user navigates to a particular URL, Elmish Land determines the appropriate page to render based on the folder structure within your `src/Pages` directory.
 
 :::info
 
@@ -21,21 +18,23 @@ No need to write your URL parsers by hand!
 
 :::
 
-## Adding pages
+## Creating a New Page:
 
-When you run the `elmish-land add page` command, a new page is created.
+To add a new page to your Elmish Land project, follow these steps:
 
-```bash
-dotnet elmish-land add page "/About"
-```
+1. **Generate the Page**: Use the CLI command to create a new page. For example, to add an **`About`** page:
+    ```bash
+    dotnet elmish-land add page "/About"
+    ```
 
-:::warning
+    This command creates a new file at `src/Pages/About/Page.fs`.
 
-You need to manually add the new page to your project file by using an IDE or by adding the following line to an ItemGroup in the project file `./MyProject.fsproj`:
+2. **Include the Page in Your Project**: Manually add the new page to your project file (`MyProject.fsproj`) by inserting the following line within an `<ItemGroup>`:
+    ```xml
+    <Compile Include="src/Pages/About/Page.fs" />
+    ```
 
-`<Compile Include="src/Pages/About/Page.fs" />`
-
-:::
+    This step ensures that the new page is recognized during the build process.
 
 The "add page" command generates `src/Pages/About/Page.fs` with the following content:
 
@@ -68,9 +67,11 @@ let page (_shared: SharedModel) (_route: HomeRoute) =
 
 ```
 
-### Understanding pages
+### Understanding the Page Structure
 
-#### `Model`
+A typical page file (`Page.fs`) includes the following components:
+
+#### **Model**: Represents the state of the page.
 The `Model` contains the state of our page. Everytime a value changes on the page we need to update the `Model`. An example
 of this is typing text in a HTML `input` element. For every change we need update the `Model` with the new value from the
 `onChange` event of the element.
@@ -79,7 +80,7 @@ of this is typing text in a HTML `input` element. For every change we need updat
 type Model = unit
 ```
 
-#### `Msg`
+#### **Messages (Msg)**: Enumerates possible events or actions on the page.
 The `Msg` contains all the possible events of our page. Examples of events can be:
 * The user clicks a button
 * An API response from the server is received
@@ -96,7 +97,7 @@ You can read more about layouts on the [Layouts](/docs/core-concepts/layouts) pa
 
 :::
 
-#### `init`
+#### **Initialization (init)**: Sets the initial state of the page.
 
 This function is called anytime your page loads for the first time.
 
@@ -112,7 +113,7 @@ You can read more about `Command.none` on the [Commands](/docs/core-concepts/com
 
 :::
 
-#### `update`
+#### **Update Function (update)**: Handles state transitions in response to messages.
 
 This function is called whenever a message is sent. An example of this is a user clicking a button.
 
@@ -122,7 +123,7 @@ let update (msg: Msg) (model: Model) =
     | LayoutMsg _ -> model, Command.none
 ```
 
-#### `view`
+#### **View Function (view)**: Defines the UI representation of the page.
 
 This function converts the current model to the HTML you want to show to the user.
 
@@ -131,29 +132,21 @@ let view (_model: Model) (_dispatch: Msg -> unit) =
     Html.text "About Page"
 ```
 
-#### `page`
+#### **Page Function (page)**: Integrates the init, update, and view functions to construct the page.
 The `page` function is our starting point for the page. From this function we need to call the `Page.from` function to setup our page.
-
-```fsharp
-let page (_shared: SharedModel) (_route: HomeRoute) =
-    Page.from init update view () LayoutMsg
-```
-
-### Working with `shared` and `route`
-
-You may have noticed that every `page` is a function that receive two arguments, `shared` and `route`:
 
 ```fsharp
 let page (shared: SharedModel) (layout: MyProject.Pages.Layout.Model) (route: AboutRoute) =
     Page.from init update view
 ```
 
-But what are these arguments for?
+### Utilizing `shared` and `route`
 
-* `shared` – Stores any data you want to share across all your pages.
-  * On [the Shared state page](/docs/core-concepts/shared), you'll learn how to customize what data should be available.
-* `route` – Stores URL information, including things like URL parameters and query.
-  * In [the Routing section](#routing), you'll learn more about the other values on the route field.
+The `page` function receives two parameters: `shared` and `route`.
+
+* **shared**: Provides access to the [`SharedModel`](/docs/core-concepts/shared), allowing data to be shared across all pages.
+
+* **route**: Contains URL information, including parameters and query strings, enabling [type-safe routing](/pages#type-safe-routing).
 
 All of these values are available to any function within `page`. That means `init`, `update` and `view` all can get access to shared and route.
 

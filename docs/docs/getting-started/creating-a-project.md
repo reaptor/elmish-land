@@ -4,32 +4,59 @@ sidebar_position: 2
 
 # Creating a project
 
-## Requirements
-* [.NET SDK](https://dotnet.microsoft.com/en-us/) version 6.0 or above (version 9.0 is recommended).
-* [Node.js](https://nodejs.org/en) version 18.0 or above. You can use nvm for managing multiple Node versions on a single machine installed.
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
+## Prerequisites
+Before initiating a project, ensure that your development environment includes:
 
-## Create a new project
-Elmish Land comes with a single dotnet tool to help you create new projects, add features, run your dev server, and more.
+* **[.NET SDK](https://dotnet.microsoft.com/)**: Version 6.0 or higher is required, with version 9.0 recommended.​
+* **[Node.js](https://nodejs.org/)**: Version 18.0 or above is necessary. Utilizing a version manager like nvm can assist in handling multiple Node.js versions on a single machine.​
 
+When installing Node.js, it's advisable to select all checkboxes related to dependencies to ensure a comprehensive setup.
+
+
+## Setting Up a New Project
+Elmish Land offers a dedicated .NET tool to facilitate project creation, feature addition, and development server management. Follow these steps to establish a new project:​
+
+### 1. Initialize the Project Directory:
 ```bash
 mkdir MyProject
 cd MyProject
+```
+
+### 2. Configure the Tool Manifest:
+```bash
 dotnet new tool-manifest
+```
+
+### 3. Install the Elmish Land Tool:
+```bash
 dotnet tool install elmish-land
+```
+
+### 4. Initialize the Elmish Land Project:
+```bash
 dotnet elmish-land init
+```
+
+### 5. Launch the Development Server:
+```bash
 dotnet elmish-land server
 ```
 
-`elmish-land init` will scaffold a new project in the MyProject directory and `elmish-land server` will start the development server on `http://localhost:5173`.
+Executing `dotnet elmish-land init` scaffolds a new project within the `MyProject` directory. Subsequently, running `dotnetn elmish-land server` initiates the development server, accessible at `http://localhost:5173`.​
 
-You create pages by adding files to the src/Pages directory of your project. Try editing the files to get a feel for how everything works.
+To create pages, add files to the `src/Pages` directory of your project. Modifying these files allows you to familiarize yourself with Elmish Land's structure and capabilities.​
 
-Be sure to join the [Elmish Land Discord](https://discord.gg/jQ26cZH3fU) to get help if you're stuck or to make new friends. We hope you have an awesome experience with Elmish Land, and can't wait to see what you build!
+For community support, collaboration, or to seek assistance, consider joining the [Elmish Land Discord](https://discord.gg/jQ26cZH3fU). We are eager to see the innovative applications you'll develop with Elmish Land!​
 
-## Editor setup
+## Editor Configuration
 
-We recommend using VS Code with the Ionide plugin for the best experience. If you prefer to use another editor, check out these [other editors](/docs/advanced/other-editors).
+For an optimal development experience, we recommend using [Visual Studio Code](https://code.visualstudio.com/) accompanied by the [Ionide plugin](https://ionide.io/Editors/Code/overview.html). If you prefer alternative editors, explore [other available options](/docs/advanced/other-editors).​
+
+### To set up VS Code:
 
 1. Install [Visual Studio Code](https://code.visualstudio.com/)
-2. Install the [Ionide](https://ionide.io/Editors/Code/overview.html) extension
+2. Add the [Ionide](https://ionide.io/Editors/Code/overview.html) extension
+
+This setup provides a robust environment tailored for F# and Elmish Land development, enhancing productivity and code management.​
+
+By following these guidelines, you are well-equipped to embark on your Elmish Land development journey, crafting scalable and maintainable web applications with F# and Elmish.
