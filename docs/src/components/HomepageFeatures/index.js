@@ -15,7 +15,7 @@ const FeatureList = [
     ),
   },
   {
-    url: '/docs/core-concepts/pages#routing',
+    url: '/docs/core-concepts/routing#routing',
     title: 'File based router',
     // Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
@@ -26,7 +26,7 @@ const FeatureList = [
     ),
   },
   {
-    url: '/docs/core-concepts/pages#type-safe-routing',
+    url: '/docs/core-concepts/routing#type-safe-routing',
     title: 'Type-Safe Routing',
     // Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (

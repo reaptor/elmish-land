@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 1.1
 ---
 
 # Pages
@@ -18,7 +18,7 @@ No need to write your URL parsers by hand!
 
 :::
 
-## Creating a New Page:
+## Creating a New Page
 
 To add a new page to your Elmish Land project, follow these steps:
 
@@ -67,11 +67,11 @@ let page (_shared: SharedModel) (_route: HomeRoute) =
 
 ```
 
-### Understanding the Page Structure
+## Understanding the Page Structure
 
 A typical page file (`Page.fs`) includes the following components:
 
-#### **Model**: Represents the state of the page.
+### **Model** (the state of the page)
 The `Model` contains the state of our page. Everytime a value changes on the page we need to update the `Model`. An example
 of this is typing text in a HTML `input` element. For every change we need update the `Model` with the new value from the
 `onChange` event of the element.
@@ -80,7 +80,7 @@ of this is typing text in a HTML `input` element. For every change we need updat
 type Model = unit
 ```
 
-#### **Messages (Msg)**: Enumerates possible events or actions on the page.
+### **Messages** (events or actions on the page)
 The `Msg` contains all the possible events of our page. Examples of events can be:
 * The user clicks a button
 * An API response from the server is received
@@ -97,7 +97,7 @@ You can read more about layouts on the [Layouts](/docs/core-concepts/layouts) pa
 
 :::
 
-#### **Initialization (init)**: Sets the initial state of the page.
+### **Initialization** (the initial state of the page)
 
 This function is called anytime your page loads for the first time.
 
@@ -113,7 +113,7 @@ You can read more about `Command.none` on the [Commands](/docs/core-concepts/com
 
 :::
 
-#### **Update Function (update)**: Handles state transitions in response to messages.
+### **Updates** (state transitions in response to messages)
 
 This function is called whenever a message is sent. An example of this is a user clicking a button.
 
@@ -123,7 +123,7 @@ let update (msg: Msg) (model: Model) =
     | LayoutMsg _ -> model, Command.none
 ```
 
-#### **View Function (view)**: Defines the UI representation of the page.
+### **Rendering** (the UI representation of the page)
 
 This function converts the current model to the HTML you want to show to the user.
 
@@ -132,7 +132,7 @@ let view (_model: Model) (_dispatch: Msg -> unit) =
     Html.text "About Page"
 ```
 
-#### **Page Function (page)**: Integrates the init, update, and view functions to construct the page.
+### **Page** (constructs the page for Elmish Land)
 The `page` function is our starting point for the page. From this function we need to call the `Page.from` function to setup our page.
 
 ```fsharp
@@ -140,13 +140,13 @@ let page (shared: SharedModel) (layout: MyProject.Pages.Layout.Model) (route: Ab
     Page.from init update view
 ```
 
-### Utilizing `shared` and `route`
+## Utilizing `shared` and `route`
 
 The `page` function receives two parameters: `shared` and `route`.
 
 * **shared**: Provides access to the [`SharedModel`](/docs/core-concepts/shared), allowing data to be shared across all pages.
 
-* **route**: Contains URL information, including parameters and query strings, enabling [type-safe routing](/docs/core-concepts/pages#type-safe-routing).
+* **route**: Contains URL information, including parameters and query strings, enabling [type-safe routing](/docs/core-concepts/routing#type-safe-routing).
 
 All of these values are available to any function within `page`. That means `init`, `update` and `view` all can get access to shared and route.
 
@@ -180,216 +180,3 @@ let init (route: AboutRoute) =
     (),
     Command.none
 ```
-
-## Routing
-
-Elmish Land uses a file-system based router where folders are used to define routes.
-
-Each folder represents a route segment that maps to a URL segment. To create a nested route, you can nest folders inside each other.
-
-* `src/Pages` is the root route
-* `src/Pages/About` creates an `/about` route
-* `src/Pages/Blog/_slug` creates a route with a parameter, slug, that can be used to load data dynamically when a user requests a page like `/blog/hello-world`
-
-Each page folder contains a file called `Page.fs` that contains the page code.
-
-```bash
-src/
-└── Pages/
-    ├── Page.fs
-    ├── About
-    │   └── Page.fs
-    └── Blog
-        ├── Utils
-        │   └── SharedUtils.fs
-        └── Page.fs
-```
-
-In this example, the `/blog/utils` URL path is not available as a page because it does not contain a file named Page.fs. This folder could be used to store components, stylesheets, images, or other colocated files.
-
-Here are the categories of routes you'll find in an Elmish Land project, ordered from most to least specific:
-
-| Route            | URL example    | Description                                        |
-|------------------|----------------|----------------------------------------------------|
-| Root page        | /              | Handles requests to the top-level URL (/).         |
-| Simple routes    | /people        | Directly maps one URL to a page.                   |
-| Route parameters | /people/:id    | Maps many URLs with a similar structure to a page. |
-| Query parameters | /people?id=:id | Pass arguments to a page in the query string.      |
-
-### Root page
-
-This file is created automatically for you with the `elmish-land init` command.
-
-| Page filename	      | URL  |
-|------------------------|------|
-| `src/Pages/Page.fs`    | `/`  |
-
-### Simple routes
-
-Let's start by talking about "static routes". These routes directly map one URL to a page file.
-
-You can use capitalization in your filename to add a dash (`-`) between words.
-
-| Page filename                               | URL                        |
-|---------------------------------------------|----------------------------|
-| `src/Pages/Hello/Page.fs`                   | `/hello`                   |
-| `src/Pages/AboutUs/Page.fs`                 | `/about-us`                |
-| `src/Pages/Settings/Account/Page.fs`        | `/settings/account`        |
-| `src/Pages/Settings/General/Page.fs`        | `/settings/general`        |
-| `src/Pages/Something/Really/Nested/Page.fs` | `/something/really/nested` |
-
-### Route parameters
-
-Some page folders have a leading underscore, (like `_Id` or `_User`). These are called "route parameters". Here are some examples:
-
-| Page filename                       | URL                 | Example URLs                                                   |
-|-------------------------------------|---------------------|----------------------------------------------------------------|
-| `src/Pages/Blog/_Id/Page.fs`        | `/blog/:id`         | `/blog/1`, `/blog/2`, `/blog/xyz`, ...                         |
-| `src/Pages/Users/_Username/Page.fs` | `/users/:username`  | `/users/ryan`, `/users/2`, `/users/bob`, ...                   |
-| `src/Pages/Settings/_Tab/Page.fs`   | `/settings/:tab`    | `/settings/account`, `/settings/general`, `/settings/api`, ... |
-
-The name of the folder (`_Id`, `_User` or `_Tab`) will determine the names of the fields available on the `Route` value passed into your page function:
-
-```fsharp
-// /blog/123
-route.Id = "123"
-
-// /users/ryan
-route.User = "ryan"
-
-// /settings/account
-route.Tab = "account"
-```
-
-For example, if we renamed `Settings/_Tab/Page.fs` to `Settings/_Foo/Page.fs`, we'd access the dynamic route parameter with `route.Foo` instead.
-
-:::info
-
-If this concept is already familiar to you, great! They are called "Dynamic routes" in many popular frameworks like Next.js and Nuxt.js:
-
-* Next.js uses the naming convention: blog/[id].js
-* Nuxt.js uses the naming convention: blog/_id.vue
-
-:::
-
-Elmish Land supports type safe routing via the `route.json` file. In the [Type safe routing section](#type-safe-routing), you'll learn more about how this works.
-
-### Query parameters
-Page folders can contain an optional `route.json` file that is used for specifying the query parameters for that page.
-
-The following file `/Pages/User/route.json` will add two query parameters `name` and `age` to the `User` page:
-
-```javascript
-{
-  "queryParameters": [
-    {
-      "module": "System",
-      "name": "name"
-    },
-    {
-      "module": "System",
-      "name": "age"
-    }
-  ]
-}
-```
-
-that will yield the follow url: `/user?name=john&age=23`
-
-### Type safe routing
-
-Elmish Land supports type safe route and query parameters through the `route.json` file.
-
-The following `/Pages/User/_UserId/route.json`:
-
-```javascript
-{
-    "pathParameter": {
-        "module": "System",
-        "type": "Guid",
-        "parse": "parseGuid",
-        "format": "formatGuid"
-    },
-    "queryParameters": [
-        {
-            "module": "System",
-            "name": "age",
-            "type": "int",
-            "required": true,
-            "parse": "parseInt",
-            "format": "formatInt"
-        }
-    ]
-}
-```
-
-yields the following `Route` type for the page `/user/:id?age=:age`:
-
-```fsharp
-module Routes =
-    type User_UserIdRoute = { UserId: Guid; Age: int  }
-```
-
-The following parameter types can be used out of the box: 
-
-`Guid`
-```javascript
-{
-    "module": "System",
-    "type": "Guid",
-    "parse": "parseGuid",
-    "format": "formatGuid"
-}
-```
-
-`Int32`
-```javascript
-{
-    "module": "System",
-    "type": "int",
-    "parse": "parseInt",
-    "format": "formatInt"
-}
-```
-
-`Int64`
-```javascript
-{
-    "module": "System",
-    "type": "int64",
-    "parse": "parseInt64",
-    "format": "formatInt64"
-}
-```
-
-`Bool`
-```javascript
-{
-    "module": "System",
-    "type": "bool",
-    "parse": "parseBool",
-    "format": "formatBool"
-}
-```
-
-`Float`
-```javascript
-{
-    "module": "System",
-    "type": "float",
-    "parse": "parseFloat",
-    "format": "formatFloat"
-}
-```
-
-`Decimal`
-```javascript
-{
-    "module": "System",
-    "type": "decimal",
-    "parse": "parseDecimal",
-    "format": "formatDecimal"
-}
-```
-
-In the [Custom route and query parameters page](/docs/advanced/custom-route-and-query-parameters), you'll learn more about how to use your own types as route and query parameters.

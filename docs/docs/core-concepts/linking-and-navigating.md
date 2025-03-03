@@ -66,6 +66,6 @@ Will automatically redirect the page to the `#/Foo/bar/baz?name=John` when loade
 
 :::info
 
-These examples uses [route parameters](/docs/core-concepts/pages#route-parameters).
+These examples uses [route parameters](/docs/core-concepts/routing#route-parameters-dynamic-routing).
 
 :::

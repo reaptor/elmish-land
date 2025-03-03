@@ -61,7 +61,7 @@ let layout (_props: Props) (_route: Route) (_shared: SharedModel) =
     Layout.from init update routeChanged view
 ```
 
-Layouts have the same [structure as pages](/docs/core-concepts/pages#understanding-pages) except for the `Props` type and the `layout` and `routeChanged` functions.
+Layouts have the same [structure as pages](/docs/core-concepts/pages#understanding-the-page-structure) except for the `Props` type and the `layout` and `routeChanged` functions.
 
 ### Understanding layouts
 

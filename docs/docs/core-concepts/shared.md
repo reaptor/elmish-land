@@ -131,7 +131,7 @@ let page (shared: SharedModel) (route: AboutRoute) =
     Page.create init update view
 ```
 
-In [the "Working with shared and route" section](/docs/core-concepts/pages#working-with-shared-and-route), you'll learn more about how to use `shared` from a page.
+In [the "Working with shared and route" section](/docs/core-concepts/pages#utilizing-shared-and-route), you'll learn more about how to use `shared` from a page.
 
 ## Sending messages from pages to Shared
 When you need to send messages from a page to Shared you will use the `Command.ofShared` function. 
