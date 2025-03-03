@@ -314,7 +314,7 @@ type ProjectName =
 
     static member asString(ProjectName projectName) = projectName
 
-let getDotnetToolDependencies () = [ "fable", "--version 4.*" ]
+let getDotnetToolDependencies () = [ "fable", "--version 5 --prerelease" ]
 
 let nugetDependencies =
     Set [
