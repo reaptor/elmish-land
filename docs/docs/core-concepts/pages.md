@@ -146,7 +146,7 @@ The `page` function receives two parameters: `shared` and `route`.
 
 * **shared**: Provides access to the [`SharedModel`](/docs/core-concepts/shared), allowing data to be shared across all pages.
 
-* **route**: Contains URL information, including parameters and query strings, enabling [type-safe routing](/pages#type-safe-routing).
+* **route**: Contains URL information, including parameters and query strings, enabling [type-safe routing](/docs/core-concepts/pages#type-safe-routing).
 
 All of these values are available to any function within `page`. That means `init`, `update` and `view` all can get access to shared and route.
 
