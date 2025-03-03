@@ -314,13 +314,14 @@ type ProjectName =
 
     static member asString(ProjectName projectName) = projectName
 
-let getDotnetToolDependencies () = [ "fable", "--version 5 --prerelease" ]
+let getDotnetToolDependencies () = [ "fable", "--version 5.0.0-alpha.11" ]
 
 let nugetDependencies =
     Set [
         "FSharp.Core", "9.0.201"
         "Elmish", "4.2.0"
         "Fable.Promise", "3.2.0"
+        "Fable.Elmish.HMR", "7.0.0"
         "Fable.Elmish.React", "4.0.0"
         "Feliz", "2.9.0"
         "Feliz.Router", "4.0.0"

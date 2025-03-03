@@ -3,7 +3,7 @@
     <PropertyGroup>
         <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <!-- Allow users with newer dotnet SDK to run Elmish Land -->
         <RollForward>Major</RollForward>
         <RootNamespace>ElmishLand</RootNamespace>
@@ -14,7 +14,7 @@
         <ToolCommandName>elmish-land</ToolCommandName>
         <PackageOutputPath>./nupkg</PackageOutputPath>
         <LangVersion>latest</LangVersion>
-        <Version>1.0.3</Version>
+        <Version>1.1.0-alpha.1</Version>
     </PropertyGroup>
     <ItemGroup>
         <EmbeddedResource Include="templates\vite.config.js">

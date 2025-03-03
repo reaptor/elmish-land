@@ -9,37 +9,50 @@ open ElmishLand.FsProj
 open ElmishLand.Process
 open ElmishLand.Generate
 open ElmishLand.DotNetCli
+open ElmishLand.Settings
 open Orsak
 
 let fableWatch absoluteProjectDir =
-    let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir
+    eff {
+        let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir
 
-    let appFsproj =
-        absoluteProjectDir
-        |> AbsoluteProjectDir.asFilePath
-        |> FilePath.appendParts [
-            ".elmish-land"
-            "App"
-            $"ElmishLand.%s{ProjectName.asString projectName}.App.fsproj"
-        ]
-        |> FilePath.asString
+        let appFsproj =
+            absoluteProjectDir
+            |> AbsoluteProjectDir.asFilePath
+            |> FilePath.appendParts [
+                ".elmish-land"
+                "App"
+                $"ElmishLand.%s{ProjectName.asString projectName}.App.fsproj"
+            ]
+            |> FilePath.asString
 
-    runProcess
-        true
-        (AbsoluteProjectDir.asFilePath absoluteProjectDir)
-        "dotnet"
-        [|
-            "fable"
-            "watch"
-            appFsproj
-            "--noCache"
-            "--run"
-            "vite"
-            "--config"
-            "vite.config.js"
-        |]
-        CancellationToken.None
-        ignore
+        let! settings = getSettings absoluteProjectDir
+
+        let command, args =
+            match settings.ServerCommand with
+            | Some(command, args) -> command, args
+            | None ->
+                "dotnet",
+                [|
+                    "fable"
+                    "watch"
+                    appFsproj
+                    "--noCache"
+                    "--run"
+                    "vite"
+                    "--config"
+                    "vite.config.js"
+                |]
+
+        return!
+            runProcess
+                true
+                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                command
+                args
+                CancellationToken.None
+                ignore
+    }
 
 let server absoluteProjectDir =
     eff {

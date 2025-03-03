@@ -1,5 +1,6 @@
 module ElmishLand.Settings
 
+open System
 open System.IO
 open ElmishLand.Base
 open ElmishLand.Effect
@@ -45,6 +46,7 @@ type Settings = {
     DefaultLayoutTemplate: string option
     DefaultPageTemplate: string option
     RouteSettings: RouteParameters
+    ServerCommand: (string * string array) option
 }
 
 let getSettings absoluteProjectDir =
@@ -154,6 +156,16 @@ let getSettings absoluteProjectDir =
                     get.Optional.Field "defaultPageTemplate" Decode.string
                     |> Option.map trimLeadingSpaces
                 RouteSettings = RouteParameters(pageSettings)
+                ServerCommand =
+                    let decodeServerCommand =
+                        Decode.string
+                        |> Decode.andThen (fun serverCommand ->
+                            match serverCommand.Split(" ", StringSplitOptions.RemoveEmptyEntries) |> List.ofArray with
+                            | [] -> Decode.fail "Exe command is missing"
+                            | [ command ] -> Decode.succeed (command, [||])
+                            | command :: args -> Decode.succeed (command, List.toArray args))
+
+                    get.Optional.Field "serverCommand" decodeServerCommand
             })
 
         return!

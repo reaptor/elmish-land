@@ -22,22 +22,17 @@ mkdir MyProject
 cd MyProject
 ```
 
-### 2. Configure the Tool Manifest:
+### 2. Install the Elmish Land Tool:
 ```bash
-dotnet new tool-manifest
+dotnet tool install elmish-land --create-manifest-if-needed
 ```
 
-### 3. Install the Elmish Land Tool:
-```bash
-dotnet tool install elmish-land
-```
-
-### 4. Initialize the Elmish Land Project:
+### 3. Initialize the Elmish Land Project:
 ```bash
 dotnet elmish-land init
 ```
 
-### 5. Launch the Development Server:
+### 4. Launch the Development Server:
 ```bash
 dotnet elmish-land server
 ```
