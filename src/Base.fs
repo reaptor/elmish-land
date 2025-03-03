@@ -318,15 +318,14 @@ let getDotnetToolDependencies () = [ "fable", "--version 4.*" ]
 
 let nugetDependencies =
     Set [
-        "FSharp.Core", "8.0.401"
+        "FSharp.Core", "9.0.201"
         "Elmish", "4.2.0"
         "Fable.Promise", "3.2.0"
-        "Fable.Elmish.HMR", "7.0.0"
         "Fable.Elmish.React", "4.0.0"
-        "Feliz", "2.8.0"
+        "Feliz", "2.9.0"
         "Feliz.Router", "4.0.0"
     ]
 
-let npmDependencies = Set [ "react", "18"; "react-dom", "18" ]
+let npmDependencies = Set [ "react", "19"; "react-dom", "19" ]
 
-let npmDevDependencies = Set [ "vite", "5" ]
+let npmDevDependencies = Set [ "vite", "6" ]
