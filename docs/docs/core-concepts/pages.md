@@ -26,16 +26,33 @@ To add a new page to your Elmish Land project, follow these steps:
     ```bash
     dotnet elmish-land add page "/About"
     ```
-
     This command creates a new file at `src/Pages/About/Page.fs`.
-
-2. **Include the Page in Your Project**: Manually add the new page to your project file (`MyProject.fsproj`) by inserting the following line within an `<ItemGroup>`:
+   
+    💡 **Note**: The page path should be in file system format `/MyProfile` and ***not*** URL format `/my-profile`.
+    
+1. **Include the Page in Your Project**: Manually add the new page to your project file (`MyProject.fsproj`) by inserting the following line within an `<ItemGroup>`:
     ```xml
-    <Compile Include="src/Pages/About/Page.fs" />
+    <Project Sdk="Microsoft.NET.Sdk">
+        <PropertyGroup>
+            <TargetFramework>net9.0</TargetFramework>
+            <LangVersion>latest</LangVersion>
+        </PropertyGroup>    
+        <ItemGroup>
+            <Compile Include="src/Shared.fs"/>
+            <Compile Include="src/Pages/NotFound.fs"/>
+            <Compile Include="src/Pages/Layout.fs"/>
+            <Compile Include="src/Pages/Page.fs"/>
+            // highlight-start
+            <Compile Include="src/Pages/About/Page.fs" />
+            // highlight-end
+        </ItemGroup>    
+        <ItemGroup>
+          <ProjectReference Include=".elmish-land/Base/ElmishLand.MyProject.Base.fsproj" />
+        </ItemGroup>
+    </Project>
     ```
-
-    This step ensures that the new page is recognized during the build process.
-
+    F# projects require all sources to be listed **in compilation order** in an `.fsproj` file. This may look quite restrictive at first, but it does have [some advantages](https://fsharpforfunandprofit.com/posts/cyclic-dependencies/).
+   
 The "add page" command generates `src/Pages/About/Page.fs` with the following content:
 
 ```fsharp
