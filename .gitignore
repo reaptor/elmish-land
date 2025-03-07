@@ -11,3 +11,4 @@ github-pages
 /MyProject
 .elmish-land
 *.DotSettings.user
+integration-test/
