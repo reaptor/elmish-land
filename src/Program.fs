@@ -1,6 +1,7 @@
 ﻿module ElmishLand.Program
 
 open System
+open System.IO
 open ElmishLand.Effect
 open Orsak
 open ElmishLand.Log
@@ -118,8 +119,20 @@ let main argv =
             |> Effect.run
                 { new IEffectEnv with
                     member _.GetLogger(memberName, path, line) = ConsoleLogger(memberName, path, line)
-                    member _.FilePathExists(filePath) = FilePath.exists filePath
+
+                    member _.FilePathExists(filePath, isDirectory: bool) =
+                        if isDirectory then
+                            Directory.Exists(FilePath.asString filePath)
+                        else
+                            FilePath.exists filePath
+
                     member _.GetParentDirectory(filePath) = FilePath.parent filePath
+
+                    member _.GetFilesRecursive(FilePath filePath, searchPattern) =
+                        Directory.GetFiles(filePath, searchPattern, EnumerationOptions(RecurseSubdirectories = true))
+                        |> Array.map FilePath.fromString
+
+                    member _.ReadAllText(FilePath filePath) = File.ReadAllText(filePath)
                 }
 
         return handleAppResult (ConsoleLogger("", "", 0)) ignore result

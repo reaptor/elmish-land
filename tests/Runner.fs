@@ -10,7 +10,7 @@ open ElmishLand.Log
 open Xunit
 open Orsak
 
-let env (logOutput: Expects.LogOutput) =
+let env (logOutput: Expects.LogOutput) (fileSystem: IFileSystem) =
     { new IEffectEnv with
         member _.GetLogger(memberName, path, line) =
             let logger = Logger(memberName, path, line)
@@ -29,11 +29,18 @@ let env (logOutput: Expects.LogOutput) =
                     logger.WriteLine (unindent >> logOutput.Error.AppendLine >> ignore) message args
             }
 
-        member _.FilePathExists(fp) = true
-        member _.GetParentDirectory(filePath) = FilePath.fromString "" |> Some
+        member _.FilePathExists(fp, isDirectory) =
+            fileSystem.FilePathExists(fp, isDirectory)
+
+        member _.GetParentDirectory(filePath) = fileSystem.GetParentDirectory(filePath)
+
+        member _.GetFilesRecursive(filePath, searchPattern) =
+            fileSystem.GetFilesRecursive(filePath, searchPattern)
+
+        member _.ReadAllText(filePath) = fileSystem.ReadAllText(filePath)
     }
 
-let runEff (e: Effect<IEffectEnv, _, _>) =
+let runEff fileSystem (e: Effect<IEffectEnv, _, _>) =
     let logOutput: Expects.LogOutput = {
         Info = StringBuilder()
         Debug = StringBuilder()
@@ -41,6 +48,6 @@ let runEff (e: Effect<IEffectEnv, _, _>) =
     }
 
     task {
-        let! result = Effect.run (env logOutput) e
+        let! result = Effect.run (env logOutput fileSystem) e
         return result, logOutput
     }

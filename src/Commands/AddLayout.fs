@@ -1,12 +1,11 @@
 module ElmishLand.AddLayout
 
 open ElmishLand.Effect
+open ElmishLand.Resources
 open ElmishLand.Settings
 open Orsak
 open ElmishLand.Base
-open ElmishLand.Log
 open ElmishLand.TemplateEngine
-open ElmishLand.Resource
 
 let addLayout absoluteProjectDir (url: string) =
     eff {
@@ -39,24 +38,16 @@ let addLayout absoluteProjectDir (url: string) =
         let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
         let! settings = getSettings absoluteProjectDir
 
-        do!
-            writeResource
-                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
-                false
-                "AddLayout.template"
-                layoutFileParts
-                (Some(
-                    handlebars {|
-                        ViewModule = settings.View.Module
-                        ViewType = settings.View.Type
-                        RootModule = rootModuleName
-                        Layout = layout
-                    |}
-                ))
+        writeResource<AddLayout_template> log (AbsoluteProjectDir.asFilePath absoluteProjectDir) false layoutFileParts {
+            ViewModule = settings.View.Module
+            ViewType = settings.View.Type
+            RootModule = rootModuleName
+            Layout = layout
+        }
 
         let! routeData = getTemplateData projectName absoluteProjectDir
         log.Debug("routeData: {}", routeData)
-        do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData
+        generateFiles log (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData
 
         let relativefilePathString = $"""%s{layoutFileParts |> String.concat "/"}"""
 

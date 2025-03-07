@@ -13,6 +13,7 @@
     <Compile Include="Tests.fs" />
     <Compile Include="Runner.fs" />
     <Compile Include="TemplateEngineTests.fs" />
+    <Compile Include="ResourcesTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

@@ -24,8 +24,10 @@ type Log
         Effect.Create(fun (provider: #ILogProvider) -> provider.GetLogger(memberName, path, line))
 
 type IFileSystem =
-    abstract member FilePathExists: FilePath -> bool
+    abstract member FilePathExists: FilePath * isDirectory: bool -> bool
     abstract member GetParentDirectory: FilePath -> FilePath option
+    abstract member GetFilesRecursive: FilePath * searchPattern: string -> FilePath array
+    abstract member ReadAllText: FilePath -> string
 
 module FileSystem =
     let get () =

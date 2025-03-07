@@ -5,16 +5,15 @@ open System.IO
 open System.Reflection
 open System.Threading
 open ElmishLand.Effect
+open ElmishLand.Resources
 open ElmishLand.Settings
 open Orsak
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
-open ElmishLand.Log
 open ElmishLand.DotNetCli
 open ElmishLand.Process
 open ElmishLand.AppError
 open ElmishLand.FsProj
-open ElmishLand.Resource
 open ElmishLand.Generate
 
 let getNodeVersion () =
@@ -56,9 +55,6 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
         for resource in assembly.GetManifestResourceNames() do
             log.Debug(resource)
 
-        let writeResourceToProjectDir =
-            writeResource (AbsoluteProjectDir.asFilePath absoluteProjectDir) false
-
         let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir
 
         let fsProjName = $"%s{ProjectName.asString projectName}.fsproj"
@@ -77,43 +73,37 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
             not
             <| File.Exists(workingDirectory |> FilePath.appendParts [ "global.json" ] |> FilePath.asString)
         then
-            do!
-                writeResource
-                    workingDirectory
-                    false
-                    "global.json.template"
-                    [ "global.json" ]
-                    (Some(
-                        handlebars {|
-                            DotNetSdkVersion = (DotnetSdkVersion.asString dotnetSdkVersion)
-                        |}
-                    ))
+            writeResource<global_json_template> log workingDirectory false [ "global.json" ] {
+                DotNetSdkVersion = (DotnetSdkVersion.asString dotnetSdkVersion)
+            }
 
-        do! writeResourceToProjectDir "settings.json" [ ".vscode"; "settings.json" ] None
-        do! writeResourceToProjectDir "elmish-land.json" [ "elmish-land.json" ] None
+        writeResource<settings_json>
+            log
+            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+            false
+            [ ".vscode"; "settings.json" ]
+            Settings_json
 
-        do!
-            writeResource
-                workingDirectory
-                false
-                "Directory.Packages.props.template"
-                [ "Directory.Packages.props" ]
-                (Some(
-                    handlebars {|
-                        PackageVersions = getNugetPackageVersions ()
-                    |}
-                ))
+        writeResource<``elmish-land_json``>
+            log
+            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+            false
+            [ "elmish-land.json" ]
+            Elmish_land_json
 
-        do!
-            writeResourceToProjectDir
-                "Project.fsproj.template"
-                [ $"%s{ProjectName.asString projectName}.fsproj" ]
-                (Some(
-                    handlebars {|
-                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
-                        ProjectName = ProjectName.asString projectName
-                    |}
-                ))
+        writeResource<Directory_Packages_props_template> log workingDirectory false [ "Directory.Packages.props" ] {
+            PackageVersions = getNugetPackageVersions ()
+        }
+
+        writeResource<Project_fsproj_template>
+            log
+            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+            false
+            [ $"%s{ProjectName.asString projectName}.fsproj" ]
+            {
+                DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
+                ProjectName = ProjectName.asString projectName
+            }
 
         let npmDependencies =
             npmDependencies
@@ -125,29 +115,27 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
             |> Seq.map (fun (name, ver) -> $"\"%s{name}\": \"^%s{ver}\"")
             |> String.concat ",\n    "
 
-        do!
-            writeResourceToProjectDir
-                "package.json.template"
-                [ "package.json" ]
-                (Some(
-                    handlebars {|
-                        ProjectName = projectName |> ProjectName.asString |> String.asKebabCase
-                        Dependencies = npmDependencies
-                        DevDependencies = npmDevDependencies
-                    |}
-                ))
+        writeResource<package_json_template>
+            log
+            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+            false
+            [ "package.json" ]
+            {
+                ProjectName = projectName |> ProjectName.asString |> String.asKebabCase
+                Dependencies = npmDependencies
+                DevDependencies = npmDevDependencies
+            }
 
-        do! writeResourceToProjectDir "vite.config.js" [ "vite.config.js" ] None
+        writeResource<vite_config_js>
+            log
+            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+            false
+            [ "vite.config.js" ]
+            Vite_config_js
 
-        do!
-            writeResourceToProjectDir
-                "index.html.template"
-                [ "index.html" ]
-                (Some(
-                    handlebars {|
-                        Title = ProjectName.asString projectName
-                    |}
-                ))
+        writeResource<index_html_template> log (AbsoluteProjectDir.asFilePath absoluteProjectDir) false [ "index.html" ] {
+            Title = ProjectName.asString projectName
+        }
 
         let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
         let! settings = getSettings absoluteProjectDir
@@ -181,58 +169,58 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     ViewModule = settings.View.Module
                     ViewType = settings.View.Type
                     RootModule = rootModuleName
+                    ElmishLandAppProjectFullName = $"ElmishLand.%s{projectName |> ProjectName.asString}.App"
                     Routes = [| homeRoute |]
                     Layouts = [| mainLayout |]
                     RouteParamModules = []
                 }
 
-                eff {
-                    do!
-                        writeResourceToProjectDir
-                            "NotFound.template"
-                            [ "src"; "Pages"; "NotFound.fs" ]
-                            (Some(
-                                handlebars {|
-                                    ScaffoldTextElement = settings.View.TextElement
-                                    RootModule = rootModuleName
-                                |}
-                            ))
+                writeResource<NotFound_template>
+                    log
+                    (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                    false
+                    [ "src"; "Pages"; "NotFound.fs" ]
+                    {
+                        ScaffoldTextElement = settings.View.TextElement
+                        RootModule = rootModuleName
+                    }
 
-                    do!
-                        writeResourceToProjectDir
-                            "AddPage.template"
-                            [ "src"; "Pages"; "Page.fs" ]
-                            (Some(
-                                handlebars {|
-                                    ViewModule = settings.View.Module
-                                    ViewType = settings.View.Type
-                                    ScaffoldTextElement = settings.View.TextElement
-                                    RootModule = rootModuleName
-                                    Route = homeRoute
-                                |}
-                            ))
+                writeResource<AddPage_template>
+                    log
+                    (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                    false
+                    [ "src"; "Pages"; "Page.fs" ]
+                    {
+                        ViewModule = settings.View.Module
+                        ViewType = settings.View.Type
+                        ScaffoldTextElement = settings.View.TextElement
+                        RootModule = rootModuleName
+                        Route = homeRoute
+                    }
 
-                    do!
-                        writeResource
-                            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
-                            false
-                            "AddLayout.template"
-                            [ "src"; "Pages"; "Layout.fs" ]
-                            (Some(
-                                handlebars {|
-                                    ViewModule = settings.View.Module
-                                    ViewType = settings.View.Type
-                                    RootModule = rootModuleName
-                                    Layout = mainLayout
-                                |}
-                            ))
+                writeResource<AddLayout_template>
+                    log
+                    (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                    false
+                    [ "src"; "Pages"; "Layout.fs" ]
+                    {
+                        ViewModule = settings.View.Module
+                        ViewType = settings.View.Type
+                        RootModule = rootModuleName
+                        Layout = mainLayout
+                    }
 
-                    return routeData
-                }
+                eff { return routeData }
+
 
         log.Debug("Using route data {}", routeData)
 
-        do! writeResourceToProjectDir "Shared.template" [ "src"; "Shared.fs" ] (Some(handlebars routeData))
+        writeResource<Shared_template>
+            log
+            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+            false
+            [ "src"; "Shared.fs" ]
+            (Shared_template routeData)
 
         do! generate absoluteProjectDir dotnetSdkVersion
 
@@ -246,7 +234,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
             File.Exists filepath && (File.ReadAllText filepath).Contains($"\"%s{name}\"")
 
         let! fs = FileSystem.get ()
-        let dotnetToolJsonExists = fs.FilePathExists dotnetToolsJsonPath
+        let dotnetToolJsonExists = fs.FilePathExists(dotnetToolsJsonPath, false)
 
         do!
             [

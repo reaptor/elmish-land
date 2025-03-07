@@ -1,12 +1,11 @@
 module ElmishLand.AddPage
 
 open ElmishLand.Effect
+open ElmishLand.Resources
 open ElmishLand.Settings
 open Orsak
 open ElmishLand.Base
-open ElmishLand.Log
 open ElmishLand.TemplateEngine
-open ElmishLand.Resource
 
 let addPage absoluteProjectDir (url: string) =
     eff {
@@ -41,26 +40,17 @@ let addPage absoluteProjectDir (url: string) =
         let! projectPath = absoluteProjectDir |> FsProjPath.findExactlyOneFromProjectDir
         let rootModuleName = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
 
-        let writeResourceToProjectDir =
-            writeResource (AbsoluteProjectDir.asFilePath absoluteProjectDir) false
-
-        do!
-            writeResourceToProjectDir
-                "AddPage.template"
-                routeFileParts
-                (Some(
-                    handlebars {|
-                        ViewModule = settings.View.Module
-                        ViewType = settings.View.Type
-                        ScaffoldTextElement = settings.View.TextElement
-                        RootModule = rootModuleName
-                        Route = route
-                    |}
-                ))
+        writeResource<AddPage_template> log (AbsoluteProjectDir.asFilePath absoluteProjectDir) false routeFileParts {
+            ViewModule = settings.View.Module
+            ViewType = settings.View.Type
+            ScaffoldTextElement = settings.View.TextElement
+            RootModule = rootModuleName
+            Route = route
+        }
 
         let! routeData = getTemplateData projectName absoluteProjectDir
         log.Debug("routeData: {}", routeData)
-        do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData
+        generateFiles log (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData
 
         let relativefilePathString = $"""%s{routeFileParts |> String.concat "/"}"""
 

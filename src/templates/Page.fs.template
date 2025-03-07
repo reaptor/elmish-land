@@ -12,7 +12,7 @@ namespace ElmishLand
 open System.Runtime.CompilerServices
 open {{ViewModule}}
 
-[<assembly: InternalsVisibleTo("ElmishLand.{{RootModule}}.App")>]
+[<assembly: InternalsVisibleTo("{{ElmishLandAppProjectFullName}}")>]
 do()
 
 type Page<'sharedMsg, 'pageModel, 'pageMsg, 'layoutMsg, 'layoutProps> =

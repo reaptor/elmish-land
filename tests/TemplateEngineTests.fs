@@ -5,6 +5,7 @@ open System.IO
 open System.Text
 open System.Threading
 open ElmishLand.Base
+open ElmishLand.Effect
 open ElmishLand.Log
 open ElmishLand.Settings
 open ElmishLand.TemplateEngine
@@ -16,6 +17,17 @@ let projectDir = FilePath.fromString "/TestProject"
 let absoluteProjectDir = AbsoluteProjectDir projectDir
 let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir
 let pageFile = FilePath.appendParts [ "src"; "Pages"; "Test"; "Page.fs" ] projectDir
+
+let layoutFile =
+    FilePath.appendParts [ "src"; "Pages"; "Test"; "Layout.fs" ] projectDir
+
+let nullFileSystem =
+    { new IFileSystem with
+        member this.FilePathExists(path, _isDirectory) = true
+        member this.GetFilesRecursive(path, searchPattern) = [||]
+        member this.GetParentDirectory(path) = None
+        member this.ReadAllText(path) = ""
+    }
 
 [<Fact>]
 let ``Ensure multiple query params are included in UrlUsage (Route.format)`` () =
@@ -58,9 +70,9 @@ let ``Ensure multiple query params are included in UrlUsage (Route.format)`` () 
     task {
         let! result, logs =
             fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
-            |> runEff
+            |> runEff nullFileSystem
 
-        result |> Expects.ok logs |> Expects.equals logs expectedRoute
+        result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
     }
 
 [<Fact>]
@@ -94,9 +106,9 @@ let ``Ensure all query params with reserved names are generated correctly`` () =
     task {
         let! result, logs =
             fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
-            |> runEff
+            |> runEff nullFileSystem
 
-        result |> Expects.ok logs |> Expects.equals logs expectedRoute
+        result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
     }
 
 [<Fact>]
@@ -130,9 +142,9 @@ let ``Ensure query params are camel cased`` () =
     task {
         let! result, logs =
             fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
-            |> runEff
+            |> runEff nullFileSystem
 
-        result |> Expects.ok logs |> Expects.equals logs expectedRoute
+        result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
     }
 
 [<Fact>]
@@ -167,9 +179,9 @@ let ``Ensure query param parse and format are generated correctly`` () =
     task {
         let! result, logs =
             fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
-            |> runEff
+            |> runEff nullFileSystem
 
-        result |> Expects.ok logs |> Expects.equals logs expectedRoute
+        result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
     }
 
 [<Fact>]
@@ -205,7 +217,70 @@ let ``Ensure required query params is generated correctly`` () =
     task {
         let! result, logs =
             fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
-            |> runEff
+            |> runEff nullFileSystem
 
-        result |> Expects.ok logs |> Expects.equals logs expectedRoute
+        result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
+    }
+
+[<Fact>]
+let ``Ensure module names is wrapped in double ticks if project dir contains special characters`` () =
+    let projectDir = FilePath.fromString "/test-project"
+    let absoluteProjectDir = AbsoluteProjectDir projectDir
+
+    task {
+        let! result, logs =
+            getTemplateData (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir
+            |> runEff
+                { new IFileSystem with
+                    member this.FilePathExists(path, isDirectory) = true
+
+                    member this.ReadAllText(FilePath path) =
+                        match path with
+                        | "route" -> "{}"
+                        | "/test-project/elmish-land.json" -> "{}"
+                        | other -> failwith $"Unexpected path. Got '%s{other}'"
+
+                    member this.GetFilesRecursive(_path, searchPattern) = [|
+                        match searchPattern with
+                        | "Page.fs" -> FilePath.fromString "page"
+                        | "Layout.fs" -> FilePath.fromString "layout"
+                        | "route.json" -> FilePath.fromString "route"
+                        | other -> failwith $"Unexpected path. Got %s{other}"
+                    |]
+
+                    member this.GetParentDirectory(path) = None
+                }
+
+        result
+        |> Expects.ok logs
+        |> Expects.equalsWLogs logs {
+            ViewModule = "Feliz"
+            ViewType = "ReactElement"
+            RootModule = "``test-project``"
+            ElmishLandAppProjectFullName = "ElmishLand.test-project.App"
+            Routes = [|
+                {
+                    Name = "Home"
+                    RouteName = "HomeRoute"
+                    LayoutName = "Main"
+                    LayoutModuleName = "``test-project``.Pages.Layout"
+                    MsgName = "HomeMsg"
+                    ModuleName = "``test-project``.Pages.Page"
+                    RecordDefinition = "unit"
+                    RecordConstructor = "()"
+                    RecordPattern = "()"
+                    UrlUsage = """ "" """.Trim()
+                    UrlPattern = "[ Query q ]"
+                    UrlPatternWhen = ""
+                }
+            |]
+            Layouts = [|
+                {
+                    Name = "Main"
+                    MsgName = "MainMsg"
+                    ModuleName = "``test-project``.Pages.Layout"
+                }
+            |]
+            RouteParamModules = []
+        }
     }
