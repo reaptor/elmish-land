@@ -82,11 +82,11 @@
         <Compile Include="Log.fs" />
         <Compile Include="Effect.fs" />
         <Compile Include="Settings.fs" />
-        <Compile Include="Resource.fs" />
         <Compile Include="Process.fs" />
         <Compile Include="DotNetCli.fs" />
         <Compile Include="FsProj.fs" />
         <Compile Include="TemplateEngine.fs" />
+        <Compile Include="Resources.fs" />
         <Compile Include="Generate.fs" />
         <Compile Include="Commands\Init.fs" />
         <Compile Include="Commands\Restore.fs" />

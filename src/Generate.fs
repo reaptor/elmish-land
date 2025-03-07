@@ -4,12 +4,11 @@ open System
 open System.IO
 open System.Threading
 open ElmishLand.Effect
+open ElmishLand.Resources
 open ElmishLand.Settings
 open Orsak
 open ElmishLand.Base
 open ElmishLand.TemplateEngine
-open ElmishLand.Resource
-open ElmishLand.Log
 open ElmishLand.Process
 
 let dotElmishLandDirectory absoluteProjectDir =
@@ -50,9 +49,6 @@ let generate absoluteProjectDir dotnetSdkVersion =
         logger.Debug("Project file: {}", FsProjPath.asString projectPath)
         logger.Debug("Project name: {}", ProjectName.asString projectName)
 
-        let writeResourceToProjectDir =
-            writeResource (AbsoluteProjectDir.asFilePath absoluteProjectDir) true
-
         let dotElmishLandDirectory = dotElmishLandDirectory absoluteProjectDir
 
         if Environment.CommandLine.Contains("--clean") then
@@ -61,40 +57,39 @@ let generate absoluteProjectDir dotnetSdkVersion =
         let nugetDependencies = getNugetPackageReferences ()
         let! settings = getSettings absoluteProjectDir
 
-        do!
-            writeResourceToProjectDir
-                "Base.fsproj.template"
-                [
-                    ".elmish-land"
-                    "Base"
-                    $"ElmishLand.%s{ProjectName.asString projectName}.Base.fsproj"
-                ]
-                (Some(
-                    handlebars {|
-                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
-                        PackageReferences = nugetDependencies
-                        ProjectReferences = settings.ProjectReferences
-                    |}
-                ))
+        writeResource<Base_fsproj_template>
+            logger
+            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+            true
+            [
+                ".elmish-land"
+                "Base"
+                $"ElmishLand.%s{ProjectName.asString projectName}.Base.fsproj"
+            ]
+            {
+                DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
+                PackageReferences = nugetDependencies
+                ProjectReferences = settings.ProjectReferences
+            }
 
-        do!
-            writeResourceToProjectDir
-                "App.fsproj.template"
-                [
-                    ".elmish-land"
-                    "App"
-                    $"ElmishLand.%s{ProjectName.asString projectName}.App.fsproj"
-                ]
-                (Some(
-                    handlebars {|
-                        DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
-                        ProjectReferences =
-                            [ $"../../%s{ProjectName.asString projectName}.fsproj" ]
-                            |> List.append settings.ProjectReferences
-                    |}
-                ))
+        writeResource<App_fsproj_template>
+            logger
+            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+            true
+            [
+                ".elmish-land"
+                "App"
+                $"ElmishLand.%s{ProjectName.asString projectName}.App.fsproj"
+            ]
+            {
+                DotNetVersion = (DotnetSdkVersion.asFrameworkVersion dotnetSdkVersion)
+                ProjectReferences =
+                    [ $"../../%s{ProjectName.asString projectName}.fsproj" ]
+                    |> List.append settings.ProjectReferences
+            }
+
 
         let! templateData = getTemplateData projectName absoluteProjectDir
         logger.Debug("Using template data: {}", templateData)
-        do! generateFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) templateData
+        generateFiles logger (AbsoluteProjectDir.asFilePath absoluteProjectDir) templateData
     }

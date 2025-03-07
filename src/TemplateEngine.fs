@@ -3,15 +3,12 @@ module ElmishLand.TemplateEngine
 open System
 open System.IO
 open System.Text.RegularExpressions
-open System.Xml
 open ElmishLand.Effect
-open ElmishLand.Log
 open ElmishLand.Settings
 open HandlebarsDotNet
 open ElmishLand.Base
 open Microsoft.FSharp.Collections
 open Orsak
-open ElmishLand.Resource
 
 let reservedWords = [|
     "abstract"
@@ -143,6 +140,7 @@ type TemplateData = {
     ViewModule: string
     ViewType: string
     RootModule: string
+    ElmishLandAppProjectFullName: string
     Routes: Route array
     Layouts: Layout array
     RouteParamModules: string list
@@ -151,42 +149,48 @@ type TemplateData = {
     member this.ViewTypeIsReact = this.ViewType = "ReactElement"
 
 let getSortedPageFiles absoluteProjectDir =
-    let pageFilesDir =
-        absoluteProjectDir
-        |> AbsoluteProjectDir.asFilePath
-        |> FilePath.appendParts [ "src"; "Pages" ]
-        |> FilePath.asString
+    eff {
+        let! fs = FileSystem.get ()
 
-    if not (Directory.Exists pageFilesDir) then
-        Error AppError.PagesDirectoryMissing
-    else
-        Directory.GetFiles(pageFilesDir, "Page.fs", EnumerationOptions(RecurseSubdirectories = true))
-        |> Array.map FilePath.fromString
-        |> Array.sortByDescending (fun x ->
-            if x |> FilePath.endsWithParts [ "src"; "Pages"; "Page.fs" ] then
-                0
+        let pageFilesDir =
+            absoluteProjectDir
+            |> AbsoluteProjectDir.asFilePath
+            |> FilePath.appendParts [ "src"; "Pages" ]
+
+        return!
+            if not (fs.FilePathExists(pageFilesDir, true)) then
+                Error AppError.PagesDirectoryMissing
             else
-                x |> FilePath.parts |> Array.length)
-        |> Ok
+                fs.GetFilesRecursive(pageFilesDir, "Page.fs")
+                |> Array.sortByDescending (fun x ->
+                    if x |> FilePath.endsWithParts [ "src"; "Pages"; "Page.fs" ] then
+                        0
+                    else
+                        x |> FilePath.parts |> Array.length)
+                |> Ok
+    }
 
 let getSortedLayoutFiles absoluteProjectDir =
-    let layoutFilesDir =
-        absoluteProjectDir
-        |> AbsoluteProjectDir.asFilePath
-        |> FilePath.appendParts [ "src"; "Pages" ]
-        |> FilePath.asString
+    eff {
+        let! fs = FileSystem.get ()
 
-    if not (Directory.Exists layoutFilesDir) then
-        Ok Array.empty
-    else
-        Directory.GetFiles(layoutFilesDir, "Layout.fs", EnumerationOptions(RecurseSubdirectories = true))
-        |> Array.map FilePath.fromString
-        |> Array.sortByDescending (fun x ->
-            if x |> FilePath.endsWithParts [ "src"; "Pages"; "Page.fs" ] then
-                0
+        let layoutFilesDir =
+            absoluteProjectDir
+            |> AbsoluteProjectDir.asFilePath
+            |> FilePath.appendParts [ "src"; "Pages" ]
+
+        return!
+            if not (fs.FilePathExists(layoutFilesDir, true)) then
+                Ok Array.empty
             else
-                x |> FilePath.parts |> Array.length)
-        |> Ok
+                fs.GetFilesRecursive(layoutFilesDir, "Layout.fs")
+                |> Array.sortByDescending (fun x ->
+                    if x |> FilePath.endsWithParts [ "src"; "Pages"; "Page.fs" ] then
+                        0
+                    else
+                        x |> FilePath.parts |> Array.length)
+                |> Ok
+    }
 
 let wrapWithTicksIfNeeded (s: string) =
     if Regex.IsMatch(s, "^[0-9a-zA-Z_]+$") && not (Array.contains s reservedWords) then
@@ -253,7 +257,8 @@ let fileToLayout projectName absoluteProjectDir (FilePath file) =
         {
             Name = wrapWithTicksIfNeeded name
             MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
-            ModuleName = $"%s{projectName |> ProjectName.asString}.Pages%s{moduleNamePart}.Layout"
+            ModuleName =
+                $"%s{projectName |> ProjectName.asString |> wrapWithTicksIfNeeded}.Pages%s{moduleNamePart}.Layout"
         }
 
 let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (file: FilePath) =
@@ -305,7 +310,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                         else
                             let layoutFile = FilePath.appendParts [ "Layout.fs" ] dir
 
-                            let layoutExists = fs.FilePathExists layoutFile
+                            let layoutExists = fs.FilePathExists(layoutFile, false)
 
                             if layoutExists then
                                 return! Ok <| fileToLayout projectName absoluteProjectDir layoutFile
@@ -516,7 +521,8 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                 LayoutName = layout.Name
                 LayoutModuleName = layout.ModuleName
                 MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
-                ModuleName = $"%s{projectName |> ProjectName.asString}.Pages%s{moduleNamePart}.Page"
+                ModuleName =
+                    $"%s{projectName |> ProjectName.asString |> wrapWithTicksIfNeeded}.Pages%s{moduleNamePart}.Page"
                 RecordDefinition = recordDefinition
                 RecordConstructor = recordConstructor
                 RecordPattern = recordPattern
@@ -565,19 +571,9 @@ let getTemplateData projectName absoluteProjectDir =
             ViewModule = settings.View.Module
             ViewType = settings.View.Type
             RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
+            ElmishLandAppProjectFullName = $"ElmishLand.%s{projectName |> ProjectName.asString}.App"
             Routes = routes
             Layouts = layoutFiles |> Array.map (fileToLayout projectName absoluteProjectDir)
             RouteParamModules = routeParamModules
         }
-    }
-
-let generateFiles workingDir (templateData: TemplateData) =
-    let writeResource = writeResource workingDir true
-
-    eff {
-        do! writeResource "Routes.template" [ ".elmish-land"; "Base"; "Routes.fs" ] (Some(handlebars templateData))
-        do! writeResource "Command.fs.template" [ ".elmish-land"; "Base"; "Command.fs" ] (Some(handlebars templateData))
-        do! writeResource "Page.fs.template" [ ".elmish-land"; "Base"; "Page.fs" ] (Some(handlebars templateData))
-        do! writeResource "Layout.fs.template" [ ".elmish-land"; "Base"; "Layout.fs" ] (Some(handlebars templateData))
-        do! writeResource "App.template" [ ".elmish-land"; "App"; "App.fs" ] (Some(handlebars templateData))
     }
