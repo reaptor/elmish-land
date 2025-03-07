@@ -98,6 +98,7 @@
 
         <Content Include="../README.md" Pack="true" PackagePath="\" />
         <Content Include="../LICENSE" Pack="true" PackagePath="\" />
+        <Content Include="CHANGELOG.md" />
     </ItemGroup>
 
     <ItemGroup>
