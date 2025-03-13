@@ -1,0 +1,281 @@
+---
+slug: building-a-local-ai-chat-app-in-fsharp-and-elmish-land-with-ollama-and-deepseek
+title: Building a local AI Chat app in F# and Elmish Land with Ollama and DeepSeek
+authors: [klofberg]
+draft: true
+---
+
+With the rise of AI chat applications, developers often rely on cloud-based APIs for natural language processing. However, running an AI model locally offers several advantages, including privacy, low latency, and cost savings. In this tutorial, we’ll build a local AI chat application using [F#](https://fsharp.org), [Elmish Land](https://elmish.land) and [Ollama](https://ollama.com) with the [DeepSeek-R1 model](https://ollama.com/library/deepseek-r1). The UI will be styled with [TailwindCSS](https://tailwindcss.com) to ensure a clean and modern look.
+
+By the end of this guide, you’ll have a fully functional chat interface where you can interact with a locally hosted AI model.
+
+![EIntro](./index.png)
+
+<!-- truncate -->
+
+## What is Ollama?
+
+Ollama is an open-source framework for running large language models on your own computer. It provides an easy-to-use REST API to interact with models, making it ideal for applications that need an offline AI assistant.
+
+Key features of Ollama:
+* Runs AI models directly on your machine.
+* Provides a lightweight REST API for chat interactions.
+* Supports multiple models, including open-source LLMs.
+
+To install Ollama, follow the instructions on their [official website](https://ollama.com/download).
+
+Once installed, you can add the DeepSeek-R1 model with:
+
+```bash
+ollama pull deepseek-r1
+```
+
+## The DeepSeek-R1 Model
+
+DeepSeek-R1 is an open-source AI model optimized for reasoning and chat interactions. It supports multi-turn dialogue and is efficient for running locally on consumer hardware.
+
+Some highlights of Deepseek R1:
+* Trained for chat-based applications.
+* Optimized for low-resource environments.
+* Provides coherent and context-aware responses.
+
+We’ll use DeepSeek-R1 as our AI engine for this chat application.
+
+## Project Setup
+
+#### 1. Install Elmish Land
+    ```bash
+    mkdir ChatElmish
+    cd ChatElmish
+    dotnet tool install elmish-land --create-manifest-if-needed
+    dotnet elmish-land init
+    ```
+
+#### 2. Install Thoth.Json to decode and encode JSON with the Ollama API
+    ```bash
+    dotnet add package Thoth.Json
+    ```
+
+#### 3. Install TailwindCSS
+
+    3.1. Install Tailwind and the vite plugin
+
+    ```bash
+    npm install tailwindcss @tailwindcss/vite
+    ```
+
+    3.2. Add the @tailwindcss/vite plugin to your Vite configuration `vite.config.js`:
+
+    ```javascript
+    import { defineConfig } from 'vite'
+    // highlight-start
+    import tailwindcss from '@tailwindcss/vite'
+    // highlight-end
+
+    export default defineConfig({
+        // highlight-start
+        plugins: [
+            tailwindcss(),
+        ],
+        // highlight-end
+        build: {
+            outDir: "dist"
+        }
+    })
+    ```
+
+    3.3. Create a file named `styles.css` in the root folder of your project and add an `@import` for Tailwind CSS.
+
+    ```css
+    @import "tailwindcss";
+    ```
+
+    Add a link to your `styles.css` in the `<head>` section of your `index.html`.
+
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta charset="UTF-8">
+            // highlight-start
+            <link href="/styles.css" rel="stylesheet">
+            <title>Chat Elmish</title>
+            // highlight-end
+        </head>
+        <body>
+            <div id="app"></div>
+            <script type="module" src=".elmish-land/App/App.fs.js"></script>
+        </body>
+    </html>
+    ```
+
+## Building the Chat App
+
+Paste the following code to the `src/Pages/Page.fs` file:
+
+```fsharp
+module ChatElmish.Pages.Page
+
+open System.Text
+open Fable.Core
+open Fetch
+open Feliz
+open Thoth.Json
+open ElmishLand
+open ChatElmish.Shared
+open ChatElmish.Pages
+
+type Model = {
+    History: (string * string) list
+    Question: string
+}
+
+type Msg =
+    | LayoutMsg of Layout.Msg
+    | UpdateQuestion of string
+    | AskQuestion of (Msg -> unit)
+    | ResponseReceived of string
+    | ResponseCompleted of unit
+
+let init () =
+    {
+        History = List.empty
+        Question = ""
+    },
+    Command.none
+
+// Retrieve the response body as a stream
+// We need to use
+// because Fable.Fetch doesn't support streams yet
+[<Emit("""
+async function readStream(response, chunkReceived) {
+    for await (const chunk of response.body) {
+        chunkReceived(chunk);
+    }
+}
+""")>]
+let dummy: unit = jsNative
+dummy
+
+[<Global("readStream")>]
+let readStream (response: Response) (chunkReceived: byte[] -> unit): JS.Promise<unit> = jsNative
+
+let askOllama (history: (string * string) list, responseReceived) =
+    let decodeResponse =
+        Decode.object (fun get ->
+            get.Required.Field "message" (Decode.object (fun get ->
+                get.Required.Field "content" Decode.string))
+        )
+
+    let body =
+        Encode.object [
+            "model", Encode.string "deepseek-r1:latest"
+            "messages", Encode.list [
+                for user, assistant in List.rev history do
+                    Encode.object [
+                        "role", Encode.string "user"
+                        "content", Encode.string user
+                    ]
+                    if assistant <> "" then
+                        Encode.object [
+                            "role", Encode.string "assistant"
+                            "content", Encode.string assistant
+                        ]
+            ]
+        ]
+        |> Encode.toString 2
+
+    fetch
+        "http://localhost:11434/api/chat"
+        [
+            Method HttpMethod.POST
+            Body (BodyInit.Case3 body)
+        ]
+    |> Promise.bind (fun response ->
+        readStream response (fun chunk ->
+            let s = Decode.unsafeFromString decodeResponse (Encoding.UTF8.GetString chunk)
+            responseReceived s)
+        )
+
+let update (msg: Msg) (model: Model) =
+    match msg with
+    | LayoutMsg _ -> model, Command.none
+    | UpdateQuestion question ->
+        { model with Question = question }, Command.none
+    | AskQuestion dispatch ->
+        let history = (model.Question, "") :: model.History
+        { model with
+            Question = ""
+            History = history
+        }, Command.ofPromise askOllama (history, dispatch << ResponseReceived) ResponseCompleted
+    | ResponseReceived response ->
+        let newHistory =
+            match model.History with
+            | (question, answer) :: tail -> (question, answer + response) :: tail
+            | x -> x
+        { model with History = newHistory }
+        , Command.none
+    | ResponseCompleted () -> model, Command.none
+
+let view (model: Model) (dispatch: Msg -> unit) =
+    Html.div [
+        prop.classes [
+            "flex flex-col items-center h-screen p-5 dark:bg-gray-80 text-[#e3e3e3]"
+            if model.History.IsEmpty then
+                "justify-center"
+            else
+                "justify-between"
+        ]
+        prop.children [
+            if model.History.IsEmpty then
+                Html.div [
+                    prop.className "flex w-180 justify-center mb-5"
+                    prop.children [
+                        Html.h1 [
+                            prop.className "text-[28px] font-semibold"
+                            prop.text "What can I help with?"
+                        ]
+                    ]
+                ]
+            else
+                Html.div [
+                    prop.className "w-180 flex flex-col flex-col-reverse gap-6 overflow-y-auto pb-5"
+                    prop.children [
+                        for question, answer in model.History do
+                            Html.div [
+                                prop.innerHtml answer
+                            ]
+                            Html.div [
+                                prop.className "flex justify-end"
+                                prop.children [
+                                    Html.div [
+                                        prop.className "rounded-3xl px-4 py-2 dark:bg-[#303030]"
+                                        prop.text question
+                                    ]
+                                ]
+                            ]
+                    ]
+                ]
+            Html.div [
+                prop.className "w-180 flex cursor-text flex-col rounded-3xl px-3 py-1 dark:bg-[#303030]"
+                prop.children [
+                    Html.input [
+                        prop.className "w-full outline-none resize-none border-0 bg-transparent p-2"
+                        prop.value model.Question
+                        prop.onChange (fun text -> dispatch (UpdateQuestion text))
+                        prop.onKeyUp (fun e ->
+                            if e.key = "Enter" then
+                                dispatch (AskQuestion dispatch)
+                        )
+                        prop.placeholder "Ask anything"
+                    ]
+                ]
+            ]
+        ]
+    ]
+
+let page (_shared: SharedModel) (_route: HomeRoute) =
+    Page.from init update view () LayoutMsg
+```

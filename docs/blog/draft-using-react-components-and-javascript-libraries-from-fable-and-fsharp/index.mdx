@@ -1,0 +1,112 @@
+---
+slug: using-react-components-and-javascript-libraries-from-fable-and-fsharp
+title: Using Javascript Libraries and React Components from Fable and F#
+authors: [klofberg]
+draft: true
+---
+
+[Fable](https://fable.io) is a powerful compiler that transforms your F# code into elegant and performant JavaScript, allowing you to tap into the extensive JavaScript ecosystem while maintaining F#’s expressiveness and type safety. In this post, I’ll explore how to create bindings for both React-specific and basic JavaScript libraries, and then dive into configuring your project file for publishing a Fable-compatible package to NuGet.
+
+<!-- truncate -->
+
+## Getting Started with Fable
+
+Fable lets you leverage your F# expertise in a modern web context. By translating F# into clear JavaScript code, it enables you to:
+* Utilize your F# skills in building dynamic web applications.
+* Access a vast array of JavaScript libraries without sacrificing the safety of F#’s type system.
+* Build both client-side and server-side applications with a unified codebase.
+
+Whether you’re incorporating interactive user interfaces or integrating general JavaScript functionality, Fable provides a solid bridge between F# and JavaScript.
+
+## Binding Basic JavaScript Libraries
+
+When integrating a standard JavaScript library, your goal is to create bindings that offer type safety and seamless IntelliSense support. [Fable’s interop features](https://fable.io/docs/javascript/features.html), particularly the `import` [attributes](https://fable.io/docs/javascript/features.html#attributes) and [functions](https://fable.io/docs/javascript/features.html#functions), simplify this process. Consider the following example of a naive binding for the [Supabase Javascript Library](https://supabase.com/docs/reference/javascript/introduction) library:
+
+```fsharp
+namespace Supabase
+
+open Fable.Core
+open Fable.Core.JS
+open Fable.Core.JsInterop
+
+// highlight-start
+[<Erase>]
+// highlight-end
+type PostgrestError = {
+    cause: string
+    details: string
+    hint: string
+    code: string
+}
+
+[<Erase>]
+type PostgrestSingleResponse<'a> = {
+    error: PostgrestError option
+    data: 'a option
+    count: int option
+}
+
+[<Erase>]
+type PostgrestFilterBuilder<'a> =
+    inherit Promise<PostgrestSingleResponse<'a array>>
+    abstract member eq: column: string * value: obj -> PostgrestFilterBuilder<'a>
+    abstract member neq: column: string * value: obj -> PostgrestFilterBuilder<'a>
+
+[<Erase>]
+type PostgrestQueryBuilder =
+    abstract member select: string -> PostgrestFilterBuilder<'a>
+
+[<Erase>]
+type SupabaseClient =
+    abstract member from: relation: string -> PostgrestQueryBuilder
+
+[<Erase>]
+[<RequireQualifiedAccess>]
+type Supabase =
+    static member createClient (supabaseUrl: string, supabaseKey: string)
+        : SupabaseClient =
+        // highlight-start
+        import "createClient" "@supabase/supabase-js"
+        // highlight-end
+
+```
+
+The `[<Erase>]` attribute in Fable is a powerful tool that tells the compiler to omit the annotated types from the final JavaScript output. This means that while these types—like those for PostgrestError, PostgrestSingleResponse, and others—exist in your F# code to enforce type safety and provide IntelliSense during development, they vanish at runtime, resulting in lean and efficient JavaScript. Essentially, the types serve as compile-time contracts, ensuring that your interactions with external JavaScript libraries remain error-free without adding extra runtime overhead.
+
+The import function is used to bind F# code to external JavaScript modules. In the snippet, the line
+```fsharp
+import "createClient" "@supabase/supabase-js"
+```
+instructs Fable to import the `createClient` export from the `@supabase/supabase-js` package. This allows you to call the external function from your F# code as if it were a native function, while still leveraging F#’s robust type system. Combined, the `[<Erase>]` attribute and the import function enable seamless interop between F# and JavaScript, letting you write type-safe F# code that integrates directly with dynamic JavaScript libraries—an approach well-documented in the Fable [Erase features](https://fable.io/docs/javascript/features.html#erase) and the [import features](https://fable.io/docs/javascript/features.html#imports).
+
+💡 **Note**: You will have to install the npm package to your project to use the binding above:
+```bash
+npm install @supabase/supabase-js
+````
+
+## Binding React Libraries with Feliz
+
+React is a cornerstone of modern web development, and the Feliz library offers an expressive DSL for building React applications in F#. When creating bindings for React components or utilities, you can follow a similar approach while taking advantage of Feliz’s intuitive API. For example:
+
+```fsharp
+namespace Feliz.Shadcn
+
+[<AutoOpen>]
+module Elements =
+    open Fable.Core
+    open Fable.Core.JsInterop
+    open Feliz
+
+    [<Erase>]
+    type Shadcn =
+        static member inline accordion (props: list<IReactProperty>) =
+            Interop.reactApi.createElement(
+                import
+                    "Accordion"
+                    "@/components/ui/accordion"
+                , createObj !!props
+            )
+
+```
+
+In this example, the Import attribute is used to bind a default React component from a JavaScript library. The myComponent function then leverages Feliz’s React.createElement to instantiate the component with the provided properties, allowing you to integrate and compose your UI with F#’s type safety and clarity.
