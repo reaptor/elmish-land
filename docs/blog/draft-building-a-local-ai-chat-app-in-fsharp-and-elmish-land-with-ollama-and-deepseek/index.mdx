@@ -5,6 +5,8 @@ authors: [klofberg]
 draft: true
 ---
 
+import Details from '@theme/MDXComponents/Details';
+
 With the rise of AI chat applications, developers often rely on cloud-based APIs for natural language processing. However, running an AI model locally offers several advantages, including privacy, low latency, and cost savings. In this tutorial, we’ll build a local AI chat application using [F#](https://fsharp.org), [Elmish Land](https://elmish.land) and [Ollama](https://ollama.com) with the [DeepSeek-R1 model](https://ollama.com/library/deepseek-r1). The UI will be styled with [TailwindCSS](https://tailwindcss.com) to ensure a clean and modern look.
 
 By the end of this guide, you’ll have a fully functional chat interface where you can interact with a locally hosted AI model.
@@ -66,7 +68,7 @@ We’ll use DeepSeek-R1 as our AI engine for this chat application.
 
     3.2. Add the @tailwindcss/vite plugin to your Vite configuration `vite.config.js`:
 
-    ```javascript
+    ```javascript title="/vite.config.js"
     import { defineConfig } from 'vite'
     // highlight-start
     import tailwindcss from '@tailwindcss/vite'
@@ -86,13 +88,13 @@ We’ll use DeepSeek-R1 as our AI engine for this chat application.
 
     3.3. Create a file named `styles.css` in the root folder of your project and add an `@import` for Tailwind CSS.
 
-    ```css
+    ```css title="/styles.css"
     @import "tailwindcss";
     ```
 
     Add a link to your `styles.css` in the `<head>` section of your `index.html`.
 
-    ```html
+    ```html title="/index.html"
     <!DOCTYPE html>
     <html lang="en">
         <head>
@@ -113,7 +115,19 @@ We’ll use DeepSeek-R1 as our AI engine for this chat application.
 
 ## Building the Chat App
 
-Paste the following code to the `src/Pages/Page.fs` file:
+The main `Page` file of our AI chat application handles the user interface, state management, and interaction with the Ollama backend. Here's the full code to be paseted in you app:
+
+export function Collapse (props) {
+    return (
+        <Details>
+            <summary mdxType="summary">{props.title}</summary>
+
+            {props.children}
+        </Details>
+    );
+}
+
+<Collapse title="/src/Pages/Page.fs">
 
 ```fsharp
 module ChatElmish.Pages.Page
@@ -163,12 +177,6 @@ dummy
 let readStream (response: Response) (chunkReceived: byte[] -> unit): JS.Promise<unit> = jsNative
 
 let askOllama (history: (string * string) list, responseReceived) =
-    let decodeResponse =
-        Decode.object (fun get ->
-            get.Required.Field "message" (Decode.object (fun get ->
-                get.Required.Field "content" Decode.string))
-        )
-
     let body =
         Encode.object [
             "model", Encode.string "deepseek-r1:latest"
@@ -186,6 +194,12 @@ let askOllama (history: (string * string) list, responseReceived) =
             ]
         ]
         |> Encode.toString 2
+
+    let decodeResponse =
+        Decode.object (fun get ->
+            get.Required.Field "message" (Decode.object (fun get ->
+                get.Required.Field "content" Decode.string))
+        )
 
     fetch
         "http://localhost:11434/api/chat"
@@ -278,4 +292,161 @@ let view (model: Model) (dispatch: Msg -> unit) =
 
 let page (_shared: SharedModel) (_route: HomeRoute) =
     Page.from init update view () LayoutMsg
+```
+
+</Collapse>
+
+### The Model and Msg
+
+```fsharp
+type Model = {
+    History: (string * string) list
+    Question: string
+}
+
+type Msg =
+    | LayoutMsg of Layout.Msg
+    | UpdateQuestion of string
+    | AskQuestion of (Msg -> unit)
+    | ResponseReceived of string
+    | ResponseCompleted of unit
+```
+
+The Model contains the current question to to be asked and a history of previous questions and anwsers. This is used both for the UI and is sent to Ollama for every new question.
+
+### Displaying the `Ask anything` input and reacting to user input
+
+```fsharp
+Html.input [
+    prop.className "w-full outline-none resize-none border-0 bg-transparent p-2"
+    prop.value model.Question
+    // highlight-start
+    prop.onChange (fun text -> dispatch (UpdateQuestion text))
+    prop.onKeyUp (fun e ->
+        if e.key = "Enter" then
+            dispatch (AskQuestion dispatch)
+    )
+    // highlight-end
+    prop.placeholder "Ask anything"
+]
+```
+
+We need to update our Model for every keystroke or change of the `input`. Therfore we attach the `onChange` event and send the `UpdateQuestion` message for every change of the input.
+
+When the user presses the `Enter` key we send the question with the `AskQuestion`. This is done by attaching the event `onKeyUp` and checking for the correct key being pressed.
+
+```fsharp
+let update (msg: Msg) (model: Model) =
+    match msg with
+    | LayoutMsg _ -> model, Command.none
+    // highlight-start
+    | UpdateQuestion question ->
+        { model with Question = question }, Command.none
+    | AskQuestion dispatch ->
+        let history = (model.Question, "") :: model.History
+        { model with
+            Question = ""
+            History = history
+        }, Command.ofPromise askOllama (history, dispatch << ResponseReceived) ResponseCompleted
+    | ResponseReceived response ->
+        let newHistory =
+            match model.History with
+            | (question, answer) :: tail -> (question, answer + response) :: tail
+            | x -> x
+        { model with History = newHistory }
+        , Command.none
+    | ResponseCompleted () -> model, Command.none
+    // highlight-end
+```
+
+When the `UpdateQuestion` is received we need to update our Model with the latest user input.
+
+When the `AskQuestion` is received we add the latest question to the History field of the Model and clears the Question field of the Model. When then make a call to Ollama with the full history of the chat and starts listening to the streaming response from the Ollama API.
+
+### Calling Ollama with out question
+
+First we encode the JSON body for the Ollama API request according to the [documentation](https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-chat-completion). We use the Thoth.Json library for this.
+
+```fsharp
+let askOllama (history: (string * string) list, responseReceived) =
+    let body =
+        Encode.object [
+            "model", Encode.string "deepseek-r1:latest"
+            "messages", Encode.list [
+                for user, assistant in List.rev history do
+                    Encode.object [
+                        "role", Encode.string "user"
+                        "content", Encode.string user
+                    ]
+                    if assistant <> "" then
+                        Encode.object [
+                            "role", Encode.string "assistant"
+                            "content", Encode.string assistant
+                        ]
+            ]
+        ]
+        |> Encode.toString 2
+```
+
+Then we make the call to the API with the Fable.Fetch library providing our encoded JSON body.
+
+```fsharp
+let askOllama (history: (string * string) list, responseReceived) =
+    ...
+    fetch
+        "http://localhost:11434/api/chat"
+        [
+            Method HttpMethod.POST
+            Body (BodyInit.Case3 body)
+        ]
+    ...
+```
+
+The response is then read as a stream allowing the UI to be updated for every new part of the response we get from Ollama.
+
+```fsharp
+let askOllama (history: (string * string) list, responseReceived) =
+    ...
+        ResponseHelper.readStream response (fun chunk ->
+            let s = Decode.unsafeFromString decodeResponse (Encoding.UTF8.GetString chunk)
+            responseReceived s)
+    ...
+```
+
+We need to use custom javascript code for reading the response as a stream due to Fable.Fetch not supporting streaming responses yet. This is done using Fable's javascript interop and emitting custom javascript to read the response:
+
+```fsharp
+module ResponseHelper =
+    [<Emit("""
+    async function readStream(response, chunkReceived) {
+        for await (const chunk of response.body) {
+            chunkReceived(chunk);
+        }
+    }
+    """)>]
+    let dummy: unit = jsNative
+    dummy
+
+    [<Global("readStream")>]
+    let readStream (response: Response) (chunkReceived: byte[] -> unit): JS.Promise<unit> = jsNative
+```
+
+### Reacting to responses from Ollama
+
+Every time we get a chunk of data back from Ollama via it's streaming API we need to update out Model and UI with the new text.
+
+```fsharp
+module ResponseHelper =
+    [<Emit("""
+    async function readStream(response, chunkReceived) {
+        for await (const chunk of response.body) {
+            chunkReceived(chunk);
+        }
+    }
+    """)>]
+    let dummy: unit = jsNative
+    dummy
+
+    [<Global("readStream")>]
+    let readStream (response: Response) (chunkReceived: byte[] -> unit): JS.Promise<unit> = jsNative
 ```
