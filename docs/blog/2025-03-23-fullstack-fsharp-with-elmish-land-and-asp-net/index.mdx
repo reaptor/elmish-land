@@ -282,7 +282,7 @@ type Msg =
     | WeatherForecastFetched of WeatherForecast array
 
 let fetchWeatherForecast (): Promise<WeatherForecast array> =
-    Fetch.get("http://localhost:5297/WeatherForecast", caseStrategy = CamelCase)
+    Fetch.get("http://localhost:5001/WeatherForecast", caseStrategy = CamelCase)
 
 let init () =
     { WeatherForecasts = [||] },
