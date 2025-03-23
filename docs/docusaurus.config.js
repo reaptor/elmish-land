@@ -142,6 +142,16 @@ const config = {
                 theme: prismThemes.github,
                 darkTheme: prismThemes.dracula,
                 additionalLanguages: ['fsharp', 'bash'],
+                magicComments: [
+                    {
+                      className: 'code-block-diff-add-line',
+                      line: 'diff-add'
+                    },
+                    {
+                      className: 'code-block-diff-remove-line',
+                      line: 'diff-remove'
+                    }
+                  ],
             },
         }),
 };
