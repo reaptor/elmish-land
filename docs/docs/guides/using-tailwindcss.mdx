@@ -1,0 +1,227 @@
+---
+sidebar_position: 1
+---
+
+# Using Tailwind CSS with Elmish Land
+
+## Introduction
+
+Building modern web applications with F# and Elmish Land offers a powerful functional programming approach to frontend development.
+However, styling applications efficiently is equally important. [Tailwind CSS](https://tailwindcss.com/) is a popular utility-first CSS framework that enables
+rapid UI development with minimal custom styles. By integrating Tailwind CSS with Elmish Land, F# developers can create sleek,
+maintainable, and highly customizable web applications.
+
+This guide walks you through setting up Tailwind CSS in an Elmish Land project, using it within pages and components, and applying best
+practices to keep your styles organized.
+
+<!-- truncate -->
+
+## Why Use Tailwind CSS with Elmish Land?
+
+### Benefits:
+
+* **Utility-first styling** – Write minimal CSS while composing styles directly in HTML elements.
+
+* **Responsive design out-of-the-box** – Tailwind’s utility classes make handling different screen sizes easy.
+
+* **Optimized for performance** – Tailwind’s build tools remove unused styles, reducing CSS bundle size.
+
+* **Great for Elmish Land pages** – Its declarative styling aligns well with Elmish Land’s functional approach to UI development.
+
+By using Tailwind CSS in Elmish Land, developers can speed up UI development while keeping styles consistent and scalable.
+
+## Setting Up Tailwind CSS in an Elmish Land Project
+
+To use Tailwind CSS with Elmish Land, follow these steps:
+
+### 1. Install Tailwind CSS v4
+
+Install Tailwind CSS and its dependencies to your Elmish Land project
+(See [Creating a project](/docs/getting-started/creating-a-project) for information on how to create a new Elmish Land project):
+
+```bash
+npm install tailwindcss @tailwindcss/vite
+```
+
+### 2. Configure the Vite plugin
+
+Add the @tailwindcss/vite plugin to your Vite configuration `vite.config.js`:
+
+```javascript
+import { defineConfig } from 'vite'
+// highlight-start
+import tailwindcss from '@tailwindcss/vite'
+// highlight-end
+
+export default defineConfig({
+    // highlight-start
+    plugins: [
+        tailwindcss(),
+    ],
+    // highlight-end
+    build: {
+        outDir: "dist"
+    }
+})
+```
+
+### 3. Import Tailwind CSS
+
+Create a file named `styles.css` in the root folder of your project and add an `@import` for Tailwind CSS.
+
+```css
+@import "tailwindcss";
+```
+
+### 4. Add your CSS file to index.html
+
+Add a link to your `styles.css` in the `<head>` section of your `index.html`.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta charset="UTF-8">
+        // highlight-start
+        <link href="/styles.css" rel="stylesheet">
+        // highlight-end
+        <title>TailwindElmishLand</title>
+    </head>
+    <body>
+        <div id="app"></div>
+        <script type="module" src=".elmish-land/App/App.fs.js"></script>
+    </body>
+</html>
+```
+
+## Using Tailwind CSS in Elmish Land pages
+
+Once Tailwind is set up, you can start using its utility classes directly in your pages.
+
+Here’s a simple example of a button component styled with Tailwind added to `src/Pages/Page.fs`:
+
+```fsharp
+module TailwindElmishLand.Pages.Page
+
+open Feliz
+open ElmishLand
+open TailwindElmishLand.Shared
+open TailwindElmishLand.Pages
+
+type Model = unit
+
+type Msg =
+    | LayoutMsg of Layout.Msg
+
+let init () =
+    (),
+    Command.none
+
+let update (msg: Msg) (model: Model) =
+    match msg with
+    | LayoutMsg _ -> model, Command.none
+
+let view (_model: Model) (_dispatch: Msg -> unit) =
+    // highlight-start
+    Html.div [
+        prop.className "m-2"
+        prop.children [
+            Html.button [
+                prop.className "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                prop.onClick (fun _ -> Browser.Dom.window.alert("hej"))
+                prop.text "Click me!"
+            ]
+        ]
+    ]
+    // highlight-end
+
+let page (_shared: SharedModel) (_route: HomeRoute) =
+    Page.from init update view () LayoutMsg
+```
+### Explanation:
+
+    * m-2 → Margin
+
+    * bg-blue-500 → Background color (blue)
+
+    * hover:bg-blue-700 → Darker blue on hover
+
+    * text-white → White text
+
+    * font-bold → Bold text
+
+    * py-2 px-4 → Padding
+
+    * rounded → Rounded corners
+
+Using Tailwind this way eliminates the need for separate CSS files, keeping styles localized within components.
+
+## Best Practices for using Tailwind CSS with Elmish Land
+
+### 1. Use className instead of style
+
+Instead of inline style attributes, use Tailwind’s className approach. This keeps styles scalable and maintainable.
+
+### 2. Extract Reusable Components
+
+Avoid repeating long Tailwind class strings by creating reusable styled components in Elmish Land.
+
+#### Example:
+```fsharp
+let card content =
+    Html.div [
+        prop.className "shadow-lg rounded-lg p-6 bg-white"
+        prop.children content
+    ]
+```
+
+### 3. Use Dark Mode
+
+Tailwind includes a dark variant that lets you style your site differently when dark mode is enabled:
+
+Use `dark:` prefixed classes:
+
+```fsharp
+Html.div [
+    prop.className "m-2 bg-white dark:bg-gray-800 rounded-lg px-6 py-8 ring shadow-xl ring-gray-900/5"
+    prop.children [
+        Html.h3 [
+            prop.className "text-gray-900 dark:text-white text-base font-medium tracking-tight"
+            prop.text "Writes upside-down"
+        ]
+        Html.p [
+            prop.className "text-gray-500 dark:text-gray-400 mt-2 text-sm"
+            prop.text "The Zero Gravity Pen can be used to write in any orientation, including upside-down. It even works in outer space."
+        ]
+    ]
+]
+```
+
+See [Dark mode](https://tailwindcss.com/docs/dark-mode) in the Tailwind CSS documentation for more information.
+
+## Common Use Cases for Tailwind CSS
+
+### 1. Responsive Layouts
+
+Tailwind makes it easy to build mobile-friendly interfaces:
+
+```fsharp
+prop.className "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+```
+
+See [Responsive design](https://tailwindcss.com/docs/responsive-design) in the Tailwind CSS documentation for more information.
+
+### 2. Interactive Components
+
+Add dynamic styles for hover, focus, and active states effortlessly:
+
+```fsharp
+prop.className "bg-green-500 hover:bg-green-700 focus:ring-4 focus:ring-green-300"
+```
+
+## Conclusion
+
+Using Tailwind CSS with Elmish Land and F# provides a seamless way to create modern, responsive, and maintainable UIs while keeping development fast and functional.
+With Tailwind’s utility classes, you can style components efficiently without writing excessive custom CSS.

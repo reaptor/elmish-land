@@ -39,8 +39,6 @@ dotnet elmish-land server
 
 Executing `dotnet elmish-land init` scaffolds a new project within the `MyProject` directory. Subsequently, running `dotnetn elmish-land server` initiates the development server, accessible at `http://localhost:5173`.​
 
-To create pages, add files to the `src/Pages` directory of your project. Modifying these files allows you to familiarize yourself with Elmish Land's structure and capabilities.​
-
 For community support, collaboration, or to seek assistance, consider joining the [Elmish Land Discord](https://discord.gg/jQ26cZH3fU). We are eager to see the innovative applications you'll develop with Elmish Land!​
 
 ## Editor Configuration

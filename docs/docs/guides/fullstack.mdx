@@ -1,0 +1,337 @@
+---
+slug: fullstack-fsharp-with-elmish-land-and-asp-net
+title: Fullstack app with Elmish Land
+authors: [klofberg]
+---
+
+# Fullstack app with Elmish Land
+
+## Introduction
+
+If you're a fan of F#, you probably want to write both your backend and frontend in your favorite language. In this guide, I'll walk through how to build a fullstack web application using:
+
+* [ASP.NET Web API](https://learn.microsoft.com/en-us/visualstudio/get-started/tutorial-fsharp-web-app?view=vs-2022) in F# for the backend. I will use raw ASP.NET in this tutorial but other frameworks are also supported eg. [Giraffe](https://giraffe.wiki) or [Saturn](https://saturnframework.org).
+* [Elmish Land](/) for the frontend
+* A shared F# library for types used across the stack
+
+Elmish Land is a delightful way to write frontends in F# using [Elmish](https://elmish.github.io/elmish/). It's perfect for those who want to keep the type safety and functional programming style consistent across the stack.
+
+Let’s dive in!
+
+<!-- truncate -->
+
+💡 ***Note:*** *Another popular approach to fullstack F# development is the exellent [SAFE stack](https://safe-stack.github.io) and [SAFEr template](https://github.com/Dzoukr/SAFEr.Template). The key difference with this guide is its use of Elmish Land, which introduces additional features such as a [file-based router](/docs/core-concepts/routing#routing) and [type-safe routing](/docs/core-concepts/routing#type-safe-routing) out of the box.*
+
+## Project Setup
+
+Let’s start from scratch and get everything wired up.
+
+### Create the Project Directory
+
+```bash
+mkdir ElmishLandFullStack
+cd ElmishLandFullStack
+mkdir Client Server Shared
+dotnet new tool-manifest
+```
+
+This creates a top-level directory for your fullstack app with directories for the Client, Server, and Shared projects.
+
+### Shared Project – Common Types
+
+The Shared project will hold types used in both the frontend and backend.
+
+```bash
+cd Shared
+dotnet new classlib -lang f#
+```
+
+### Server Project – ASP.NET Web API
+
+Now set up the backend:
+
+```bash
+cd ../Server
+dotnet new webapi -lang f#
+dotnet add reference ../Shared/Shared.fsproj
+```
+
+We reference the `Shared` project here so the backend can use shared types.
+
+### Client Project – Elmish Land Frontend
+
+Initialize the Elmish Land frontend:
+
+```bash
+cd ../Client
+dotnet tool install elmish-land
+dotnet tool install fable
+dotnet elmish-land init
+# We will use the top level dotnet tool configuration
+# directory instead of this
+rm -rf .config
+dotnet add package Thoth.Fetch
+dotnet add reference ../Shared/Shared.fsproj
+```
+
+You now have a working Elmish Land frontend app with F# and Fable. We also add `Thoth.Fetch` for HTTP requests and reference our shared types.
+
+### Create a Solution File
+
+Let’s group everything into a solution so IDEs like Visual Studio or Rider can play nice.
+
+```bash
+cd ..
+dotnet new sln
+dotnet sln add Shared/Shared.fsproj
+dotnet sln add Server/Server.fsproj
+dotnet sln add Client/Client.fsproj
+dotnet sln add Client/.elmish-land/Base/ElmishLand.Client.Base.fsproj
+dotnet sln add Client/.elmish-land/App/ElmishLand.Client.App.fsproj
+```
+
+### Add package.json for Development Scripts
+
+To make development easier, let’s add a `package.json` to run both client and server in watch mode.
+
+```json
+{
+    "workspaces": [
+        "Client"
+    ],
+    "scripts": {
+        "dev-server": "dotnet run --watch --project Server/Server.fsproj",
+        "dev-client": "npm start --workspace=Client",
+        "start": "concurrently --kill-others \"npm run dev-server\" \"npm run dev-client\""
+    }
+}
+```
+
+Install the required npm dependency:
+
+```bash
+npm i concurrently --save-dev
+```
+
+## Consuming Web API Data from Elmish Land
+
+### Move Shared Types to the Shared Project
+
+Let’s define a type used by both frontend and backend.
+
+1. Create a file `Shared/WeatherForecast.fs`
+
+    ```fsharp
+    namespace Shared
+
+    open System
+
+    type WeatherForecast =
+        { Date: DateTime
+          TemperatureC: int
+          Summary: string }
+
+        member this.TemperatureF =
+            32.0 + (float this.TemperatureC / 0.5556)
+
+    ```
+
+2. Update the project file `Shared.fsproj`
+
+    Remove the default Library.fs file and include your new file:
+
+    ```bash
+    rm Shared/Library.fs
+    ```
+
+    ```xml
+    <!-- Shared/Shared.fsproj -->
+    <ItemGroup>
+        // diff-remove
+        <Compile Include="Library.fs" />
+        // diff-add
+        <Compile Include="WeatherForecast.fs" />
+    </ItemGroup>
+    ```
+
+3. Remove WeatherForecast.fs from the server project
+
+    ```bash
+    rm Server/WeatherForecast.fs
+    ````
+
+    and update the project file:
+    ```xml
+    <!-- Server/Server.fsproj -->
+    <ItemGroup>
+        // diff-remove
+        <Compile Include="WeatherForecast.fs" />
+        <Compile Include="Controllers/WeatherForecastController.fs" />
+        <Compile Include="Program.fs" />
+    </ItemGroup>
+    ```
+
+### Update the Backend Controller
+
+Change the `open` in `Server/Controllers/WeatherForecastController.fs` so we can use the new shared type:
+
+```fsharp
+namespace Server.Controllers
+
+open System
+open Microsoft.AspNetCore.Mvc
+open Microsoft.Extensions.Logging
+// diff-remove
+open Server
+// diff-add
+open Shared
+
+...
+```
+
+### Enable CORS in Program.fs
+
+Add CORS configuration to Program.fs to enable calling the API from the Client.
+
+```fsharp
+// Server/Program.fs
+
+namespace Server
+#nowarn "20"
+open System
+open Microsoft.AspNetCore.Builder
+open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Hosting
+
+module Program =
+    let exitCode = 0
+
+    [<EntryPoint>]
+    let main args =
+
+        let builder = WebApplication.CreateBuilder(args)
+
+        builder.Services.AddControllers()
+
+        // diff-add
+        builder.WebHost.ConfigureKestrel(fun _ serverOptions ->
+            // diff-add
+            // Ensures that we always get the correct
+            // diff-add
+            // port used by the client
+            // diff-add
+            serverOptions.Listen(Net.IPAddress.Loopback, 5001)
+        // diff-add
+        )
+        // diff-add
+
+        // diff-add
+        builder.Services.AddCors(fun options ->
+            // diff-add
+            options.AddDefaultPolicy(fun policy ->
+                // diff-add
+                policy
+                // diff-add
+                    .SetIsOriginAllowed(fun origin -> Uri(origin).Host = "localhost")
+                // diff-add
+                |> ignore
+            // diff-add
+            )
+        // diff-add
+        )
+
+        let app = builder.Build()
+
+        app.UseHttpsRedirection()
+
+        // diff-add
+        app.UseCors()
+        app.UseAuthorization()
+        app.MapControllers()
+
+        app.Run()
+
+        exitCode
+
+```
+
+## Calling the API from the Frontend
+
+Replace the file `Client/Pages/Page.fs` with the following:
+
+```fsharp
+// Client/Pages/Page.fs
+
+module Client.Pages.Page
+
+open Feliz
+open ElmishLand
+open Client.Shared
+open Client.Pages
+open Thoth.Json
+open Thoth.Fetch
+open Shared
+open Fable.Core.JS
+
+type Model = {
+    WeatherForecasts: WeatherForecast array
+}
+
+type Msg =
+    | LayoutMsg of Layout.Msg
+    | WeatherForecastFetched of WeatherForecast array
+
+let fetchWeatherForecast (): Promise<WeatherForecast array> =
+    Fetch.get("http://localhost:5001/WeatherForecast", caseStrategy = CamelCase)
+
+let init () =
+    { WeatherForecasts = [||] },
+    Command.ofPromise fetchWeatherForecast () WeatherForecastFetched
+
+let update (msg: Msg) (model: Model) =
+    match msg with
+    | LayoutMsg _ -> model, Command.none
+    | WeatherForecastFetched weatherForecasts ->
+        { WeatherForecasts = weatherForecasts }, Command.none
+
+let view (model: Model) (_dispatch: Msg -> unit) =
+    Html.table [
+        Html.thead [
+            Html.tr [
+                Html.th "Summary"
+                Html.th "Date"
+                Html.th "TemperatureF"
+            ]
+        ]
+        Html.tbody [
+            for weatherForecast in model.WeatherForecasts do
+                Html.tr [
+                    Html.td weatherForecast.Summary
+                    Html.td (weatherForecast.Date.ToShortDateString())
+                    Html.td weatherForecast.TemperatureF
+                ]
+        ]
+    ]
+
+let page (_shared: SharedModel) (_route: HomeRoute) =
+    Page.from init update view () LayoutMsg
+
+```
+
+Now you can just run `npm start` to fire up both server and client!
+
+## Conclusion
+
+You now have a working fullstack F# application with:
+
+* ASP.NET Web API for your backend logic
+* Elmish Land for a reactive frontend experience
+* A shared library of F# types for type-safe communication
+
+Elmish Land keeps the frontend functional and composable, making it a joy to build UIs. Combined with the robust ASP.NET ecosystem on the backend, you’ve got the best of both worlds — and all in F#!
+
+### Next Steps
+
+* [Add pages to your app](/docs/core-concepts/pages#creating-a-new-page)
+* [Style the frontend with Tailwind CSS](/blog/using-tailwind-css-with-fable-and-elmish)
+* Use [Fable Remoting](https://zaid-ajaj.github.io/Fable.Remoting/) to simplify the communication between the server and client.

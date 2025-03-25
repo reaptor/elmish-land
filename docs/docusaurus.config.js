@@ -53,15 +53,15 @@ const config = {
                     feedOptions: {
                         type: ['rss', 'atom'],
                         xslt: true,
-                      },
-                      // Please change this to your repo.
-                      // Remove this to remove the "edit this page" links.
-                      editUrl:
+                    },
+                    // Please change this to your repo.
+                    // Remove this to remove the "edit this page" links.
+                    editUrl:
                         'https://github.com/reaptor/elmish-land/tree/main/packages/create-docusaurus/templates/shared/',
-                      // Useful options to enforce blogging best practices
-                      onInlineTags: 'warn',
-                      onInlineAuthors: 'warn',
-                      onUntruncatedBlogPosts: 'warn',
+                    // Useful options to enforce blogging best practices
+                    onInlineTags: 'warn',
+                    onInlineAuthors: 'warn',
+                    onUntruncatedBlogPosts: 'warn',
                 },
                 theme: {
                     customCss: './src/css/custom.css',
@@ -73,7 +73,7 @@ const config = {
                     ignorePatterns: ['/tags/**'],
                     filename: 'sitemap.xml',
                     createSitemapItems: async (params) => {
-                        const {defaultCreateSitemapItems, ...rest} = params;
+                        const { defaultCreateSitemapItems, ...rest } = params;
                         const items = await defaultCreateSitemapItems(rest);
                         return items.filter((item) => !item.url.includes('/page/'));
                     },
@@ -111,7 +111,7 @@ const config = {
                         position: 'left',
                         label: 'Docs',
                     },
-                    {to: '/blog', label: 'Blog', position: 'left'},
+                    { to: '/blog', label: 'Blog', position: 'left' },
                     {
                         href: 'https://github.com/reaptor/elmish-land',
                         label: 'GitHub',
@@ -144,14 +144,19 @@ const config = {
                 additionalLanguages: ['fsharp', 'bash'],
                 magicComments: [
                     {
-                      className: 'code-block-diff-add-line',
-                      line: 'diff-add'
+                        className: 'theme-code-block-highlighted-line',
+                        line: 'highlight-next-line',
+                        block: { start: 'highlight-start', end: 'highlight-end' },
                     },
                     {
-                      className: 'code-block-diff-remove-line',
-                      line: 'diff-remove'
+                        className: 'code-block-diff-add-line',
+                        line: 'diff-add'
+                    },
+                    {
+                        className: 'code-block-diff-remove-line',
+                        line: 'diff-remove'
                     }
-                  ],
+                ],
             },
         }),
 };

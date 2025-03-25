@@ -12,10 +12,10 @@ Each folder within `src/Pages` represents a route segment, which maps directly t
 
 #### Examples:
 
-* **Root route** → `src/Pages` → `/`
-* **Static route** → `src/Pages/About` → `/about`
-* **Dynamic route with a parameter** → `src/Pages/Blog/_slug` → `/blog/:slug`
-  *(Allows loading dynamic content for URLs like `/blog/hello-world`)*
+* **Root route** → `src/Pages` → `/#`
+* **Static route** → `src/Pages/About` → `/#about`
+* **Dynamic route with a parameter** → `src/Pages/Blog/_slug` → `/#blog/:slug`
+  *(Allows loading dynamic content for URLs like `/#blog/hello-world`)*
 
 Each page folder that contains a `Page.fs` file will be served on that specific URL.
 
@@ -42,15 +42,20 @@ Elmish Land supports multiple routing types, ordered below from most to least sp
 
 | Route Type       | Example URL      | Description                                     |
 |------------------|------------------|-------------------------------------------------|
-| Root page        | `/`              | Handles requests to the top-level URL.          |
-| Simple routes    | `/people`        | Maps a URL directly to a page.                  |
-| Route parameters | `/people/:id`    | Dynamically maps multiple URLs to a page.       |
-| Query parameters | `/people?id=:id` | Passes arguments to a page via query strings.   |
+| Root page        | `/#`              | Handles requests to the top-level URL.          |
+| Simple routes    | `/#people`        | Maps a URL directly to a page.                  |
+| Route parameters | `/#people/:id`    | Dynamically maps multiple URLs to a page.       |
+| Query parameters | `/#people?id=:id` | Passes arguments to a page via query strings.   |
 
+:::info
+
+At the moment Elmish Land only support routes with a hash sign (#) eg `/#about`.
+
+:::
 
 ## Root page
 
-The root page (`/)` is created automatically when running:
+The root page (`/#`) is created automatically when running:
 
 ```bash
 dotnet elmish-land init
@@ -60,7 +65,7 @@ dotnet elmish-land init
 
 | Page File    	         | URL  |
 |------------------------|------|
-| `src/Pages/Page.fs`    | `/`  |
+| `src/Pages/Page.fs`    | `/#`  |
 
 
 ## Simple Routes (Static Routing)
@@ -71,11 +76,11 @@ dotnet elmish-land init
 
 | Page File                                   | URL                        |
 |---------------------------------------------|----------------------------|
-| `src/Pages/Hello/Page.fs`                   | `/hello`                   |
-| `src/Pages/AboutUs/Page.fs`                 | `/about-us`                |
-| `src/Pages/Settings/Account/Page.fs`        | `/settings/account`        |
-| `src/Pages/Settings/General/Page.fs`        | `/settings/general`        |
-| `src/Pages/Something/Really/Nested/Page.fs` | `/something/really/nested` |
+| `src/Pages/Hello/Page.fs`                   | `/#hello`                   |
+| `src/Pages/AboutUs/Page.fs`                 | `/#about-us`                |
+| `src/Pages/Settings/Account/Page.fs`        | `/#settings/account`        |
+| `src/Pages/Settings/General/Page.fs`        | `/#settings/general`        |
+| `src/Pages/Something/Really/Nested/Page.fs` | `/#something/really/nested` |
 
 ## Route Parameters (Dynamic Routing)
 
@@ -85,9 +90,9 @@ Folders prefixed with **an underscore** (`_`) define **dynamic route parameters*
 
 | Page filename                       | URL                 | Example URLs                               |
 |-------------------------------------|---------------------|--------------------------------------------|
-| `src/Pages/Blog/_Id/Page.fs`        | `/blog/:id`         | `/blog/1`, `/blog/xyz`                     |
-| `src/Pages/Users/_Username/Page.fs` | `/users/:username`  | `/users/ryan`, `/users/bob`                |
-| `src/Pages/Settings/_Tab/Page.fs`   | `/settings/:tab`    | `/settings/account`, `/settings/general`   |
+| `src/Pages/Blog/_Id/Page.fs`        | `/#blog/:id`         | `/#blog/1`, `/#blog/xyz`                     |
+| `src/Pages/Users/_Username/Page.fs` | `/#users/:username`  | `/#users/ryan`, `/#users/bob`                |
+| `src/Pages/Settings/_Tab/Page.fs`   | `/#settings/:tab`    | `/#settings/account`, `/#settings/general`   |
 
 ### Accessing Route Parameters
 
@@ -137,7 +142,7 @@ In addition to URL path parameters, Elmish Land supports query parameters throug
 }
 ```
 
-🔗 **Example URL**: `/user?name=john&age=23`
+🔗 **Example URL**: `/#user?name=john&age=23`
 
 *(Allows passing parameters dynamically, like filtering a user list or handling search queries.)*
 
