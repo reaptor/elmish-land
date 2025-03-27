@@ -79,7 +79,7 @@ let update (msg: Msg) (model: Model) =
 let view (_model: Model) (_dispatch: Msg -> unit) =
     Html.text "About Page"
 
-let page (_shared: SharedModel) (_route: HomeRoute) =
+let page (_shared: SharedModel) (_route: AboutRoute) =
     Page.from init update view () LayoutMsg
 
 ```
