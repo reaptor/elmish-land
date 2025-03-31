@@ -8,7 +8,7 @@ sidebar_position: 10
 
 The Elmish Land CLI tool is available [as a .NET tool](https://www.nuget.org/packages/elmish-land/). This one command-line tool has everything you need to create new projects, run your development server, and even build your application for production.
 
-After installing, you can run `donet elmish-land --help` to see these commands at any time. This page is a more detailed breakdown of the documentation you'll see in your terminal.
+After installing, you can run `dotnet elmish-land --help` to see these commands at any time. This page is a more detailed breakdown of the documentation you'll see in your terminal.
 
 ## Init
 
