@@ -4,9 +4,6 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
-open Microsoft.VisualBasic.FileIO
-open Orsak
-open Thoth.Json.Net
 open System.Text.RegularExpressions
 open ElmishLand.AppError
 
@@ -314,11 +311,11 @@ type ProjectName =
 
     static member asString(ProjectName projectName) = projectName
 
-let getDotnetToolDependencies () = [ "fable", "--version 5.0.0-alpha.11" ]
+let getDotnetToolDependencies () = [ "fable", "--version 4.*" ]
 
 let nugetDependencies =
     Set [
-        "FSharp.Core", "9.0.201"
+        "FSharp.Core", "9.0.303"
         "Elmish", "4.2.0"
         "Fable.Promise", "3.2.0"
         "Fable.Elmish.HMR", "7.0.0"
