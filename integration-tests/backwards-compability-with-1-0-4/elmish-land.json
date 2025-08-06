@@ -1,0 +1,8 @@
+{
+  "view": {
+    "module": "Feliz",
+    "type": "ReactElement",
+    "textElement": "Html.text"
+  },
+  "projectReferences": []
+}

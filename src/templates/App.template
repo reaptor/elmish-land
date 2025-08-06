@@ -94,6 +94,14 @@ let rec commandToCmd fromSharedMsg fromLayoutMsg command =
     | Command.SharedMsg msg -> Cmd.ofMsg (fromSharedMsg msg)
     | Command.LayoutMsg msg -> Cmd.ofMsg (fromLayoutMsg msg)
 
+let rec sharedCommandToCmd (command: Command<SharedMsg, SharedMsg, _>): Cmd<Msg> = 
+    match command with
+    | Command.None -> Cmd.none
+    | Command.Batch cmds -> Cmd.batch (List.map sharedCommandToCmd cmds)
+    | Command.Cmd cmd -> Cmd.map SharedMsg cmd
+    | Command.SharedMsg msg -> Cmd.ofMsg (SharedMsg msg)
+    | Command.LayoutMsg msg -> failwith "Layout messages should not occur in shared commands"
+    
 {{#each Layouts}}
 let get{{Name}}Layout currentLayout currentRoute sharedModel layoutProps =
     let layout = {{ModuleName}}.layout layoutProps currentRoute sharedModel
@@ -191,7 +199,7 @@ let update (msg: Msg) (model: Model) =
     match msg with
     | SharedMsg msg' ->
         let model'', cmd = Shared.update msg' model.Shared
-        { model with Shared = model'' }, commandToCmd SharedMsg Unchecked.defaultof<_> cmd
+        { model with Shared = model'' }, sharedCommandToCmd cmd
     | RouteChanged nextRoute ->
         if model.CurrentRoute = nextRoute then
             model, Cmd.none

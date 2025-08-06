@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="src/Shared.fs"/>
+        <Compile Include="src/Pages/NotFound.fs"/>
+        <Compile Include="src/Pages/Layout.fs"/>
+        <Compile Include="src/Pages/Page.fs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include=".elmish-land/Base/ElmishLand.using-commands-from-shared-module-does-not-work-27.Base.fsproj" />
+    </ItemGroup>
+</Project>

@@ -11,4 +11,7 @@ github-pages
 /MyProject
 .elmish-land
 *.DotSettings.user
-integration-test/
+integration-tests/**/bin/
+integration-tests/**/obj/
+integration-tests/**/node_modules/
+integration-tests/**/dist/

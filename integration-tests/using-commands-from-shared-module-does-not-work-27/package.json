@@ -1,0 +1,16 @@
+{
+  "name": "using-commands-from-shared-module-does-not-work-27",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+      "start": "dotnet elmish-land server",
+      "build": "dotnet elmish-land build"
+  },
+  "dependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "vite": "^6"
+  }
+}
