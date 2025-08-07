@@ -7,15 +7,29 @@ failed=()
 for dir in */; do
     if [ -d "$dir" ]; then
         dirname=${dir%/}
-        echo "Building test project: $dirname"
         cd $dirname
-        if ! dotnet run --project ../../src/elmish-land.fsproj -- build --verbose; then
-            echo "Build failed for: $dirname"
-            failed+=("$dirname")
-            exit_code=1
+        
+        # Check if this is a bash test (has test.sh) or F# project test
+        if [ -f "test.sh" ]; then
+            echo "Running bash test: $dirname"
+            if ! ./test.sh; then
+                echo "Test failed for: $dirname"
+                failed+=("$dirname")
+                exit_code=1
+            else
+                succeeded+=("$dirname")
+            fi
         else
-            succeeded+=("$dirname")
-        fi        
+            echo "Building F# test project: $dirname"
+            if ! dotnet run --project ../../src/elmish-land.fsproj -- build --verbose; then
+                echo "Build failed for: $dirname"
+                failed+=("$dirname")
+                exit_code=1
+            else
+                succeeded+=("$dirname")
+            fi
+        fi
+        
         cd ..
     fi
 done

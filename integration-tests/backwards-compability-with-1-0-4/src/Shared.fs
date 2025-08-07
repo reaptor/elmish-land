@@ -7,8 +7,7 @@ type SharedModel = unit
 
 type SharedMsg = | NoOp
 
-let init () =
-    (), Command.none
+let init () = (), Command.none
 
 let update (msg: SharedMsg) (model: SharedModel) =
     match msg with

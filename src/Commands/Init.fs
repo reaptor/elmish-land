@@ -226,6 +226,40 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
 
         do! validate absoluteProjectDir
 
+        // Generate solution file
+        log.Debug("Generating solution file")
+        let solutionName = $"%s{ProjectName.asString projectName}.sln"
+
+        do!
+            runProcess
+                true
+                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                "dotnet"
+                [| "new"; "sln"; "-n"; ProjectName.asString projectName |]
+                CancellationToken.None
+                ignore
+            |> Effect.map ignore<string>
+
+        // Add projects to solution in the specified order
+        let projectsToAdd = [
+            $".elmish-land/Base/ElmishLand.%s{ProjectName.asString projectName}.Base.fsproj"
+            $"%s{ProjectName.asString projectName}.fsproj"
+            $".elmish-land/App/ElmishLand.%s{ProjectName.asString projectName}.App.fsproj"
+        ]
+
+        for projectPath in projectsToAdd do
+            log.Debug("Adding project to solution: {}", projectPath)
+
+            do!
+                runProcess
+                    true
+                    (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                    "dotnet"
+                    [| "sln"; solutionName; "add"; projectPath |]
+                    CancellationToken.None
+                    ignore
+                |> Effect.map ignore<string>
+
         let dotnetToolsJsonPath =
             workingDirectory |> FilePath.appendParts [ ".config"; "dotnet-tools.json" ]
 
