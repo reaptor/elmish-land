@@ -128,6 +128,7 @@ type Route = {
     UrlUsage: string
     UrlPattern: string
     UrlPatternWhen: string
+    IsMainLayout: bool
 }
 
 type Layout = {
@@ -530,6 +531,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                 UrlUsage = urlUsage
                 UrlPattern = urlPattern
                 UrlPatternWhen = urlPatternWhen
+                IsMainLayout = layout.Name = "Main"
             }
         }
 

@@ -157,6 +157,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     UrlUsage = "\"\""
                     UrlPattern = "[]"
                     UrlPatternWhen = ""
+                    IsMainLayout = true
                 }
 
                 let mainLayout = {

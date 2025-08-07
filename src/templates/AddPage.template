@@ -8,7 +8,7 @@ open {{RootModule}}.Pages
 type Model = unit
 
 type Msg =
-    | LayoutMsg of Layout.Msg
+    | LayoutMsg of {{#if Route.IsMainLayout}}Layout.Msg{{else}}{{Route.LayoutName}}.Layout.Msg{{/if}}
 
 let init () =
     (),
