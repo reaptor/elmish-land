@@ -421,14 +421,15 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                     args
                     |> List.map (fun arg ->
                         let parameter = getPathParameter arg
-                        let arg = arg |> toCamelCase |> wrapWithTicksIfNeeded
+                        let argVariable = arg |> toCamelCase |> wrapWithTicksIfNeeded
 
                         let value =
                             getPathParamParser parameter
-                            |> Option.map (fun x -> $"(%s{x} %s{arg}).Value")
-                            |> Option.defaultValue arg
+                            |> Option.map (fun x -> $"(%s{x} %s{argVariable}).Value")
+                            |> Option.defaultValue argVariable
 
-                        $"%s{arg |> toPascalCase |> wrapWithTicksIfNeeded} = %s{value}")
+                        let fieldName = arg |> toPascalCase |> wrapWithTicksIfNeeded
+                        $"%s{fieldName} = %s{value}")
                     |> fun xs ->
                         List.append
                             xs
