@@ -1,9 +1,0 @@
-{
-  "files.exclude": {
-    "**/bin": true,
-    "**/obj": true,
-    "**/*.fs.js": true,
-    "**/fable_modules": true,
-    "**/node_modules": true
-  }
-}
