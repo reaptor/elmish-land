@@ -64,6 +64,7 @@ let ``Ensure multiple query params are included in UrlUsage (Route.format)`` () 
         UrlUsage =
             """"test", [ match first with Some x -> "first",  x | None -> () ] @ [ match second with Some x -> "second",  x | None -> () ]"""
         UrlPattern = "[ test; Query q ]"
+        IsMainLayout = false
         UrlPatternWhen = """eq test "test" """.Trim()
     }
 
@@ -100,6 +101,7 @@ let ``Ensure all query params with reserved names are generated correctly`` () =
         RecordPattern = "{ To = ``to`` }"
         UrlUsage = """"test", [ match ``to`` with Some x -> "to",  x | None -> () ]"""
         UrlPattern = "[ test; Query q ]"
+        IsMainLayout = false
         UrlPatternWhen = """eq test "test" """.Trim()
     }
 
@@ -136,6 +138,7 @@ let ``Ensure query params are camel cased`` () =
         RecordPattern = "{ QueryParam = queryParam }"
         UrlUsage = """"test", [ match queryParam with Some x -> "queryParam",  x | None -> () ]"""
         UrlPattern = "[ test; Query q ]"
+        IsMainLayout = false
         UrlPatternWhen = """eq test "test" """.Trim()
     }
 
@@ -173,6 +176,7 @@ let ``Ensure query param parse and format are generated correctly`` () =
         UrlUsage =
             """"test", [ match fromDate with Some x -> "fromDate", ApplicationDate.asQueryparam x | None -> () ]"""
         UrlPattern = "[ test; Query q ]"
+        IsMainLayout = false
         UrlPatternWhen = """eq test "test" """.Trim()
     }
 
@@ -212,6 +216,7 @@ let ``Ensure required query params is generated correctly`` () =
         UrlPatternWhen =
             """eq test "test" && containsQuery "order" InternalRevocationListOrder.fromQueryString q """
                 .Trim()
+        IsMainLayout = false
     }
 
     task {
@@ -271,6 +276,7 @@ let ``Ensure module names is wrapped in double ticks if project dir contains spe
                     RecordPattern = "()"
                     UrlUsage = """ "" """.Trim()
                     UrlPattern = "[ Query q ]"
+                    IsMainLayout = true
                     UrlPatternWhen = ""
                 }
             |]

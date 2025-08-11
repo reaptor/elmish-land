@@ -15,7 +15,13 @@ open ElmishLand.AddPage
 open ElmishLand.AddLayout
 
 let (|NotFlag|_|) (x: string) =
-    if x.StartsWith("--") then None else Some x
+    if x.StartsWith("--") || x.StartsWith("-") then
+        None
+    else
+        Some x
+
+let hasAutoAcceptFlag (argv: string[]) =
+    argv |> Array.exists (fun arg -> arg = "--auto-accept" || arg = "-y")
 
 let run argv =
     eff {
@@ -27,8 +33,10 @@ let run argv =
             | "server" :: _ -> server (AbsoluteProjectDir.create argv)
             | "build" :: _ -> build (AbsoluteProjectDir.create argv)
             | "restore" :: _ -> restore (AbsoluteProjectDir.create argv)
-            | "add" :: "page" :: NotFlag url :: _ -> addPage (AbsoluteProjectDir.create argv) url
-            | "add" :: "layout" :: NotFlag url :: _ -> addLayout (AbsoluteProjectDir.create argv) url
+            | "add" :: "page" :: NotFlag url :: _ ->
+                addPage (AbsoluteProjectDir.create argv) url (hasAutoAcceptFlag argv)
+            | "add" :: "layout" :: NotFlag url :: _ ->
+                addLayout (AbsoluteProjectDir.create argv) url (hasAutoAcceptFlag argv)
             | _ ->
                 $"""
     %s{getWelcomeTitle ()}

@@ -22,6 +22,7 @@ let templateData: TemplateData = {
             RecordPattern = "RoutesRecordPattern"
             UrlUsage = "RoutesUrlUsage"
             UrlPattern = "RoutesUrlPattern"
+            IsMainLayout = false
             UrlPatternWhen = "RoutesUrlPatternWhen"
         }
     |]
@@ -97,6 +98,7 @@ let AddPage_template () =
             RecordPattern = "RouteRecordPattern"
             UrlUsage = "RouteUrlUsage"
             UrlPattern = "RouteUrlPattern"
+            IsMainLayout = false
             UrlPatternWhen = "RouteUrlPatternWhen"
         }
     }
@@ -111,7 +113,7 @@ open RootModule.Pages
 type Model = unit
 
 type Msg =
-    | LayoutMsg of Layout.Msg
+    | LayoutMsg of RouteLayoutName.Layout.Msg
 
 let init () =
     (),
@@ -944,6 +946,7 @@ let ``Routes_template with F# keyword route parameters`` () =
                 RecordPattern = "()"
                 UrlUsage = ""
                 UrlPattern = "[ Query q ]"
+                IsMainLayout = false
                 UrlPatternWhen = ""
             }
             {
@@ -958,6 +961,7 @@ let ``Routes_template with F# keyword route parameters`` () =
                 RecordPattern = "{ New = ``new`` }"
                 UrlUsage = "\"arbitrary-page\", ``new``"
                 UrlPattern = "[ arbitraryPage; ``new``; Query q ]"
+                IsMainLayout = false
                 UrlPatternWhen = "eq arbitraryPage \"arbitrary-page\""
             }
         |]

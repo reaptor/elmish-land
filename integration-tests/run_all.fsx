@@ -1,6 +1,7 @@
 #!/usr/bin/env dotnet fsi
 
 #load "TestUtils.fsx"
+
 open TestUtils
 open System.IO
 
@@ -12,12 +13,13 @@ let mutable succeeded = []
 let mutable failed = []
 
 // Get all test directories
-let testDirectories = getAllTestDirectories()
+let testDirectories = getAllTestDirectories ()
 
 for dirName in testDirectories do
     if Directory.Exists(dirName) then
         if hasTestScript dirName then
             printStep $"Running F# test: {dirName}"
+
             if runTestInDirectory dirName then
                 succeeded <- dirName :: succeeded
                 printfn ""
@@ -28,6 +30,7 @@ for dirName in testDirectories do
                 printfn ""
         else
             printStep $"Building F# test project: {dirName}"
+
             if buildProjectInDirectory dirName then
                 succeeded <- dirName :: succeeded
                 printfn ""
@@ -43,11 +46,13 @@ printStep "=== Integration Test Results ==="
 
 if not (List.isEmpty succeeded) then
     printStep $"Succeeded ({List.length succeeded}):"
+
     for project in List.rev succeeded do
         printSuccessWithColor project
 
 if not (List.isEmpty failed) then
     printStep $"Failed ({List.length failed}):"
+
     for project in List.rev failed do
         printErrorWithColor project
 
