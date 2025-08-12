@@ -18,27 +18,33 @@ let testDirectories = getAllTestDirectories ()
 for dirName in testDirectories do
     if Directory.Exists(dirName) then
         if hasTestScript dirName then
-            printStep $"Running F# test: {dirName}"
+            printStep $"Running F# test script: {dirName}"
 
-            if runTestInDirectory dirName then
+            match runTestInDirectory dirName with
+            | Ok output ->
                 succeeded <- dirName :: succeeded
                 printfn ""
-            else
+            | Error errorMsg ->
                 printStep $"Test failed for: {dirName}"
-                failed <- dirName :: failed
+                printError $"Reason: {errorMsg}"
+                failed <- (dirName, errorMsg) :: failed
+                exitCode <- 1
+                printfn ""
+        elif hasFsProjFile dirName then
+            printStep $"Building F# project: {dirName}"
+
+            match buildWithDotnetBuild dirName with
+            | Ok output ->
+                succeeded <- dirName :: succeeded
+                printfn ""
+            | Error errorMsg ->
+                printStep $"Build failed for: {dirName}"
+                printError $"Reason: {errorMsg}"
+                failed <- (dirName, errorMsg) :: failed
                 exitCode <- 1
                 printfn ""
         else
-            printStep $"Building F# test project: {dirName}"
-
-            if buildProjectInDirectory dirName then
-                succeeded <- dirName :: succeeded
-                printfn ""
-            else
-                printStep $"Build failed for: {dirName}"
-                failed <- dirName :: failed
-                exitCode <- 1
-                printfn ""
+            printStep $"Skipping {dirName}: No test.fsx or .fsproj file found"
 
 // Print results summary
 printfn ""
@@ -53,7 +59,8 @@ if not (List.isEmpty succeeded) then
 if not (List.isEmpty failed) then
     printStep $"Failed ({List.length failed}):"
 
-    for project in List.rev failed do
+    for (project, errorMsg) in List.rev failed do
         printErrorWithColor project
+        printfn $"    → {errorMsg}"
 
 exit exitCode

@@ -8,20 +8,20 @@ open System.IO
 printStep "Testing solution file generation during init..."
 
 // Clean up and create test directory
-cleanupAndCreateTestDir "App"
+cleanupAndCreateTestDir "TestProject"
 
 printStep "Running elmish-land init..."
-runElmishLandCommand "init --verbose" |> ignore
+runElmishLandCommand "init" |> ignore
 
 printStep "Verifying solution file was created..."
-verifyFileExists "App.sln" "Solution file"
+verifyFileExists "TestProject.sln" "Solution file"
 
 printStep "Verifying projects are added to solution..."
 
 // Check if all expected projects are in the solution file
-let expectedProjectNames = [ "ElmishLand.App.Base"; "App"; "ElmishLand.App.App" ]
+let expectedProjectNames = [ "ElmishLand.TestProject.Base"; "TestProject"; "ElmishLand.TestProject.App" ]
 
-let solutionContent = File.ReadAllText("App.sln")
+let solutionContent = File.ReadAllText("TestProject.sln")
 
 for projectName in expectedProjectNames do
     if solutionContent.Contains(projectName) then
@@ -35,9 +35,9 @@ for projectName in expectedProjectNames do
 printStep "Verifying all project files exist..."
 
 let expectedProjectFiles = [
-    ".elmish-land/Base/ElmishLand.App.Base.fsproj"
-    "App.fsproj"
-    ".elmish-land/App/ElmishLand.App.App.fsproj"
+    ".elmish-land/Base/ElmishLand.TestProject.Base.fsproj"
+    "TestProject.fsproj"
+    ".elmish-land/App/ElmishLand.TestProject.App.fsproj"
 ]
 
 verifyFilesExist expectedProjectFiles "Project"

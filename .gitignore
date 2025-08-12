@@ -15,7 +15,6 @@ integration-tests/**/bin/
 integration-tests/**/obj/
 integration-tests/**/node_modules/
 integration-tests/**/dist/
-integration-tests/create-a-solution-file-when-running-init/App
 integration-tests/**/TestProject*
 quicktest/TestProject
 quicktest/Test

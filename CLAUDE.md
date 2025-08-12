@@ -1,7 +1,7 @@
 # Project Build Information
 
 ## Building the Project
-- Always run `dotnet build` from the root directory: `/Users/lindasvedberg/Kristofer/elmish-land`
+- Always run `dotnet build` from the root directory of the elmish-land project
 - This builds both the main elmish-land project and tests
 
 ## Running Integration Tests

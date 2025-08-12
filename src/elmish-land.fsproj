@@ -14,7 +14,7 @@
         <ToolCommandName>elmish-land</ToolCommandName>
         <PackageOutputPath>./nupkg</PackageOutputPath>
         <LangVersion>latest</LangVersion>
-        <Version>1.1.0-alpha.1</Version>
+        <Version>1.1.0-beta.1</Version>
     </PropertyGroup>
     <ItemGroup>
         <EmbeddedResource Include="templates\vite.config.js">

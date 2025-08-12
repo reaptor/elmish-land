@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:keepachangelog.com)",
+      "Bash(gh issue view:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(timeout 15 dotnet fsi:*)",
+      "Bash(dotnet --list-sdks)",
+      "Bash(dotnet fsi:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

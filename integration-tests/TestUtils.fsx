@@ -5,7 +5,7 @@ module TestUtils
 open System
 open System.IO
 open System.Diagnostics
-open System.Text.RegularExpressions
+open System.Text.Json
 
 let runCommand (command: string) (args: string) =
     let psi = ProcessStartInfo()
@@ -14,11 +14,14 @@ let runCommand (command: string) (args: string) =
     psi.UseShellExecute <- false
     psi.RedirectStandardOutput <- true
     psi.RedirectStandardError <- true
-    psi.RedirectStandardInput <- true
 
     use proc = Process.Start(psi)
-    proc.StandardInput.WriteLine("y")
-    proc.WaitForExit()
+    
+    // Add timeout to prevent hanging
+    let timeoutMs = 120000 // 2 minutes
+    if not (proc.WaitForExit(timeoutMs)) then
+        proc.Kill()
+        failwith $"Command timed out after {timeoutMs}ms: {command} {args}"
 
     let output = proc.StandardOutput.ReadToEnd()
     let error = proc.StandardError.ReadToEnd()
@@ -29,7 +32,7 @@ let runCommand (command: string) (args: string) =
     output
 
 let runElmishLandCommand (args: string) =
-    runCommand "dotnet" $"run --project ../../../src/elmish-land.fsproj -- {args}"
+    runCommand "dotnet" $"../../../src/bin/Release/net8.0/elmish-land.dll {args}"
 
 let cleanupAndCreateTestDir (dirName: string) =
     if Directory.Exists(dirName) then
@@ -44,40 +47,9 @@ let verifyFileExists (filePath: string) (description: string) =
 
     printfn $"✅ {description} {filePath} exists"
 
-let verifyFileContains (filePath: string) (expectedContent: string) (description: string) =
-    let content = File.ReadAllText(filePath)
-
-    if content.Contains(expectedContent) then
-        printfn $"✅ {description}"
-    else
-        let relevantLines =
-            content.Split('\n')
-            |> Array.filter (fun line -> line.Contains(expectedContent.Split(' ').[0]))
-
-        printfn $"❌ ERROR: {description}"
-        printfn $"Expected: {expectedContent}"
-        printfn "Found:"
-
-        if relevantLines.Length > 0 then
-            relevantLines |> Array.iter (printfn "  %s")
-        else
-            printfn "  No relevant content found"
-
-        exit 1
-
 let verifyFilesExist (files: string list) (description: string) =
     for file in files do
         verifyFileExists file $"{description} file"
-
-let insertIntoFirstItemGroup (filePath: string) (compileInclude: string) =
-    let content = File.ReadAllText(filePath)
-    let pattern = @"</ItemGroup>"
-    let replacement = $"    <Compile Include=\"{compileInclude}\" />\n  </ItemGroup>"
-
-    // Only replace the first occurrence
-    let regex = Regex(pattern)
-    let newContent = regex.Replace(content, replacement, 1)
-    File.WriteAllText(filePath, newContent)
 
 let printSuccess (message: string) = printfn $"✅ {message}"
 
@@ -103,6 +75,9 @@ let getAllTestDirectories () =
 let hasTestScript (dirName: string) =
     File.Exists(Path.Combine(dirName, "test.fsx"))
 
+let hasFsProjFile (dirName: string) =
+    Directory.GetFiles(dirName, "*.fsproj") |> Array.length > 0
+
 let runTestInDirectory (dirName: string) =
     let originalDir = Directory.GetCurrentDirectory()
 
@@ -110,22 +85,61 @@ let runTestInDirectory (dirName: string) =
         Directory.SetCurrentDirectory(dirName)
         let result = runCommand "dotnet" "fsi test.fsx"
         Directory.SetCurrentDirectory(originalDir)
-        true
+        Ok result
     with ex ->
         Directory.SetCurrentDirectory(originalDir)
-        false
+        Error ex.Message
 
-let buildProjectInDirectory (dirName: string) =
+let checkDotnetVersionInstalled (dirPath: string) =
+    let globalJsonPath = Path.Combine(dirPath, "global.json")
+    
+    if not (File.Exists(globalJsonPath)) then
+        printStep $"No global.json found in {dirPath}, skipping version check"
+        Ok ()
+    else
+        try
+            let jsonContent = File.ReadAllText(globalJsonPath)
+            use jsonDoc = JsonDocument.Parse(jsonContent)
+            
+            let requiredVersion = 
+                try
+                    let sdkElement = jsonDoc.RootElement.GetProperty("sdk")
+                    let versionElement = sdkElement.GetProperty("version")
+                    versionElement.GetString()
+                with
+                | _ -> ""
+            
+            if String.IsNullOrEmpty(requiredVersion) then
+                printStep "No SDK version specified in global.json, skipping version check"
+                Ok ()
+            else
+                // Check if the specified version is installed
+                let installedVersionsOutput = runCommand "dotnet" "--list-sdks"
+                let isVersionInstalled = installedVersionsOutput.Contains(requiredVersion)
+                
+                if isVersionInstalled then
+                    printStep $"✅ Required dotnet SDK version {requiredVersion} is installed"
+                    Ok ()
+                else
+                    Error $"Required dotnet SDK version '{requiredVersion}' is not installed."
+        with ex ->
+            Error $"Failed to process global.json: {ex.Message}"
+
+let buildWithDotnetBuild (dirName: string) =
     let originalDir = Directory.GetCurrentDirectory()
 
     try
         Directory.SetCurrentDirectory(dirName)
 
-        let result =
-            runCommand "dotnet" "run --project ../../src/elmish-land.fsproj -- build --verbose"
-
-        Directory.SetCurrentDirectory(originalDir)
-        true
+        // Check if required dotnet version is installed
+        match checkDotnetVersionInstalled "." with
+        | Ok () ->
+            let result = runCommand "dotnet" "build"
+            Directory.SetCurrentDirectory(originalDir)
+            Ok result
+        | Error err ->
+            Directory.SetCurrentDirectory(originalDir)
+            Error err
     with ex ->
         Directory.SetCurrentDirectory(originalDir)
-        false
+        Error ex.Message
