@@ -1,5 +1,6 @@
 module ElmishLand.Build
 
+open System
 open System.IO
 open System.Threading
 open ElmishLand.Base
@@ -16,7 +17,7 @@ let successMessage =
 Your app was saved in the 'dist' directory.
 """
 
-let fableBuild absoluteProjectDir =
+let fableBuild absoluteProjectDir isVerbose =
     let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir
 
     let appFsproj =
@@ -30,7 +31,7 @@ let fableBuild absoluteProjectDir =
         |> FilePath.asString
 
     runProcess
-        true
+        isVerbose
         (AbsoluteProjectDir.asFilePath absoluteProjectDir)
         "dotnet"
         [|
@@ -47,6 +48,9 @@ let fableBuild absoluteProjectDir =
         ignore
 
 let build absoluteProjectDir =
+    let isVerbose = System.Environment.CommandLine.Contains("--verbose")
+    let stopSpinner = createSpinner "Building your project..."
+
     eff {
         let! log = Log().Get()
 
@@ -59,19 +63,26 @@ let build absoluteProjectDir =
         do! ensureViteInstalled ()
 
         let! result =
-            fableBuild absoluteProjectDir
+            fableBuild absoluteProjectDir isVerbose
             |> Effect.map Ok
             |> Effect.onError (fun e -> eff { return Error e })
 
         match result with
         | Ok _ ->
+            stopSpinner ()
             log.Info successMessage
             return! Ok()
         | Error(AppError.ProcessError e) when e.Contains "dotnet tool restore" ->
             do!
-                runProcess true workingDirectory "dotnet" [| "tool"; "restore" |] CancellationToken.None ignore
+                runProcess isVerbose workingDirectory "dotnet" [| "tool"; "restore" |] CancellationToken.None ignore
                 |> Effect.map ignore<string>
 
-            do! fableBuild absoluteProjectDir |> Effect.map (fun _ -> log.Info successMessage)
-        | Error e -> return! Error e
+            do!
+                fableBuild absoluteProjectDir isVerbose
+                |> Effect.map (fun _ ->
+                    stopSpinner ()
+                    log.Info successMessage)
+        | Error e ->
+            stopSpinner ()
+            return! Error e
     }

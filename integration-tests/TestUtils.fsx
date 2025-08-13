@@ -16,9 +16,10 @@ let runCommand (command: string) (args: string) =
     psi.RedirectStandardError <- true
 
     use proc = Process.Start(psi)
-    
+
     // Add timeout to prevent hanging
     let timeoutMs = 120000 // 2 minutes
+
     if not (proc.WaitForExit(timeoutMs)) then
         proc.Kill()
         failwith $"Command timed out after {timeoutMs}ms: {command} {args}"
@@ -92,34 +93,34 @@ let runTestInDirectory (dirName: string) =
 
 let checkDotnetVersionInstalled (dirPath: string) =
     let globalJsonPath = Path.Combine(dirPath, "global.json")
-    
+
     if not (File.Exists(globalJsonPath)) then
         printStep $"No global.json found in {dirPath}, skipping version check"
-        Ok ()
+        Ok()
     else
         try
             let jsonContent = File.ReadAllText(globalJsonPath)
             use jsonDoc = JsonDocument.Parse(jsonContent)
-            
-            let requiredVersion = 
+
+            let requiredVersion =
                 try
                     let sdkElement = jsonDoc.RootElement.GetProperty("sdk")
                     let versionElement = sdkElement.GetProperty("version")
                     versionElement.GetString()
-                with
-                | _ -> ""
-            
+                with _ ->
+                    ""
+
             if String.IsNullOrEmpty(requiredVersion) then
                 printStep "No SDK version specified in global.json, skipping version check"
-                Ok ()
+                Ok()
             else
                 // Check if the specified version is installed
                 let installedVersionsOutput = runCommand "dotnet" "--list-sdks"
                 let isVersionInstalled = installedVersionsOutput.Contains(requiredVersion)
-                
+
                 if isVersionInstalled then
                     printStep $"✅ Required dotnet SDK version {requiredVersion} is installed"
-                    Ok ()
+                    Ok()
                 else
                     Error $"Required dotnet SDK version '{requiredVersion}' is not installed."
         with ex ->
@@ -133,7 +134,7 @@ let buildWithDotnetBuild (dirName: string) =
 
         // Check if required dotnet version is installed
         match checkDotnetVersionInstalled "." with
-        | Ok () ->
+        | Ok() ->
             let result = runCommand "dotnet" "build"
             Directory.SetCurrentDirectory(originalDir)
             Ok result
