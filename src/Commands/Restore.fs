@@ -9,7 +9,19 @@ open ElmishLand.FsProj
 open ElmishLand.Generate
 open ElmishLand.Base
 
+let successMessage () =
+    let header = getCommandHeader "restored your project!"
+
+    let content =
+        """Run the following command to start the development server:
+
+dotnet elmish-land server"""
+
+    getFormattedCommandOutput header content
+
 let restore absoluteProjectDir =
+    let stopSpinner = createSpinner "Restoring your project..."
+
     eff {
         let! log = Log().Get()
 
@@ -24,6 +36,7 @@ let restore absoluteProjectDir =
             )
 
         if Seq.isEmpty settingsFiles then
+            stopSpinner ()
             return! Error AppError.ElmishLandProjectMissing
         else
             for settingsFile in settingsFiles do
@@ -35,4 +48,7 @@ let restore absoluteProjectDir =
 
                 do! generate subAbsoluteProjectDir dotnetSdkVersion
                 do! validate subAbsoluteProjectDir
+
+            stopSpinner ()
+            log.Info(successMessage ())
     }

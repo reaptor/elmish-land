@@ -174,12 +174,80 @@ Want to learn more? Visit https://elmish.land
 
 let getCommandHeader s =
     let appTitle = getAppTitle ()
-    let header = $"%s{appTitle} %s{s}"
+    $"%s{appTitle} %s{s}"
 
-    $"""
-%s{header}
-%s{String.init header.Length (fun _ -> "-")}
+let getFormattedCommandOutput (header: string) (content: string) =
+    let separator = String.init (header.Length + 4) (fun _ -> "⎺")
+
+    $"""%s{header}
+%s{separator}
+%s{content |> String.eachLine (fun line -> $"%s{line}")}
 """
+
+let showWaitingIndicator (message: string) (action: unit -> 'a) =
+    let isVerbose = System.Environment.CommandLine.Contains("--verbose")
+
+    if isVerbose then
+        // In verbose mode, just execute without spinner
+        action ()
+    else
+        let spinChars = [| '⠋'; '⠙'; '⠹'; '⠸'; '⠼'; '⠴'; '⠦'; '⠧'; '⠇'; '⠏' |]
+        let mutable spinIndex = 0
+        let mutable isCompleted = false
+
+        // Start spinner in background
+        let spinnerTask =
+            System.Threading.Tasks.Task.Run(fun () ->
+                while not isCompleted do
+                    printf $"\r%c{spinChars[spinIndex]} %s{message}"
+                    Console.Out.Flush()
+                    spinIndex <- (spinIndex + 1) % spinChars.Length
+                    System.Threading.Thread.Sleep(100)
+
+                printf "\r%s\r" (String(' ', message.Length + 2)) // Clear the line completely
+                Console.Out.Flush())
+
+        try
+            // Execute the action
+            let result = action ()
+            isCompleted <- true
+            spinnerTask.Wait(1000) |> ignore // Wait max 1 second for cleanup
+            result
+        with ex ->
+            isCompleted <- true
+            spinnerTask.Wait(1000) |> ignore
+            reraise ()
+
+let createSpinner (message: string) =
+    let isVerbose = System.Environment.CommandLine.Contains("--verbose")
+    let spinChars = [| '⠋'; '⠙'; '⠹'; '⠸'; '⠼'; '⠴'; '⠦'; '⠧'; '⠇'; '⠏' |]
+    let mutable spinIndex = 0
+    let mutable isCompleted = false
+    let mutable spinnerTask = None
+
+    if not isVerbose then
+        let task =
+            System.Threading.Tasks.Task.Run(fun () ->
+                while not isCompleted do
+                    printf $"\r%c{spinChars[spinIndex]} %s{message}"
+                    Console.Out.Flush()
+                    spinIndex <- (spinIndex + 1) % spinChars.Length
+                    System.Threading.Thread.Sleep(100)
+
+                printf "\r%s\r" (String(' ', message.Length + 2)) // Clear the line completely
+                Console.Out.Flush())
+
+        spinnerTask <- Some task
+
+    let stopSpinner () =
+        if not isVerbose then
+            isCompleted <- true
+
+            match spinnerTask with
+            | Some task -> task.Wait(1000) |> ignore // Wait max 1 second for cleanup
+            | None -> ()
+
+    stopSpinner
 
 let canonicalizePath (path: string) =
     let p = path.Replace("\\", "/")

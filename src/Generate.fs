@@ -31,7 +31,7 @@ let getNugetPackageReferences () =
 let ensureViteInstalled () =
     eff {
         do!
-            runProcess true workingDirectory "npm" [| "run"; "vite"; "--version" |] CancellationToken.None ignore
+            runProcess false workingDirectory "npm" [| "run"; "vite"; "--version" |] CancellationToken.None ignore
             |> Effect.map ignore<string>
     }
     |> Effect.changeError (fun _ -> AppError.ViteNotInstalled)
