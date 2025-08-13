@@ -26,13 +26,17 @@ let getNodeVersion () =
     |> Effect.joinResult
 
 let successMessage () =
-    $"""%s{getCommandHeader "created a new project"}
-Run the following command to start the development server:
+    let header = getCommandHeader "created a new project!"
+    let content = """Run the following command to start the development server:
 
-dotnet elmish-land server
-"""
+dotnet elmish-land server"""
+    
+    getFormattedCommandOutput header content
 
 let init (absoluteProjectDir: AbsoluteProjectDir) =
+    let isVerbose = System.Environment.CommandLine.Contains("--verbose")
+    let stopSpinner = createSpinner "Creating your project..."
+
     eff {
         let! log = Log().Get()
 
@@ -233,7 +237,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
 
         do!
             runProcess
-                true
+                isVerbose
                 (AbsoluteProjectDir.asFilePath absoluteProjectDir)
                 "dotnet"
                 [| "new"; "sln"; "-n"; ProjectName.asString projectName |]
@@ -253,7 +257,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
 
             do!
                 runProcess
-                    true
+                    isVerbose
                     (AbsoluteProjectDir.asFilePath absoluteProjectDir)
                     "dotnet"
                     [| "sln"; solutionName; "add"; projectPath |]
@@ -280,12 +284,12 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                         "dotnet", [| "tool"; "install"; name; version |]
             ]
             |> List.map (fun (cmd, args) ->
-                true, AbsoluteProjectDir.asFilePath absoluteProjectDir, cmd, args, CancellationToken.None, ignore)
+                isVerbose, AbsoluteProjectDir.asFilePath absoluteProjectDir, cmd, args, CancellationToken.None, ignore)
             |> runProcesses
 
         do!
             runProcess
-                true
+                isVerbose
                 (AbsoluteProjectDir.asFilePath absoluteProjectDir)
                 "dotnet"
                 [|
@@ -298,7 +302,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
 
         do!
             runProcess
-                true
+                isVerbose
                 (AbsoluteProjectDir.asFilePath absoluteProjectDir)
                 "npm"
                 [| "install" |]
@@ -306,5 +310,6 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 ignore
             |> Effect.map ignore<string>
 
+        stopSpinner ()
         log.Info(successMessage ())
     }

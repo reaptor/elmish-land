@@ -9,7 +9,12 @@
       "WebFetch(domain:github.com)",
       "Bash(timeout 15 dotnet fsi:*)",
       "Bash(dotnet --list-sdks)",
-      "Bash(dotnet fsi:*)"
+      "Bash(dotnet fsi:*)",
+      "Bash(dotnet build:*)",
+      "Bash(.init.ps1 TestFormatOutput)",
+      "Bash(./init.sh:*)",
+      "Bash(./add-page.sh:*)",
+      "Bash(dotnet:*)"
     ],
     "deny": [],
     "ask": []

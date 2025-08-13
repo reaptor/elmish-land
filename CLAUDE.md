@@ -3,6 +3,7 @@
 ## Building the Project
 - Always run `dotnet build` from the root directory of the elmish-land project
 - This builds both the main elmish-land project and tests
+- Don't specify the project or configuration when building (use "dotnet build" not "dotnet build src/elmish-land.fsproj -c Release")
 
 ## Running Integration Tests
 - Change to the relevant test directory (e.g., `integration-tests/backwards-compability-with-1-0-4`)
@@ -17,3 +18,7 @@
   - Page file updates to use specific layout
   - Auto-accept functionality
 - Unit tests run much faster (~400-500ms) compared to integration tests (~several seconds)
+
+## Testing your changes
+- Always use quicktest\init.sh and other bash scripts in that directory if you need to test your changes
+- Always use the name TestProject when using quicktest
