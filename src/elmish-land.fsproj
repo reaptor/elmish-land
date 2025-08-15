@@ -87,6 +87,7 @@
         <Compile Include="FsProj.fs" />
         <Compile Include="TemplateEngine.fs" />
         <Compile Include="Resources.fs" />
+        <Compile Include="Validation.fs" />
         <Compile Include="Generate.fs" />
         <Compile Include="Commands\Init.fs" />
         <Compile Include="Commands\Restore.fs" />

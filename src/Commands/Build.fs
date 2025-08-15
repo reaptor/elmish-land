@@ -10,6 +10,7 @@ open ElmishLand.DotNetCli
 open ElmishLand.FsProj
 open ElmishLand.Process
 open ElmishLand.Generate
+open ElmishLand.Validation
 open Orsak
 
 let successMessage =
@@ -47,6 +48,38 @@ let fableBuild absoluteProjectDir isVerbose =
         CancellationToken.None
         ignore
 
+let enhancedFableBuild absoluteProjectDir isVerbose =
+    eff {
+        let! result = 
+            fableBuild absoluteProjectDir isVerbose
+            |> Effect.map Ok
+            |> Effect.onError (fun e -> eff { return Error e })
+
+        match result with
+        | Ok output -> return! Ok output
+        | Error (AppError.ProcessError errorOutput) ->
+            // Check for compilation errors that might be function signature issues
+            if errorOutput.Contains("error") && (errorOutput.Contains(".fs") || errorOutput.Contains("Pages")) then
+                let! pageErrors = validatePageFiles absoluteProjectDir
+                let! layoutErrors = validateLayoutFiles absoluteProjectDir
+                let allErrors = List.append pageErrors layoutErrors
+                
+                if not (List.isEmpty allErrors) then
+                    let enhancedErrorMessage = 
+                        $"""Build failed with validation errors:
+
+%s{formatValidationErrors allErrors}
+
+Original Fable output:
+%s{errorOutput}"""
+                    return! Error (AppError.ValidationError enhancedErrorMessage)
+                else
+                    return! Error (AppError.ProcessError errorOutput)
+            else
+                return! Error (AppError.ProcessError errorOutput)
+        | Error e -> return! Error e
+    }
+
 let build absoluteProjectDir =
     let isVerbose = System.Environment.CommandLine.Contains("--verbose")
     let stopSpinner = createSpinner "Building your project..."
@@ -63,7 +96,7 @@ let build absoluteProjectDir =
         do! ensureViteInstalled ()
 
         let! result =
-            fableBuild absoluteProjectDir isVerbose
+            enhancedFableBuild absoluteProjectDir isVerbose
             |> Effect.map Ok
             |> Effect.onError (fun e -> eff { return Error e })
 
@@ -77,11 +110,18 @@ let build absoluteProjectDir =
                 runProcess isVerbose workingDirectory "dotnet" [| "tool"; "restore" |] CancellationToken.None ignore
                 |> Effect.map ignore<string>
 
-            do!
-                fableBuild absoluteProjectDir isVerbose
-                |> Effect.map (fun _ ->
-                    stopSpinner ()
-                    log.Info successMessage)
+            let! retryResult =
+                enhancedFableBuild absoluteProjectDir isVerbose
+                |> Effect.map Ok
+                |> Effect.onError (fun e -> eff { return Error e })
+            match retryResult with
+            | Ok _ ->
+                stopSpinner ()
+                log.Info successMessage
+                return! Ok()
+            | Error retryError ->
+                stopSpinner ()
+                return! Error retryError
         | Error e ->
             stopSpinner ()
             return! Error e

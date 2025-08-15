@@ -21,7 +21,12 @@
       "Bash(grep:*)",
       "Bash(timeout:*)",
       "Bash(true)",
-      "Bash(gtimeout:*)"
+      "Bash(gtimeout:*)",
+      "Bash(quicktest:*)",
+      "Bash(rm:*)",
+      "Bash(pwsh:*)",
+      "Bash(pkill:*)",
+      "Bash(tasklist)"
     ],
     "deny": [],
     "ask": []
