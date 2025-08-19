@@ -12,4 +12,3 @@ type AppError =
     | ElmishLandProjectMissing
     | InvalidSettings of string
     | MissingMainLayout
-    | ValidationError of string

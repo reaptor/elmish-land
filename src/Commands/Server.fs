@@ -10,6 +10,7 @@ open ElmishLand.Process
 open ElmishLand.Generate
 open ElmishLand.DotNetCli
 open ElmishLand.Settings
+open ElmishLand.FableErrorAnalyzer
 open Orsak
 
 let fableWatch absoluteProjectDir stopSpinner =
@@ -30,6 +31,7 @@ let fableWatch absoluteProjectDir stopSpinner =
         let isVerbose = System.Environment.CommandLine.Contains("--verbose")
         let mutable isViteReady = false
         let mutable localUrl = ""
+        let mutable collectedOutput = ""
 
         let command, args =
             match settings.ServerCommand with
@@ -48,8 +50,45 @@ let fableWatch absoluteProjectDir stopSpinner =
                 |]
 
         let outputHandler (output: string) =
+            // Collect all output for error analysis
+            collectedOutput <- collectedOutput + output + "\n"
+            
+            // Always show Fable compilation errors and warnings, even without --verbose
+            let isError = 
+                output.Contains("error FS") || 
+                output.Contains("warning FS") || 
+                output.Contains("error FABLE") ||
+                output.Contains("warning FABLE") ||
+                output.Contains("Build FAILED") ||
+                output.Contains("Build failed") ||
+                output.Contains("Compilation failed") ||
+                output.Contains("error:") ||
+                output.Contains("Error:") ||
+                (output.Contains("error") && (output.Contains(".fs(") || output.Contains(".fsx("))) ||
+                (output.Contains("Error") && (output.Contains(".fs(") || output.Contains(".fsx("))) ||
+                output.Contains("MSBUILD : error") ||
+                output.Contains("CSC : error") ||
+                (output.Contains("[ERROR]") || output.Contains("[WARN]"))
+
+            if isError then
+                // Check if this line can be translated to user-friendly format
+                let isTranslatable = isTranslatableAppFsError output
+                
+                if isTranslatable then
+                    // For translatable App.fs errors, process immediately and show user-friendly message instead
+                    if hasCompilationErrors output then
+                        let pageLayoutErrors = analyzeAppFsErrors absoluteProjectDir settings output
+                        for pageLayoutError in pageLayoutErrors do
+                            match pageLayoutError with
+                            | PageError (_, message) -> System.Console.Error.WriteLine($"  → %s{message}")
+                            | LayoutError (_, message) -> System.Console.Error.WriteLine($"  → %s{message}")
+                    
+                    // Don't show the original cryptic error
+                else
+                    // For non-translatable errors, show the original error
+                    System.Console.Error.WriteLine(output)
             // Check if this is the VITE ready message
-            if output.Contains("VITE") && output.Contains("ready in") then
+            elif output.Contains("VITE") && output.Contains("ready in") then
                 stopSpinner ()
                 isViteReady <- true
             // Capture the Local URL and display the final message

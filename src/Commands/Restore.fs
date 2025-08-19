@@ -8,7 +8,6 @@ open ElmishLand.DotNetCli
 open ElmishLand.FsProj
 open ElmishLand.Generate
 open ElmishLand.Base
-open ElmishLand.Validation
 
 let successMessage () =
     let header = getCommandHeader "restored your project!"
@@ -49,15 +48,6 @@ let restore absoluteProjectDir =
 
                 do! generate subAbsoluteProjectDir dotnetSdkVersion
                 do! validate subAbsoluteProjectDir
-                
-                // Validate page and layout function signatures
-                let! pageErrors = validatePageFiles subAbsoluteProjectDir
-                let! layoutErrors = validateLayoutFiles subAbsoluteProjectDir
-                let allErrors = List.append pageErrors layoutErrors
-                
-                if not (List.isEmpty allErrors) then
-                    let errorMessage = formatValidationErrors allErrors
-                    return! Error (AppError.ValidationError errorMessage)
 
             stopSpinner ()
             log.Info(successMessage ())
