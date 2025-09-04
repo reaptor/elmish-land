@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.0] - 2025-08-12
+## [1.1.0 beta 1] - 2025-08-12
 
 ### Added
 - Automatic project file management - pages and layouts are now automatically added to the project file ([#29](https://github.com/reaptor/elmish-land/issues/29))
@@ -25,3 +25,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Support for dashes (-) in folder and application names ([#20](https://github.com/reaptor/elmish-land/issues/20))
+
+## [1.0.3] - 2024-11-15
+
+### Fixed
+- Fixed add page command throwing exception
+
+## [1.0.0] - 2024-11-14
+
+### Added
+- Full stable release of Elmish Land framework
+- Support for .NET 9
+- Support for subscriptions in Shared module  
+- Support for cascading query parameters in route.json files
+- NotFound page support
+- View module support in config
+- Route.isEqualWithoutPathAndQuery method for route comparison
+- Ability to set view type to scaffold when creating new pages
+- Layout props and ability to send messages from layouts to pages
+- Support for typed path parameters and query parameters with custom parsers and formatters
+
+### Changed
+- Improved layout system based on naming conventions
+- Layout init now only called when layout changes
+
+### Fixed
+- Query parameters handling ([#19](https://github.com/reaptor/elmish-land/issues/19))
+- Route.format when using reserved names for query params and multiple query params
+- Layout models now support structural comparison
+- Page init no longer called twice
+- Pages now correctly receive layout messages
+- App.fs compilation when using page messages from layout
+- App.fs no longer always initializes HomePage

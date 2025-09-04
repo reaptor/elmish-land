@@ -65,18 +65,35 @@ let fableWatch absoluteProjectDir stopSpinner =
                     System.Console.WriteLine(getCommandHeader $"development server is running at %s{localUrl}.")
                     System.Console.WriteLine "Ctrl-C to stop."
             elif not isVerbose then
-                // In non-verbose mode, display errors and warnings with colors
-                let errors, warnings = FableOutput.processOutput output "" false
+                // Check for Vite HMR update messages and rewrite them
+                if output.Contains("[vite]") && output.Contains("hmr update") then
+                    // Extract timestamp (supports various formats)
+                    // Matches patterns like: "9:07:02 PM", "21:07:02", "9:07 PM", "21:07", "21:07:02.123"
+                    let timestampPattern = @"^\s*(\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:\s*[AP]M)?)"
+                    let timestampMatch = System.Text.RegularExpressions.Regex.Match(output, timestampPattern)
+                    
+                    // Extract the file path after "hmr update"
+                    let hmrIndex = output.IndexOf("hmr update")
+                    if timestampMatch.Success && hmrIndex >= 0 then
+                        let timestamp = timestampMatch.Groups.[1].Value.Trim()
+                        let filePath = output.Substring(hmrIndex + "hmr update".Length).Trim()
+                        Console.WriteLine($"%s{timestamp} Updated %s{filePath}")
+                    else
+                        // Fallback: just show the cleaned message if parsing fails
+                        Console.WriteLine(output)
+                else
+                    // In non-verbose mode, display errors and warnings with colors
+                    let errors, warnings = FableOutput.processOutput output "" false
 
-                for error in errors do
-                    Console.ForegroundColor <- ConsoleColor.Red
-                    Console.WriteLine(error)
-                    Console.ResetColor()
+                    for error in errors do
+                        Console.ForegroundColor <- ConsoleColor.Red
+                        Console.WriteLine(error)
+                        Console.ResetColor()
 
-                for warning in warnings do
-                    Console.ForegroundColor <- ConsoleColor.Yellow
-                    Console.WriteLine(warning)
-                    Console.ResetColor()
+                    for warning in warnings do
+                        Console.ForegroundColor <- ConsoleColor.Yellow
+                        Console.WriteLine(warning)
+                        Console.ResetColor()
 
         return!
             runProcess

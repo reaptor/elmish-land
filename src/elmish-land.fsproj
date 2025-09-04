@@ -9,7 +9,7 @@
         <RootNamespace>ElmishLand</RootNamespace>
         <PackAsTool>true</PackAsTool>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <PackageId>ElmishLand</PackageId>
+        <PackageId>elmish-land</PackageId>
         <AssemblyName>elmish-land</AssemblyName>
         <ToolCommandName>elmish-land</ToolCommandName>
         <PackageOutputPath>./nupkg</PackageOutputPath>
