@@ -31,3 +31,5 @@
 - ALWAYS use concise commit messages
 - NEVER add "Generated with [Claude Code]" to commit messages
 - ALWAYS follow existing format when editing CHANGELOG.md
+- ALWAYS run `dotnet fantomas .` from the root project folder before commiting
+- ALWAYS stage all files before commiting
