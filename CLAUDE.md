@@ -27,3 +27,7 @@
 - Use "cd quicktest; ./el.sh build; cd .." to test the build command (must be run from the `<project root folder>` eg /Users/klofberg/Projects)
 - Use "cd quicktest; ./el.sh restore; cd .." to test the restore command (must be run from the `<project root folder>` eg /Users/klofberg/Projects)
 - Use "cd quicktest; ./el.sh server; cd .." to test the server command (must be run from the `<project root folder>` eg /Users/klofberg/Projects). The server command must be stopped with ctrl-c
+- never add info about claude code in commit messages
+- ALWAYS use concise commit messages
+- NEVER add "Generated with [Claude Code]" to commit messages
+- ALWAYS follow existing format when editing CHANGELOG.md

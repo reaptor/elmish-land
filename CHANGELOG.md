@@ -5,9 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0 beta 2] - 2025-09-04
 
-## [1.1.0 beta 1] - 2025-08-12
+### Fixed
+- Fixed validation to only check layout references for pages that are included in the project file, preventing spurious errors for pages that exist on disk but aren't part of the project
+
+## [1.1.0 beta 1] - 2025-09-04
 
 ### Added
 - Automatic project file management - pages and layouts are now automatically added to the project file ([#29](https://github.com/reaptor/elmish-land/issues/29))

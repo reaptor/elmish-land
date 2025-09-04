@@ -22,7 +22,10 @@
       "Bash(timeout:*)",
       "Bash(true)",
       "Bash(gtimeout:*)",
-      "Read(/Users/klofberg/Projects/**)"
+      "Read(/Users/klofberg/Projects/**)",
+      "Bash(git tag:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
