@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic project file management - pages and layouts are now automatically added to the project file ([#29](https://github.com/reaptor/elmish-land/issues/29))
 - Automatic layout reference updates when adding new layouts to existing pages ([#30](https://github.com/reaptor/elmish-land/issues/30))
 - Solution file generation during project initialization to improve IDE experience in Visual Studio and Rider ([#22](https://github.com/reaptor/elmish-land/issues/22))
-- Loading indicator when running commands (init, build, restore, server)
+- Loading indicator when running commands (init, build, restore, server). Use --verbose to show the ful build and server output.
 
 ### Fixed
 - Improved error messaging when pages use incorrect layout references, with validation checks in `build`, `restore`, and `server` commands ([#28](https://github.com/reaptor/elmish-land/issues/28))
