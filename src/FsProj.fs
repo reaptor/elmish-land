@@ -154,7 +154,7 @@ let validate absoluteProjectDir =
 
         // Simple check for pages that might be using wrong layout (basic pattern matching)
         let layoutReferenceErrors =
-            actualPageFiles
+            includedPageFiles
             |> Set.toArray
             |> Array.choose (fun pageFile ->
                 let pageFilePath =
