@@ -357,3 +357,46 @@ let ``nested layout with page uses correct layout message reference`` () =
             if Directory.Exists(folder) then
                 Directory.Delete(folder, true)
     }
+
+[<Fact>]
+let ``Fable build errors should be deduplicated and displayed correctly`` () =
+    task {
+        // Mock Fable build output with duplicate errors
+        let mockOutput =
+            """
+17:22:36.382 Process.fs(73): runProcessInternal: Running "dotnet" [|"fable";
+    "/Users/klofberg/Projects/elmish-land/quicktest/TestProject/.elmish-land/App/ElmishLand.TestProject.App.fsproj";
+    "--noCache"; "--run"; "vite"; "build"; "--config"; "vite.config.js"|] in working dir "/Users/klofberg/Projects/elmish-land/quicktest/TestProject"
+Fable 4.25.0: F# to JavaScript compiler
+Minimum @fable-org/fable-library-js version (when installed from npm): 1.11.0
+
+Thanks to the contributor! @davedawkins
+Stand with Ukraine! https://standwithukraine.com.ua/
+Parsing .elmish-land/App/ElmishLand.TestProject.App.fsproj...
+Started Fable compilation...
+
+Fable compilation finished in 6494ms
+./src/Pages/Page.fs(23,5): (23,22) error FSHARP: This value is not a function and cannot be applied. (code 3)
+Compilation failed
+  17:22:47.945 (0): : Build failed
+"""
+
+        // This represents the same error coming through stderr (note: line 23 to match requirement)
+        let mockErrorOutput =
+            """./src/Pages/Page.fs(23,5): (23,22) error FSHARP: This value is not a function and cannot be applied. (code 3)"""
+
+        // Process the output using FableOutput module - non-verbose mode (false)
+        let errors, warnings =
+            ElmishLand.FableOutput.processOutput mockOutput mockErrorOutput false
+
+        // In non-verbose mode, ONLY the actual error should be shown, NOT "Build failed"
+        Assert.Equal(1, errors |> List.length)
+
+        Assert.Contains(
+            "./src/Pages/Page.fs(23,5): (23,22) error FSHARP: This value is not a function and cannot be applied. (code 3)",
+            errors
+        )
+
+        // Verify warnings list is empty for this output
+        Assert.Equal(0, warnings |> List.length)
+    }

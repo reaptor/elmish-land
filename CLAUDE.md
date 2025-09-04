@@ -23,6 +23,7 @@
 - Always use quicktest/el.sh if you need to test your changes
 - NEVER manually delete the quicktest folder or its contents - this is handled by the scripts
 - NEVER run elmish-land commands directly with `dotnet ../src/bin/Debug/net8.0/elmish-land.dll` - quicktest/el.sh
-- Use "quicktest/el.sh init" to test the init command
-- Use "quicktest/el.sh build" to test the build command
-- Use "quicktest/el.sh restore" to test the restore command
+- Use "cd quicktest; ./el.sh init; cd .." to test the init command (must be run from the `<project root folder>` eg /Users/klofberg/Projects)
+- Use "cd quicktest; ./el.sh build; cd .." to test the build command (must be run from the `<project root folder>` eg /Users/klofberg/Projects)
+- Use "cd quicktest; ./el.sh restore; cd .." to test the restore command (must be run from the `<project root folder>` eg /Users/klofberg/Projects)
+- Use "cd quicktest; ./el.sh server; cd .." to test the server command (must be run from the `<project root folder>` eg /Users/klofberg/Projects). The server command must be stopped with ctrl-c

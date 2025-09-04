@@ -1,5 +1,6 @@
 module ElmishLand.Server
 
+open System
 open System.IO
 open System.Threading
 open ElmishLand.Base
@@ -10,6 +11,7 @@ open ElmishLand.Process
 open ElmishLand.Generate
 open ElmishLand.DotNetCli
 open ElmishLand.Settings
+open ElmishLand.FableOutput
 open Orsak
 
 let fableWatch absoluteProjectDir stopSpinner =
@@ -62,8 +64,19 @@ let fableWatch absoluteProjectDir stopSpinner =
 
                     System.Console.WriteLine(getCommandHeader $"development server is running at %s{localUrl}.")
                     System.Console.WriteLine "Ctrl-C to stop."
-            elif isVerbose then
-                () // In verbose mode, output is already printed by runProcess
+            elif not isVerbose then
+                // In non-verbose mode, display errors and warnings with colors
+                let errors, warnings = FableOutput.processOutput output "" false
+
+                for error in errors do
+                    Console.ForegroundColor <- ConsoleColor.Red
+                    Console.WriteLine(error)
+                    Console.ResetColor()
+
+                for warning in warnings do
+                    Console.ForegroundColor <- ConsoleColor.Yellow
+                    Console.WriteLine(warning)
+                    Console.ResetColor()
 
         return!
             runProcess
@@ -100,7 +113,7 @@ let server absoluteProjectDir =
         | Error(AppError.ProcessError e) when e.Contains "dotnet tool restore" ->
             do!
                 runProcess isVerbose workingDirectory "dotnet" [| "tool"; "restore" |] CancellationToken.None ignore
-                |> Effect.map ignore<string>
+                |> Effect.map ignore
 
             do! fableWatch absoluteProjectDir stopSpinner |> Effect.map ignore
         | Error e ->

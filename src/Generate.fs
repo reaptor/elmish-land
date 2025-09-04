@@ -32,7 +32,7 @@ let ensureViteInstalled () =
     eff {
         do!
             runProcess false workingDirectory "npm" [| "run"; "vite"; "--version" |] CancellationToken.None ignore
-            |> Effect.map ignore<string>
+            |> Effect.map ignore
     }
     |> Effect.changeError (fun _ -> AppError.ViteNotInstalled)
 

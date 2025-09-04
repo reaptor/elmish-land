@@ -8,9 +8,11 @@ open Orsak
 
 let getDotnetSdkVersion () =
     eff {
-        let! version =
+        let! versionOutput =
             runProcess false workingDirectory "dotnet" [| "--version" |] CancellationToken.None ignore
             |> Effect.changeError (fun _ -> DotnetSdkNotFound)
+
+        let version = fst versionOutput // Get stdout from tuple
 
         return!
             match DotnetSdkVersion.fromString version with

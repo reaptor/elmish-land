@@ -96,9 +96,10 @@ let private runProcessInternal
                 p.WaitForExit()
 
                 if p.ExitCode = 0 then
-                    return! Ok(out.ToString())
+                    return! Ok(out.ToString(), err.ToString())
                 else
-                    return! errorResult ()
+                    // Return both stdout and stderr on error
+                    return! Error(ProcessError(out.ToString() + "\n" + err.ToString()))
         with ex ->
             return! ex.ToString() |> AppError.ProcessError |> Error
 

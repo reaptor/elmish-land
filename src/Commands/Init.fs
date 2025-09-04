@@ -19,8 +19,16 @@ open ElmishLand.Generate
 let getNodeVersion () =
     runProcess false workingDirectory "node" [| "-v" |] CancellationToken.None ignore
     |> Effect.changeError (fun _ -> AppError.NodeNotFound)
-    |> Effect.map (fun output ->
-        match Version.TryParse(output[1..]) with
+    |> Effect.map (fun (output, _) ->
+        let versionString = output.Trim()
+
+        let versionWithoutV =
+            if versionString.StartsWith("v") then
+                versionString.Substring(1)
+            else
+                versionString
+
+        match Version.TryParse(versionWithoutV) with
         | true, version when version >= minimumRequiredNode -> Ok version
         | _ -> Error NodeNotFound)
     |> Effect.joinResult
@@ -245,7 +253,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 [| "new"; "sln"; "-n"; ProjectName.asString projectName |]
                 CancellationToken.None
                 ignore
-            |> Effect.map ignore<string>
+            |> Effect.map ignore<string * string>
 
         // Add projects to solution in the specified order
         let projectsToAdd = [
@@ -265,7 +273,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     [| "sln"; solutionName; "add"; projectPath |]
                     CancellationToken.None
                     ignore
-                |> Effect.map ignore<string>
+                |> Effect.map ignore<string * string>
 
         let dotnetToolsJsonPath =
             workingDirectory |> FilePath.appendParts [ ".config"; "dotnet-tools.json" ]
@@ -300,7 +308,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 |]
                 CancellationToken.None
                 ignore
-            |> Effect.map ignore<string>
+            |> Effect.map ignore<string * string>
 
         do!
             runProcess
@@ -310,7 +318,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 [| "install" |]
                 CancellationToken.None
                 ignore
-            |> Effect.map ignore<string>
+            |> Effect.map ignore<string * string>
 
         stopSpinner ()
         log.Info(successMessage ())

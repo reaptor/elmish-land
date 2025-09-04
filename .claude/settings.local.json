@@ -21,7 +21,8 @@
       "Bash(grep:*)",
       "Bash(timeout:*)",
       "Bash(true)",
-      "Bash(gtimeout:*)"
+      "Bash(gtimeout:*)",
+      "Read(/Users/klofberg/Projects/**)"
     ],
     "deny": [],
     "ask": []
