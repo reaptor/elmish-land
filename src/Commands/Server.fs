@@ -70,10 +70,13 @@ let fableWatch absoluteProjectDir stopSpinner =
                     // Extract timestamp (supports various formats)
                     // Matches patterns like: "9:07:02 PM", "21:07:02", "9:07 PM", "21:07", "21:07:02.123"
                     let timestampPattern = @"^\s*(\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:\s*[AP]M)?)"
-                    let timestampMatch = System.Text.RegularExpressions.Regex.Match(output, timestampPattern)
-                    
+
+                    let timestampMatch =
+                        System.Text.RegularExpressions.Regex.Match(output, timestampPattern)
+
                     // Extract the file path after "hmr update"
                     let hmrIndex = output.IndexOf("hmr update")
+
                     if timestampMatch.Success && hmrIndex >= 0 then
                         let timestamp = timestampMatch.Groups.[1].Value.Trim()
                         let filePath = output.Substring(hmrIndex + "hmr update".Length).Trim()
