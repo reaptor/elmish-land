@@ -303,6 +303,17 @@ module FilePath =
         |> Option.ofObj
         |> Option.map (fun di -> di.FullName |> canonicalizePath |> FilePath)
 
+    let directoryExists (FilePath path) = Directory.Exists(path)
+
+    let readAllText (FilePath path) = File.ReadAllText(path)
+
+    let getFilesRecursive (FilePath path) searchPattern =
+        if Directory.Exists(path) then
+            Directory.GetFiles(path, searchPattern, SearchOption.AllDirectories)
+            |> Array.map fromString
+        else
+            [||]
+
 let workingDirectory = FilePath.fromString Environment.CurrentDirectory
 
 let relativeProjectDir commandLineArgs =

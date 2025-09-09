@@ -13,24 +13,23 @@ open Runner
 open Xunit
 open Orsak
 
-let projectDir = FilePath.fromString "/TestProject"
-let absoluteProjectDir = AbsoluteProjectDir projectDir
-let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir
-let pageFile = FilePath.appendParts [ "src"; "Pages"; "Test"; "Page.fs" ] projectDir
-
-let layoutFile =
-    FilePath.appendParts [ "src"; "Pages"; "Test"; "Layout.fs" ] projectDir
-
-let nullFileSystem =
-    { new IFileSystem with
-        member this.FilePathExists(path, _isDirectory) = true
-        member this.GetFilesRecursive(path, searchPattern) = [||]
-        member this.GetParentDirectory(path) = None
-        member this.ReadAllText(path) = ""
-    }
+let createTestProjectStructure () =
+    let tempDir = Path.Combine(Path.GetTempPath(), "test_" + Guid.NewGuid().ToString())
+    let testProjectDir = Path.Combine(tempDir, "TestProject")
+    Directory.CreateDirectory(Path.Combine(testProjectDir, "src", "Pages", "Test")) |> ignore
+    
+    // Create Layout.fs file for tests that need it
+    File.WriteAllText(Path.Combine(testProjectDir, "src", "Pages", "Test", "Layout.fs"), "module Layout")
+    
+    tempDir, testProjectDir
 
 [<Fact>]
 let ``Ensure multiple query params are included in UrlUsage (Route.format)`` () =
+    let tempDir, testProjectDir = createTestProjectStructure()
+    let projectDir = FilePath.fromString testProjectDir
+    let absoluteProjectDir = AbsoluteProjectDir projectDir
+    let pageFile = FilePath.appendParts [ "src"; "Pages"; "Test"; "Page.fs" ] projectDir
+
     let queryParam1 = {
         Name = "first"
         Module = "System"
@@ -69,15 +68,24 @@ let ``Ensure multiple query params are included in UrlUsage (Route.format)`` () 
     }
 
     task {
-        let! result, logs =
-            fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
-            |> runEff nullFileSystem
+        try
+            let! result, logs =
+                fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
+                |> runEff
 
-        result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
+            result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
+        finally
+            if Directory.Exists(tempDir) then
+                Directory.Delete(tempDir, true)
     }
 
 [<Fact>]
 let ``Ensure all query params with reserved names are generated correctly`` () =
+    let tempDir, testProjectDir = createTestProjectStructure()
+    let projectDir = FilePath.fromString testProjectDir
+    let absoluteProjectDir = AbsoluteProjectDir projectDir
+    let pageFile = FilePath.appendParts [ "src"; "Pages"; "Test"; "Page.fs" ] projectDir
+
     let queryParamWReservedName = {
         Name = "to"
         Module = "System"
@@ -106,15 +114,24 @@ let ``Ensure all query params with reserved names are generated correctly`` () =
     }
 
     task {
-        let! result, logs =
-            fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
-            |> runEff nullFileSystem
+        try
+            let! result, logs =
+                fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
+                |> runEff
 
-        result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
+            result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
+        finally
+            if Directory.Exists(tempDir) then
+                Directory.Delete(tempDir, true)
     }
 
 [<Fact>]
 let ``Ensure query params are camel cased`` () =
+    let tempDir, testProjectDir = createTestProjectStructure()
+    let projectDir = FilePath.fromString testProjectDir
+    let absoluteProjectDir = AbsoluteProjectDir projectDir
+    let pageFile = FilePath.appendParts [ "src"; "Pages"; "Test"; "Page.fs" ] projectDir
+
     let queryParamWReservedName = {
         Name = "QueryParam"
         Module = "System"
@@ -143,15 +160,24 @@ let ``Ensure query params are camel cased`` () =
     }
 
     task {
-        let! result, logs =
-            fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
-            |> runEff nullFileSystem
+        try
+            let! result, logs =
+                fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
+                |> runEff
 
-        result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
+            result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
+        finally
+            if Directory.Exists(tempDir) then
+                Directory.Delete(tempDir, true)
     }
 
 [<Fact>]
 let ``Ensure query param parse and format are generated correctly`` () =
+    let tempDir, testProjectDir = createTestProjectStructure()
+    let projectDir = FilePath.fromString testProjectDir
+    let absoluteProjectDir = AbsoluteProjectDir projectDir
+    let pageFile = FilePath.appendParts [ "src"; "Pages"; "Test"; "Page.fs" ] projectDir
+
     let queryParam1 = {
         Name = "fromDate"
         Module = "Common"
@@ -181,15 +207,24 @@ let ``Ensure query param parse and format are generated correctly`` () =
     }
 
     task {
-        let! result, logs =
-            fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
-            |> runEff nullFileSystem
+        try
+            let! result, logs =
+                fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
+                |> runEff
 
-        result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
+            result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
+        finally
+            if Directory.Exists(tempDir) then
+                Directory.Delete(tempDir, true)
     }
 
 [<Fact>]
 let ``Ensure required query params is generated correctly`` () =
+    let tempDir, testProjectDir = createTestProjectStructure()
+    let projectDir = FilePath.fromString testProjectDir
+    let absoluteProjectDir = AbsoluteProjectDir projectDir
+    let pageFile = FilePath.appendParts [ "src"; "Pages"; "Test"; "Page.fs" ] projectDir
+
     let queryParam1 = {
         Name = "order"
         Module = "Common"
@@ -220,73 +255,70 @@ let ``Ensure required query params is generated correctly`` () =
     }
 
     task {
-        let! result, logs =
-            fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
-            |> runEff nullFileSystem
+        try
+            let! result, logs =
+                fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
+                |> runEff
 
-        result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
+            result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
+        finally
+            if Directory.Exists(tempDir) then
+                Directory.Delete(tempDir, true)
     }
 
 [<Fact>]
 let ``Ensure module names is wrapped in double ticks if project dir contains special characters`` () =
-    let projectDir = FilePath.fromString "/test-project"
+    let tempDir = Path.Combine(Path.GetTempPath(), "test_" + Guid.NewGuid().ToString())
+    let testProjectDir = Path.Combine(tempDir, "test-project")
+    let projectDir = FilePath.fromString testProjectDir
     let absoluteProjectDir = AbsoluteProjectDir projectDir
-
+    
     task {
-        let! result, logs =
-            getTemplateData (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir
-            |> runEff
-                { new IFileSystem with
-                    member this.FilePathExists(path, isDirectory) = true
+        try
+            // Create test structure with special characters in project name
+            Directory.CreateDirectory(Path.Combine(testProjectDir, "src", "Pages")) |> ignore
+            File.WriteAllText(Path.Combine(testProjectDir, "src", "Pages", "Page.fs"), "module Page")
+            File.WriteAllText(Path.Combine(testProjectDir, "src", "Pages", "Layout.fs"), "module Layout")
+            File.WriteAllText(Path.Combine(testProjectDir, "elmish-land.json"), "{}")
+            
+            let! result, logs =
+                getTemplateData (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir
+                |> runEff
 
-                    member this.ReadAllText(FilePath path) =
-                        match path with
-                        | "route" -> "{}"
-                        | "/test-project/elmish-land.json" -> "{}"
-                        | other -> failwith $"Unexpected path. Got '%s{other}'"
-
-                    member this.GetFilesRecursive(_path, searchPattern) = [|
-                        match searchPattern with
-                        | "Page.fs" -> FilePath.fromString "page"
-                        | "Layout.fs" -> FilePath.fromString "layout"
-                        | "route.json" -> FilePath.fromString "route"
-                        | other -> failwith $"Unexpected path. Got %s{other}"
-                    |]
-
-                    member this.GetParentDirectory(path) = None
-                }
-
-        result
-        |> Expects.ok logs
-        |> Expects.equalsWLogs logs {
-            ViewModule = "Feliz"
-            ViewType = "ReactElement"
-            RootModule = "``test-project``"
-            ElmishLandAppProjectFullName = "ElmishLand.test-project.App"
-            Routes = [|
-                {
-                    Name = "Home"
-                    RouteName = "HomeRoute"
-                    LayoutName = "Main"
-                    LayoutModuleName = "``test-project``.Pages.Layout"
-                    MsgName = "HomeMsg"
-                    ModuleName = "``test-project``.Pages.Page"
-                    RecordDefinition = "unit"
-                    RecordConstructor = "()"
-                    RecordPattern = "()"
-                    UrlUsage = """ "" """.Trim()
-                    UrlPattern = "[ Query q ]"
-                    IsMainLayout = true
-                    UrlPatternWhen = ""
-                }
-            |]
-            Layouts = [|
-                {
-                    Name = "Main"
-                    MsgName = "MainMsg"
-                    ModuleName = "``test-project``.Pages.Layout"
-                }
-            |]
-            RouteParamModules = []
-        }
+            result
+            |> Expects.ok logs
+            |> Expects.equalsWLogs logs {
+                ViewModule = "Feliz"
+                ViewType = "ReactElement"
+                RootModule = "``test-project``"
+                ElmishLandAppProjectFullName = "ElmishLand.test-project.App"
+                Routes = [|
+                    {
+                        Name = "Home"
+                        RouteName = "HomeRoute"
+                        LayoutName = "Main"
+                        LayoutModuleName = "``test-project``.Pages.Layout"
+                        MsgName = "HomeMsg"
+                        ModuleName = "``test-project``.Pages.Page"
+                        RecordDefinition = "unit"
+                        RecordConstructor = "()"
+                        RecordPattern = "()"
+                        UrlUsage = """ "" """.Trim()
+                        UrlPattern = "[ Query q ]"
+                        IsMainLayout = true
+                        UrlPatternWhen = ""
+                    }
+                |]
+                Layouts = [|
+                    {
+                        Name = "Main"
+                        MsgName = "MainMsg"
+                        ModuleName = "``test-project``.Pages.Layout"
+                    }
+                |]
+                RouteParamModules = []
+            }
+        finally
+            if Directory.Exists(tempDir) then
+                Directory.Delete(tempDir, true)
     }

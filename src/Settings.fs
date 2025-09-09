@@ -54,8 +54,7 @@ let getSettings absoluteProjectDir =
         let settingsPath =
             FilePath.appendParts [ "elmish-land.json" ] (AbsoluteProjectDir.asFilePath absoluteProjectDir)
 
-        let! fs = FileSystem.get ()
-        let settingsPathExists = fs.FilePathExists(settingsPath, false)
+        let settingsPathExists = FilePath.exists settingsPath
 
         do!
             if settingsPathExists then
@@ -108,9 +107,9 @@ let getSettings absoluteProjectDir =
         let routeJson = "route.json"
 
         let! pageSettings =
-            fs.GetFilesRecursive(AbsoluteProjectDir.asFilePath absoluteProjectDir, routeJson)
+            FilePath.getFilesRecursive (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeJson
             |> Array.map (fun file ->
-                fs.ReadAllText(file)
+                FilePath.readAllText file
                 |> Decode.fromString paramsDecoder
                 |> Result.mapError InvalidSettings
                 |> Result.map (fun x ->
@@ -168,7 +167,7 @@ let getSettings absoluteProjectDir =
             })
 
         return!
-            fs.ReadAllText(settingsPath)
+            FilePath.readAllText settingsPath
             |> Decode.fromString decoder
             |> Result.mapError InvalidSettings
     }

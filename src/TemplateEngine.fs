@@ -151,18 +151,16 @@ type TemplateData = {
 
 let getSortedPageFiles absoluteProjectDir =
     eff {
-        let! fs = FileSystem.get ()
-
         let pageFilesDir =
             absoluteProjectDir
             |> AbsoluteProjectDir.asFilePath
             |> FilePath.appendParts [ "src"; "Pages" ]
 
         return!
-            if not (fs.FilePathExists(pageFilesDir, true)) then
+            if not (FilePath.directoryExists pageFilesDir) then
                 Error AppError.PagesDirectoryMissing
             else
-                fs.GetFilesRecursive(pageFilesDir, "Page.fs")
+                FilePath.getFilesRecursive pageFilesDir "Page.fs"
                 |> Array.sortByDescending (fun x ->
                     if x |> FilePath.endsWithParts [ "src"; "Pages"; "Page.fs" ] then
                         0
@@ -173,18 +171,16 @@ let getSortedPageFiles absoluteProjectDir =
 
 let getSortedLayoutFiles absoluteProjectDir =
     eff {
-        let! fs = FileSystem.get ()
-
         let layoutFilesDir =
             absoluteProjectDir
             |> AbsoluteProjectDir.asFilePath
             |> FilePath.appendParts [ "src"; "Pages" ]
 
         return!
-            if not (fs.FilePathExists(layoutFilesDir, true)) then
+            if not (FilePath.directoryExists layoutFilesDir) then
                 Ok Array.empty
             else
-                fs.GetFilesRecursive(layoutFilesDir, "Layout.fs")
+                FilePath.getFilesRecursive layoutFilesDir "Layout.fs"
                 |> Array.sortByDescending (fun x ->
                     if x |> FilePath.endsWithParts [ "src"; "Pages"; "Page.fs" ] then
                         0
@@ -301,8 +297,6 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                     |> String.concat "."
                     |> fun x -> $".%s{x}"
 
-            let! fs = FileSystem.get ()
-
             let! layout =
                 let rec findLayoutRecurse (dir: FilePath) =
                     eff {
@@ -311,7 +305,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                         else
                             let layoutFile = FilePath.appendParts [ "Layout.fs" ] dir
 
-                            let layoutExists = fs.FilePathExists(layoutFile, false)
+                            let layoutExists = FilePath.exists layoutFile
 
                             if layoutExists then
                                 return! Ok <| fileToLayout projectName absoluteProjectDir layoutFile

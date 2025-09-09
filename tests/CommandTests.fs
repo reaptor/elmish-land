@@ -69,39 +69,6 @@ let createMinimalProject projectPath =
         "<Project />"
     )
 
-// Simple file system that just delegates to real file system
-// This is needed because the addPage function uses direct file system calls
-let realFileSystem =
-    { new IFileSystem with
-        member _.FilePathExists(filePath, isDirectory) =
-            let path = FilePath.asString filePath
-
-            if isDirectory then
-                Directory.Exists(path)
-            else
-                File.Exists(path)
-
-        member _.GetParentDirectory(filePath) =
-            let path = FilePath.asString filePath
-            let parent = Path.GetDirectoryName(path)
-
-            if String.IsNullOrEmpty(parent) then
-                None
-            else
-                Some(FilePath.fromString parent)
-
-        member _.GetFilesRecursive(filePath, searchPattern) =
-            let path = FilePath.asString filePath
-
-            if Directory.Exists(path) then
-                Directory.GetFiles(path, searchPattern, SearchOption.AllDirectories)
-                |> Array.map FilePath.fromString
-            else
-                [||]
-
-        member _.ReadAllText(filePath) =
-            File.ReadAllText(FilePath.asString filePath)
-    }
 
 [<Fact>]
 let ``addPage creates page with correct indentation in preview and fsproj`` () =
@@ -115,7 +82,7 @@ let ``addPage creates page with correct indentation in preview and fsproj`` () =
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
 
             // Run addPage with auto-accept = true to avoid user interaction
-            let! result, logs = runEff realFileSystem (addPage absoluteProjectDir "/Page1" true)
+            let! result, logs = runEff (addPage absoluteProjectDir "/Page1" true)
 
             // Verify the operation succeeded
             let _successResult = Expects.ok logs result
@@ -215,7 +182,7 @@ let ``addLayout after addPage updates project file order and page layout referen
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
 
             // Step 1: Add a page first
-            let! addPageResult, addPageLogs = runEff realFileSystem (addPage absoluteProjectDir "/AnotherPage" true)
+            let! addPageResult, addPageLogs = runEff (addPage absoluteProjectDir "/AnotherPage" true)
             let _addPageSuccess = Expects.ok addPageLogs addPageResult
 
             // Verify page was added to project file
@@ -234,7 +201,7 @@ let ``addLayout after addPage updates project file order and page layout referen
 
             // Step 2: Add a layout for the same path
             let! addLayoutResult, addLayoutLogs =
-                runEff realFileSystem (addLayout absoluteProjectDir "/AnotherPage" true)
+                runEff (addLayout absoluteProjectDir "/AnotherPage" true)
 
             let _addLayoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
@@ -288,7 +255,7 @@ let ``nested layout with page uses correct layout message reference`` () =
 
             // Step 1: Add nested layout first
             let! addLayoutResult, addLayoutLogs =
-                runEff realFileSystem (addLayout absoluteProjectDir "/PageWithNestedLayout" true)
+                runEff (addLayout absoluteProjectDir "/PageWithNestedLayout" true)
 
             let _addLayoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
@@ -310,7 +277,7 @@ let ``nested layout with page uses correct layout message reference`` () =
 
             // Step 2: Add page for the nested layout path
             let! addPageResult, addPageLogs =
-                runEff realFileSystem (addPage absoluteProjectDir "/PageWithNestedLayout" true)
+                runEff (addPage absoluteProjectDir "/PageWithNestedLayout" true)
 
             let _addPageSuccess = Expects.ok addPageLogs addPageResult
 
@@ -418,7 +385,7 @@ let update msg model =
             // Run validation - should succeed because the orphan page is not in the project file
             // Note: This test verifies that pages not in the project file are completely ignored,
             // not reported as missing, and not validated for layout references
-            let! result, logs = runEff realFileSystem (ElmishLand.FsProj.validate absoluteProjectDir)
+            let! result, logs = runEff (ElmishLand.FsProj.validate absoluteProjectDir)
 
             // The validation should succeed (no errors about the orphan page)
             let _successResult = Expects.ok logs result
@@ -491,10 +458,10 @@ let ``Wrong layout reference in page should generate helpful error message`` () 
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
 
             // Step 1: Add an About page with its own layout
-            let! addLayoutResult, addLayoutLogs = runEff realFileSystem (addLayout absoluteProjectDir "/About" true)
+            let! addLayoutResult, addLayoutLogs = runEff (addLayout absoluteProjectDir "/About" true)
             let _layoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
-            let! addPageResult, addPageLogs = runEff realFileSystem (addPage absoluteProjectDir "/About" true)
+            let! addPageResult, addPageLogs = runEff (addPage absoluteProjectDir "/About" true)
             let _pageSuccess = Expects.ok addPageLogs addPageResult
 
             // Step 2: Manually edit the About page to use the wrong layout (root Layout instead of About.Layout)
@@ -559,10 +526,10 @@ let ``Correct layout reference in page should not generate any errors`` () =
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
 
             // Step 1: Add an About page with its own layout
-            let! addLayoutResult, addLayoutLogs = runEff realFileSystem (addLayout absoluteProjectDir "/About" true)
+            let! addLayoutResult, addLayoutLogs = runEff (addLayout absoluteProjectDir "/About" true)
             let _layoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
-            let! addPageResult, addPageLogs = runEff realFileSystem (addPage absoluteProjectDir "/About" true)
+            let! addPageResult, addPageLogs = runEff (addPage absoluteProjectDir "/About" true)
             let _pageSuccess = Expects.ok addPageLogs addPageResult
 
             // Step 2: Verify the About page is using the correct layout (About.Layout.Msg)
@@ -618,15 +585,15 @@ let ``Nested page with wrong layout reference should generate correct error mess
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
 
             // Step 1: Add About layout
-            let! addLayoutResult, addLayoutLogs = runEff realFileSystem (addLayout absoluteProjectDir "/About" true)
+            let! addLayoutResult, addLayoutLogs = runEff (addLayout absoluteProjectDir "/About" true)
             let _layoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
             // Step 2: Add About page
-            let! aboutResult, aboutLogs = runEff realFileSystem (addPage absoluteProjectDir "/About" true)
+            let! aboutResult, aboutLogs = runEff (addPage absoluteProjectDir "/About" true)
             let _aboutSuccess = Expects.ok aboutLogs aboutResult
 
             // Step 3: Add nested About/Me page
-            let! nestedResult, nestedLogs = runEff realFileSystem (addPage absoluteProjectDir "/About/Me" true)
+            let! nestedResult, nestedLogs = runEff (addPage absoluteProjectDir "/About/Me" true)
             let _nestedSuccess = Expects.ok nestedLogs nestedResult
 
             // Step 4: Manually change the About/Me page to use wrong layout (root Layout instead of About.Layout)

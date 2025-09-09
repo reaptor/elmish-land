@@ -11,7 +11,8 @@
       "Bash(git log:*)",
       "Bash(git add:*)",
       "Bash(cd:*)",
-      "Bash(*el.sh*)"
+      "Bash(:*el.sh:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
