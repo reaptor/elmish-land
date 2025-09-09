@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "defaultMode": "plan",
+    "allow": [
+      "WebFetch(domain:keepachangelog.com)",
+      "Bash(dotnet:*)",
+      "Bash(./el.sh:*)",
+      "Bash(grep:*)",
+      "Bash(timeout:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(cd:*)",
+      "Bash(*el.sh*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

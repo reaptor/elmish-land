@@ -74,8 +74,8 @@ let build absoluteProjectDir =
             stopSpinner ()
             // Process and display any warnings from successful build
             if not isVerbose then
-                let _errors, warnings = FableOutput.processOutput stdout stderr isVerbose
-                FableOutput.displayWarnings warnings
+                let result = FableOutput.processOutput stdout stderr isVerbose
+                FableOutput.displayWarnings result.Warnings
 
             log.Info successMessage
             return! Ok()
@@ -96,8 +96,8 @@ let build absoluteProjectDir =
                         stopSpinner ()
 
                         if not isVerbose then
-                            let _errors, warnings = FableOutput.processOutput stdout2 stderr2 isVerbose
-                            FableOutput.displayWarnings warnings
+                            let result = FableOutput.processOutput stdout2 stderr2 isVerbose
+                            FableOutput.displayWarnings result.Warnings
 
                         log.Info successMessage)
                     |> Effect.onError (fun e2 ->
@@ -112,8 +112,13 @@ let build absoluteProjectDir =
                                 let stderr2 = ""
 
                                 if not isVerbose then
-                                    let errors, warnings = FableOutput.processOutput stdout2 stderr2 isVerbose
-                                    FableOutput.displayOutput errors warnings isVerbose
+                                    let result = FableOutput.processOutput stdout2 stderr2 isVerbose
+
+                                    FableOutput.displayOutput result.Errors result.Warnings isVerbose
+
+                                    // Prompt for auto-fix if there are layout mismatches
+                                    if result.LayoutMismatches.Length > 0 then
+                                        FableOutput.promptForAutoFix result.LayoutMismatches |> ignore
                             | _ -> ()
 
                             return! Error e2
@@ -122,10 +127,23 @@ let build absoluteProjectDir =
                 stopSpinner ()
                 // Process and display errors/warnings for failed build
                 if not isVerbose then
-                    let errors, warnings = FableOutput.processOutput stdout stderr isVerbose
-                    FableOutput.displayOutput errors warnings isVerbose
-                    // Return empty error since we've already displayed the errors
-                    return! Error(AppError.ProcessError "")
+                    let result = FableOutput.processOutput stdout stderr isVerbose
+
+                    FableOutput.displayOutput result.Errors result.Warnings isVerbose
+
+                    // Prompt for auto-fix if there are layout mismatches
+                    if result.LayoutMismatches.Length > 0 then
+                        let wasFixed = FableOutput.promptForAutoFix result.LayoutMismatches
+
+                        if wasFixed then
+                            // If we fixed something, suggest rebuilding
+                            return! Error(AppError.ProcessError "")
+                        else
+                            // Return empty error since we've already displayed the errors
+                            return! Error(AppError.ProcessError "")
+                    else
+                        // Return empty error since we've already displayed the errors
+                        return! Error(AppError.ProcessError "")
                 else
                     // In verbose mode, return the full output
                     return! Error(AppError.ProcessError output)

@@ -86,17 +86,21 @@ let fableWatch absoluteProjectDir stopSpinner =
                         Console.WriteLine(output)
                 else
                     // In non-verbose mode, display errors and warnings with colors
-                    let errors, warnings = FableOutput.processOutput output "" false
+                    let result = FableOutput.processOutput output "" false
 
-                    for error in errors do
+                    for error in result.Errors do
                         Console.ForegroundColor <- ConsoleColor.Red
                         Console.WriteLine(error)
                         Console.ResetColor()
 
-                    for warning in warnings do
+                    for warning in result.Warnings do
                         Console.ForegroundColor <- ConsoleColor.Yellow
                         Console.WriteLine(warning)
                         Console.ResetColor()
+
+                    // Prompt for auto-fix if there are layout mismatches
+                    if result.LayoutMismatches.Length > 0 then
+                        FableOutput.promptForAutoFix result.LayoutMismatches |> ignore
 
         return!
             runProcess

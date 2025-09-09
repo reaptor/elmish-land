@@ -134,14 +134,6 @@ let validate absoluteProjectDir =
 
         log.Debug("Using pagesDir {}", pagesDir)
 
-        let actualPageFiles =
-            Directory.GetFiles(FilePath.asString pagesDir, "Page.fs", SearchOption.AllDirectories)
-            |> Array.map FilePath.fromString
-            |> Array.map (FilePath.removePath (absoluteProjectDir |> AbsoluteProjectDir.asFilePath))
-            |> Set.ofArray
-
-        log.Debug("actualPageFiles {}", actualPageFiles)
-
         let includedPageFiles =
             includedFSharpFileInfo
             |> List.map (fun (_, _, filePath) -> filePath)
@@ -149,54 +141,6 @@ let validate absoluteProjectDir =
             |> Set.ofList
 
         log.Debug("includedPageFiles {}", includedPageFiles)
-
-        let pageFilesMissingFromFsProj = Set.difference actualPageFiles includedPageFiles
-
-        // Simple check for pages that might be using wrong layout (basic pattern matching)
-        let layoutReferenceErrors =
-            includedPageFiles
-            |> Set.toArray
-            |> Array.choose (fun pageFile ->
-                let pageFilePath =
-                    absoluteProjectDir
-                    |> AbsoluteProjectDir.asFilePath
-                    |> FilePath.appendParts [ FilePath.asString pageFile ]
-
-                if File.Exists(FilePath.asString pageFilePath) then
-                    let content = File.ReadAllText(FilePath.asString pageFilePath)
-                    let pageDir = pageFilePath |> FilePath.directoryPath
-
-                    let pagesDir =
-                        absoluteProjectDir
-                        |> AbsoluteProjectDir.asFilePath
-                        |> FilePath.appendParts [ "src"; "Pages" ]
-
-                    // Check if page is using main layout but there's a closer layout file
-                    if content.Contains("| LayoutMsg of Layout.Msg") then
-                        let rec findCloserLayout currentDir =
-                            if
-                                FilePath.equals currentDir pagesDir
-                                || FilePath.asString currentDir = FilePath.asString pagesDir
-                            then
-                                None
-                            else
-                                let layoutFile = currentDir |> FilePath.appendParts [ "Layout.fs" ]
-
-                                if File.Exists(FilePath.asString layoutFile) then
-                                    Some(FilePath.asString pageFile)
-                                else
-                                    match FilePath.parent currentDir with
-                                    | Some parentDir -> findCloserLayout parentDir
-                                    | None -> None
-
-                        findCloserLayout pageDir
-                    else
-                        None
-                else
-                    None)
-            |> Array.toList
-            |> List.map (fun pageFile ->
-                $"Page '%s{pageFile}' appears to be using the main layout but a closer layout file exists. Run 'elmish-land restore' to regenerate all files and fix layout references.")
 
         let errors: string list = [
             yield!
@@ -222,14 +166,8 @@ let validate absoluteProjectDir =
                 |> snd
                 |> List.rev
 
-            for pageFile in pageFilesMissingFromFsProj do
-                $"""The page '%s{FilePath.asString pageFile}' is missing from the project file. Please add the file to the project using an IDE
-    or add the following line to a ItemGroup in the project file '%s{FsProjPath.asString projectPath}':
-
-    <Compile Include="%s{FilePath.asString pageFile}" />
-       """
-
-            yield! layoutReferenceErrors
+        // Note: We do NOT report pages missing from the project file
+        // This allows having test/temporary pages on disk that aren't included in the build
         ]
 
         return!
