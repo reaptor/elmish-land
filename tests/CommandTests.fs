@@ -634,3 +634,88 @@ Compilation failed"""
             if Directory.Exists(folder) then
                 Directory.Delete(folder, true)
     }
+
+[<Fact>]
+let ``initFiles creates project files without CLI commands`` () =
+    task {
+        let folder = getFolder ()
+        
+        try
+            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
+            
+            // Mock versions to avoid CLI calls
+            let dotnetSdkVersion = DotnetSdkVersion (System.Version(9, 0, 100))
+            let nodeVersion = System.Version(20, 0, 0)
+            
+            // Call initFiles with mocked versions
+            let! result, logs = runEff (ElmishLand.Init.initFiles absoluteProjectDir dotnetSdkVersion nodeVersion)
+            
+            // Verify the operation succeeded
+            let routeData = Expects.ok logs result
+            
+            // Verify project directory was created
+            Assert.True(Directory.Exists(folder), "Project directory should be created")
+            
+            // Verify essential files were created
+            let projectName = Path.GetFileName(folder)
+            
+            // Check F# project file
+            let fsprojPath = Path.Combine(folder, projectName + ".fsproj")
+            Assert.True(File.Exists(fsprojPath), "F# project file should be created")
+            
+            // Check package.json
+            let packageJsonPath = Path.Combine(folder, "package.json")
+            Assert.True(File.Exists(packageJsonPath), "package.json should be created")
+            
+            // Check vite.config.js
+            let viteConfigPath = Path.Combine(folder, "vite.config.js")
+            Assert.True(File.Exists(viteConfigPath), "vite.config.js should be created")
+            
+            // Check index.html
+            let indexHtmlPath = Path.Combine(folder, "index.html")
+            Assert.True(File.Exists(indexHtmlPath), "index.html should be created")
+            
+            // Check elmish-land.json
+            let elmishLandJsonPath = Path.Combine(folder, "elmish-land.json")
+            Assert.True(File.Exists(elmishLandJsonPath), "elmish-land.json should be created")
+            
+            // Check src/Pages structure
+            let srcPagesPath = Path.Combine(folder, "src", "Pages")
+            Assert.True(Directory.Exists(srcPagesPath), "src/Pages directory should be created")
+            
+            // Check NotFound.fs
+            let notFoundPath = Path.Combine(folder, "src", "Pages", "NotFound.fs")
+            Assert.True(File.Exists(notFoundPath), "NotFound.fs should be created")
+            
+            // Check Page.fs (home page)
+            let pagePath = Path.Combine(folder, "src", "Pages", "Page.fs")
+            Assert.True(File.Exists(pagePath), "Page.fs should be created")
+            
+            // Check Layout.fs
+            let layoutPath = Path.Combine(folder, "src", "Pages", "Layout.fs")
+            Assert.True(File.Exists(layoutPath), "Layout.fs should be created")
+            
+            // Check Shared.fs
+            let sharedPath = Path.Combine(folder, "src", "Shared.fs")
+            Assert.True(File.Exists(sharedPath), "Shared.fs should be created")
+            
+            // Check .vscode/settings.json
+            let vscodeSettingsPath = Path.Combine(folder, ".vscode", "settings.json")
+            Assert.True(File.Exists(vscodeSettingsPath), ".vscode/settings.json should be created")
+            
+            // Check generated files in .elmish-land
+            let baseProjectPath = Path.Combine(folder, ".elmish-land", "Base", $"ElmishLand.%s{projectName}.Base.fsproj")
+            Assert.True(File.Exists(baseProjectPath), "Base project should be generated")
+            
+            let appProjectPath = Path.Combine(folder, ".elmish-land", "App", $"ElmishLand.%s{projectName}.App.fsproj")
+            Assert.True(File.Exists(appProjectPath), "App project should be generated")
+            
+            // Verify routeData was returned
+            Assert.NotNull(routeData)
+            Assert.True(routeData.Routes.Length > 0, "Should have at least one route")
+            Assert.True(routeData.Layouts.Length > 0, "Should have at least one layout")
+            
+        finally
+            if Directory.Exists(folder) then
+                Directory.Delete(folder, true)
+    }

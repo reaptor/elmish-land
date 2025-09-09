@@ -43,10 +43,7 @@ dotnet elmish-land server"""
 
     getFormattedCommandOutput header content
 
-let init (absoluteProjectDir: AbsoluteProjectDir) =
-    let isVerbose = System.Environment.CommandLine.Contains("--verbose")
-    let stopSpinner = createSpinner "Creating your project..."
-
+let initFiles (absoluteProjectDir: AbsoluteProjectDir) (dotnetSdkVersion: DotnetSdkVersion) (nodeVersion: Version) =
     eff {
         let! log = Log().Get()
 
@@ -54,10 +51,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
             Directory.CreateDirectory(absoluteProjectDir |> AbsoluteProjectDir.asString)
             |> ignore
 
-        let! dotnetSdkVersion = getDotnetSdkVersion ()
         log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
-
-        let! nodeVersion = getNodeVersion ()
         log.Debug("Using Node.js: {}", nodeVersion)
 
         log.Debug("Initializing project. {}", AbsoluteProjectDir.asString absoluteProjectDir)
@@ -241,6 +235,16 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
 
         do! validate absoluteProjectDir
 
+        return routeData
+    }
+
+let initCliCommands (absoluteProjectDir: AbsoluteProjectDir) (_routeData: TemplateData) =
+    let isVerbose = System.Environment.CommandLine.Contains("--verbose")
+    
+    eff {
+        let! log = Log().Get()
+        let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir
+
         // Generate solution file
         log.Debug("Generating solution file")
         let solutionName = $"%s{ProjectName.asString projectName}.sln"
@@ -318,6 +322,23 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 CancellationToken.None
                 ignore
             |> Effect.map ignore<string * string>
+    }
+
+let init (absoluteProjectDir: AbsoluteProjectDir) =
+    let stopSpinner = createSpinner "Creating your project..."
+
+    eff {
+        let! log = Log().Get()
+
+        // Get versions first using CLI
+        let! dotnetSdkVersion = getDotnetSdkVersion ()
+        let! nodeVersion = getNodeVersion ()
+
+        // Create files without CLI commands
+        let! routeData = initFiles absoluteProjectDir dotnetSdkVersion nodeVersion
+
+        // Run CLI commands
+        do! initCliCommands absoluteProjectDir routeData
 
         stopSpinner ()
         log.Info(successMessage ())
