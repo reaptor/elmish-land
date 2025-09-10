@@ -157,6 +157,7 @@ let initFiles (absoluteProjectDir: AbsoluteProjectDir) (dotnetSdkVersion: Dotnet
                     RouteName = "HomeRoute"
                     LayoutName = ""
                     LayoutModuleName = $"%s{rootModuleName}.Pages.Layout"
+                    LayoutModulePath = "" // Main layout has no module path
                     MsgName = "HomeMsg"
                     ModuleName = $"%s{rootModuleName}.Pages.Page"
                     RecordDefinition = ""
@@ -172,6 +173,7 @@ let initFiles (absoluteProjectDir: AbsoluteProjectDir) (dotnetSdkVersion: Dotnet
                     Name = "Main"
                     MsgName = "MainLayoutMsg"
                     ModuleName = $"%s{rootModuleName}.Pages.Layout"
+                    ModulePath = "" // Main layout has no module path
                 }
 
                 let routeData = {
@@ -240,7 +242,7 @@ let initFiles (absoluteProjectDir: AbsoluteProjectDir) (dotnetSdkVersion: Dotnet
 
 let initCliCommands (absoluteProjectDir: AbsoluteProjectDir) (_routeData: TemplateData) =
     let isVerbose = System.Environment.CommandLine.Contains("--verbose")
-    
+
     eff {
         let! log = Log().Get()
         let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir

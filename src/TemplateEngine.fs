@@ -120,6 +120,7 @@ type Route = {
     RouteName: string
     LayoutName: string
     LayoutModuleName: string
+    LayoutModulePath: string // Module path with dots for nested layouts (e.g., "About.Me")
     MsgName: string
     ModuleName: string
     RecordDefinition: string
@@ -135,6 +136,7 @@ type Layout = {
     Name: string
     MsgName: string
     ModuleName: string
+    ModulePath: string // Module path with dots for nested layouts (e.g., "About.Me")
 }
 
 type TemplateData = {
@@ -251,11 +253,18 @@ let fileToLayout projectName absoluteProjectDir (FilePath file) =
                 |> String.concat "."
                 |> fun x -> $".%s{x}"
 
+        let modulePath =
+            if parts.Length = 0 then
+                ""
+            else
+                parts |> List.rev |> List.map toPascalCase |> String.concat "."
+
         {
             Name = wrapWithTicksIfNeeded name
             MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
             ModuleName =
                 $"%s{projectName |> ProjectName.asString |> wrapWithTicksIfNeeded}.Pages%s{moduleNamePart}.Layout"
+            ModulePath = modulePath
         }
 
 let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (file: FilePath) =
@@ -516,6 +525,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                 RouteName = wrapWithTicksIfNeeded $"%s{name}Route"
                 LayoutName = layout.Name
                 LayoutModuleName = layout.ModuleName
+                LayoutModulePath = layout.ModulePath
                 MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
                 ModuleName =
                     $"%s{projectName |> ProjectName.asString |> wrapWithTicksIfNeeded}.Pages%s{moduleNamePart}.Page"

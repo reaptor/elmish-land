@@ -44,3 +44,9 @@ let equalsIgnoringWhitespace logs expected actual =
         <> (actual |> String.eachLine String.trimWhitespace)
     then
         failwithf $"Expected %A{expected}.\n\nActual %A{actual}\n\nLogs:\n%s{LogOutput.asString logs}"
+
+let containsSubstring (expected: string) (actual: string) =
+    if actual.Contains expected then
+        ()
+    else
+        failwithf $"Expected substring %A{expected}.\n\nActual %A{actual}"

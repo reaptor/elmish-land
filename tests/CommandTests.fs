@@ -10,6 +10,7 @@ open ElmishLand.AddPage
 open ElmishLand.AddLayout
 open Runner
 open Xunit
+open Orsak
 
 let getFolder () =
     "Proj_" + Guid.NewGuid().ToString().Replace("-", "")
@@ -200,8 +201,7 @@ let ``addLayout after addPage updates project file order and page layout referen
             Assert.True(File.Exists(pageFilePath), "Page file should be created")
 
             // Step 2: Add a layout for the same path
-            let! addLayoutResult, addLayoutLogs =
-                runEff (addLayout absoluteProjectDir "/AnotherPage" true)
+            let! addLayoutResult, addLayoutLogs = runEff (addLayout absoluteProjectDir "/AnotherPage" true)
 
             let _addLayoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
@@ -254,8 +254,7 @@ let ``nested layout with page uses correct layout message reference`` () =
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
 
             // Step 1: Add nested layout first
-            let! addLayoutResult, addLayoutLogs =
-                runEff (addLayout absoluteProjectDir "/PageWithNestedLayout" true)
+            let! addLayoutResult, addLayoutLogs = runEff (addLayout absoluteProjectDir "/PageWithNestedLayout" true)
 
             let _addLayoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
@@ -276,8 +275,7 @@ let ``nested layout with page uses correct layout message reference`` () =
             Assert.True(File.Exists(nestedLayoutFilePath), "Nested layout file should be created")
 
             // Step 2: Add page for the nested layout path
-            let! addPageResult, addPageLogs =
-                runEff (addPage absoluteProjectDir "/PageWithNestedLayout" true)
+            let! addPageResult, addPageLogs = runEff (addPage absoluteProjectDir "/PageWithNestedLayout" true)
 
             let _addPageSuccess = Expects.ok addPageLogs addPageResult
 
@@ -599,7 +597,10 @@ let ``Nested page with wrong layout reference should generate correct error mess
             // Step 4: Manually change the About/Me page to use wrong layout (root Layout instead of About.Layout)
             let aboutMePagePath = Path.Combine(folder, "src", "Pages", "About", "Me", "Page.fs")
             let content = File.ReadAllText(aboutMePagePath)
-            let wrongContent = content.Replace("| LayoutMsg of About.Layout.Msg", "| LayoutMsg of Layout.Msg")
+
+            let wrongContent =
+                content.Replace("| LayoutMsg of About.Layout.Msg", "| LayoutMsg of Layout.Msg")
+
             File.WriteAllText(aboutMePagePath, wrongContent)
 
             // Step 5: Simulate build error output for nested page (error in App.fs)
@@ -612,7 +613,8 @@ Compilation failed"""
                 """./.elmish-land/App/App.fs(180,20): (180,30) error FSHARP: The type 'Layout.Msg' does not match the type 'About.Layout.Msg' (code 1)"""
 
             // Step 6: Process the output
-            let result = ElmishLand.FableOutput.processOutput mockBuildOutput mockErrorOutput false
+            let result =
+                ElmishLand.FableOutput.processOutput mockBuildOutput mockErrorOutput false
 
             // Verify the error is captured with correct message
             Assert.True(result.Errors |> List.length >= 1, "Should have at least one error")
@@ -639,82 +641,114 @@ Compilation failed"""
 let ``initFiles creates project files without CLI commands`` () =
     task {
         let folder = getFolder ()
-        
+
         try
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
-            
+
             // Mock versions to avoid CLI calls
-            let dotnetSdkVersion = DotnetSdkVersion (System.Version(9, 0, 100))
+            let dotnetSdkVersion = DotnetSdkVersion(System.Version(9, 0, 100))
             let nodeVersion = System.Version(20, 0, 0)
-            
+
             // Call initFiles with mocked versions
             let! result, logs = runEff (ElmishLand.Init.initFiles absoluteProjectDir dotnetSdkVersion nodeVersion)
-            
+
             // Verify the operation succeeded
             let routeData = Expects.ok logs result
-            
+
             // Verify project directory was created
             Assert.True(Directory.Exists(folder), "Project directory should be created")
-            
+
             // Verify essential files were created
             let projectName = Path.GetFileName(folder)
-            
+
             // Check F# project file
             let fsprojPath = Path.Combine(folder, projectName + ".fsproj")
             Assert.True(File.Exists(fsprojPath), "F# project file should be created")
-            
+
             // Check package.json
             let packageJsonPath = Path.Combine(folder, "package.json")
             Assert.True(File.Exists(packageJsonPath), "package.json should be created")
-            
+
             // Check vite.config.js
             let viteConfigPath = Path.Combine(folder, "vite.config.js")
             Assert.True(File.Exists(viteConfigPath), "vite.config.js should be created")
-            
+
             // Check index.html
             let indexHtmlPath = Path.Combine(folder, "index.html")
             Assert.True(File.Exists(indexHtmlPath), "index.html should be created")
-            
+
             // Check elmish-land.json
             let elmishLandJsonPath = Path.Combine(folder, "elmish-land.json")
             Assert.True(File.Exists(elmishLandJsonPath), "elmish-land.json should be created")
-            
+
             // Check src/Pages structure
             let srcPagesPath = Path.Combine(folder, "src", "Pages")
             Assert.True(Directory.Exists(srcPagesPath), "src/Pages directory should be created")
-            
+
             // Check NotFound.fs
             let notFoundPath = Path.Combine(folder, "src", "Pages", "NotFound.fs")
             Assert.True(File.Exists(notFoundPath), "NotFound.fs should be created")
-            
+
             // Check Page.fs (home page)
             let pagePath = Path.Combine(folder, "src", "Pages", "Page.fs")
             Assert.True(File.Exists(pagePath), "Page.fs should be created")
-            
+
             // Check Layout.fs
             let layoutPath = Path.Combine(folder, "src", "Pages", "Layout.fs")
             Assert.True(File.Exists(layoutPath), "Layout.fs should be created")
-            
+
             // Check Shared.fs
             let sharedPath = Path.Combine(folder, "src", "Shared.fs")
             Assert.True(File.Exists(sharedPath), "Shared.fs should be created")
-            
+
             // Check .vscode/settings.json
             let vscodeSettingsPath = Path.Combine(folder, ".vscode", "settings.json")
             Assert.True(File.Exists(vscodeSettingsPath), ".vscode/settings.json should be created")
-            
+
             // Check generated files in .elmish-land
-            let baseProjectPath = Path.Combine(folder, ".elmish-land", "Base", $"ElmishLand.%s{projectName}.Base.fsproj")
+            let baseProjectPath =
+                Path.Combine(folder, ".elmish-land", "Base", $"ElmishLand.%s{projectName}.Base.fsproj")
+
             Assert.True(File.Exists(baseProjectPath), "Base project should be generated")
-            
-            let appProjectPath = Path.Combine(folder, ".elmish-land", "App", $"ElmishLand.%s{projectName}.App.fsproj")
+
+            let appProjectPath =
+                Path.Combine(folder, ".elmish-land", "App", $"ElmishLand.%s{projectName}.App.fsproj")
+
             Assert.True(File.Exists(appProjectPath), "App project should be generated")
-            
+
             // Verify routeData was returned
             Assert.NotNull(routeData)
             Assert.True(routeData.Routes.Length > 0, "Should have at least one route")
             Assert.True(routeData.Layouts.Length > 0, "Should have at least one layout")
-            
+
+        finally
+            if Directory.Exists(folder) then
+                Directory.Delete(folder, true)
+    }
+
+[<Fact>]
+let ``Add page command with multiple URL parts, own layout and auto updating layout reference, updates correct layout reference in page`` () =
+    task {
+        let folder = getFolder ()
+
+        try
+            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
+            let dotnetSdkVersion = DotnetSdkVersion(Version(9, 0, 100))
+            let nodeVersion = Version(20, 0, 0)
+
+            let! result, logOutput =
+                eff {
+                    let! _ = initFiles absoluteProjectDir dotnetSdkVersion nodeVersion
+                    do! addLayout absoluteProjectDir "/About/Me" true
+                    do! addPage absoluteProjectDir "/About/Me" true
+                }
+                |> runEff
+
+            Expects.ok logOutput result
+
+            File.ReadAllText(Path.Combine(folder, "src", "Pages", "About", "Me", "Page.fs"))
+            |> Expects.containsSubstring "| LayoutMsg of About.Me.Layout.Msg" // Ensure that the auto accept write correct namespace
+
         finally
             if Directory.Exists(folder) then
                 Directory.Delete(folder, true)

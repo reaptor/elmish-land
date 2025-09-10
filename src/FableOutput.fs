@@ -48,16 +48,24 @@ let private detectLayoutMismatch (errorLine: string) (_allErrors: string list) =
                 // When we have a layout mismatch, we need to check which pages might be affected
                 // The error "Layout.Msg doesn't match About.Layout.Msg" suggests a page that should
                 // use About.Layout.Msg but is using Layout.Msg instead
-                
+
                 // Extract the layout that should be used (the more specific one)
-                let expectedLayout = 
-                    if type1 <> "Layout.Msg" && type1 <> "Pages.Layout.Msg" && type1.Contains(".Layout.Msg") then
+                let expectedLayout =
+                    if
+                        type1 <> "Layout.Msg"
+                        && type1 <> "Pages.Layout.Msg"
+                        && type1.Contains(".Layout.Msg")
+                    then
                         type1
-                    elif type2 <> "Layout.Msg" && type2 <> "Pages.Layout.Msg" && type2.Contains(".Layout.Msg") then
+                    elif
+                        type2 <> "Layout.Msg"
+                        && type2 <> "Pages.Layout.Msg"
+                        && type2.Contains(".Layout.Msg")
+                    then
                         type2
                     else
                         ""
-                
+
                 // Try to infer which pages should use this layout
                 // For About.Layout.Msg, any page under About/ directory should use it
                 let inferredPage =
@@ -68,6 +76,7 @@ let private detectLayoutMismatch (errorLine: string) (_allErrors: string list) =
                         // Extract the directory name
                         let parts = expectedLayout.Replace(".Layout.Msg", "").Split('.')
                         let dirName = if parts.Length > 0 then parts.[parts.Length - 1] else ""
+
                         if dirName <> "" && dirName <> "Pages" then
                             sprintf "a page in src/Pages/%s/ directory" dirName
                         else
@@ -303,35 +312,38 @@ let findPagesWithWrongLayout (_wrongLayout: string) (correctLayout: string) =
     // Search for all Page.fs files that might have the wrong layout
     let pagesDir = Path.Combine(Directory.GetCurrentDirectory(), "src", "Pages")
     let mutable foundPages = []
-    
+
     if Directory.Exists(pagesDir) then
         // Find all Page.fs files recursively
         let pageFiles = Directory.GetFiles(pagesDir, "Page.fs", SearchOption.AllDirectories)
-        
+
         for pageFile in pageFiles do
             try
                 let content = File.ReadAllText(pageFile)
                 // Look for the pattern "| LayoutMsg of Layout.Msg" (wrong) when it should be something else
                 let pattern = @"\|\s*LayoutMsg\s+of\s+Layout\.Msg\b"
-                
+
                 if System.Text.RegularExpressions.Regex.IsMatch(content, pattern) then
                     // This page uses Layout.Msg - check if it should use something else
                     // based on its directory structure
                     let relativePath = Path.GetRelativePath(pagesDir, pageFile)
                     let pathParts = relativePath.Split(Path.DirectorySeparatorChar)
-                    
+
                     // If the page is in a subdirectory that has its own layout, it's wrong
                     if correctLayout.Contains(".Layout.Msg") && correctLayout <> "Pages.Layout.Msg" then
                         // Extract the expected directory from the correct layout
-                        let layoutDir = 
-                            let parts = correctLayout.Replace("Pages.", "").Replace(".Layout.Msg", "").Split('.')
+                        let layoutDir =
+                            let parts =
+                                correctLayout.Replace("Pages.", "").Replace(".Layout.Msg", "").Split('.')
+
                             if parts.Length > 0 then parts.[parts.Length - 1] else ""
-                        
+
                         // Check if this page is in that directory
                         if layoutDir <> "" && pathParts.Length > 1 && pathParts.[0] = layoutDir then
                             foundPages <- pageFile :: foundPages
-            with _ -> ()
-    
+            with _ ->
+                ()
+
     foundPages
 
 let promptForAutoFix (layoutMismatches: LayoutMismatch list) =
@@ -345,14 +357,15 @@ let promptForAutoFix (layoutMismatches: LayoutMismatch list) =
 
             for mismatch in layoutMismatches do
                 // Check if we have a generic page path (couldn't determine exact page)
-                let isGenericPath = 
-                    mismatch.PagePath.Contains("a page in") || 
-                    mismatch.PagePath.Contains("one of your pages")
-                
+                let isGenericPath =
+                    mismatch.PagePath.Contains("a page in")
+                    || mismatch.PagePath.Contains("one of your pages")
+
                 if isGenericPath then
                     // Find all pages with the wrong layout
-                    let pagesToFix = findPagesWithWrongLayout mismatch.WrongLayout mismatch.CorrectLayout
-                    
+                    let pagesToFix =
+                        findPagesWithWrongLayout mismatch.WrongLayout mismatch.CorrectLayout
+
                     for pageFile in pagesToFix do
                         if fixLayoutReference pageFile mismatch.WrongLayout mismatch.CorrectLayout then
                             let relativePath = Path.GetRelativePath(Directory.GetCurrentDirectory(), pageFile)

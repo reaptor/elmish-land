@@ -16,16 +16,18 @@ open Orsak
 let createTestProjectStructure () =
     let tempDir = Path.Combine(Path.GetTempPath(), "test_" + Guid.NewGuid().ToString())
     let testProjectDir = Path.Combine(tempDir, "TestProject")
-    Directory.CreateDirectory(Path.Combine(testProjectDir, "src", "Pages", "Test")) |> ignore
-    
+
+    Directory.CreateDirectory(Path.Combine(testProjectDir, "src", "Pages", "Test"))
+    |> ignore
+
     // Create Layout.fs file for tests that need it
     File.WriteAllText(Path.Combine(testProjectDir, "src", "Pages", "Test", "Layout.fs"), "module Layout")
-    
+
     tempDir, testProjectDir
 
 [<Fact>]
 let ``Ensure multiple query params are included in UrlUsage (Route.format)`` () =
-    let tempDir, testProjectDir = createTestProjectStructure()
+    let tempDir, testProjectDir = createTestProjectStructure ()
     let projectDir = FilePath.fromString testProjectDir
     let absoluteProjectDir = AbsoluteProjectDir projectDir
     let pageFile = FilePath.appendParts [ "src"; "Pages"; "Test"; "Page.fs" ] projectDir
@@ -55,6 +57,7 @@ let ``Ensure multiple query params are included in UrlUsage (Route.format)`` () 
         RouteName = "TestRoute"
         LayoutName = "Test"
         LayoutModuleName = "TestProject.Pages.Test.Layout"
+        LayoutModulePath = "Test"
         MsgName = "TestMsg"
         ModuleName = "TestProject.Pages.Test.Page"
         RecordDefinition = "{ First: string option; Second: string option }"
@@ -70,7 +73,11 @@ let ``Ensure multiple query params are included in UrlUsage (Route.format)`` () 
     task {
         try
             let! result, logs =
-                fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
+                fileToRoute
+                    (ProjectName.fromAbsoluteProjectDir absoluteProjectDir)
+                    absoluteProjectDir
+                    routeParams
+                    pageFile
                 |> runEff
 
             result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
@@ -81,7 +88,7 @@ let ``Ensure multiple query params are included in UrlUsage (Route.format)`` () 
 
 [<Fact>]
 let ``Ensure all query params with reserved names are generated correctly`` () =
-    let tempDir, testProjectDir = createTestProjectStructure()
+    let tempDir, testProjectDir = createTestProjectStructure ()
     let projectDir = FilePath.fromString testProjectDir
     let absoluteProjectDir = AbsoluteProjectDir projectDir
     let pageFile = FilePath.appendParts [ "src"; "Pages"; "Test"; "Page.fs" ] projectDir
@@ -102,6 +109,7 @@ let ``Ensure all query params with reserved names are generated correctly`` () =
         RouteName = "TestRoute"
         LayoutName = "Test"
         LayoutModuleName = "TestProject.Pages.Test.Layout"
+        LayoutModulePath = "Test"
         MsgName = "TestMsg"
         ModuleName = "TestProject.Pages.Test.Page"
         RecordDefinition = "{ To: string option }"
@@ -116,7 +124,11 @@ let ``Ensure all query params with reserved names are generated correctly`` () =
     task {
         try
             let! result, logs =
-                fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
+                fileToRoute
+                    (ProjectName.fromAbsoluteProjectDir absoluteProjectDir)
+                    absoluteProjectDir
+                    routeParams
+                    pageFile
                 |> runEff
 
             result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
@@ -127,7 +139,7 @@ let ``Ensure all query params with reserved names are generated correctly`` () =
 
 [<Fact>]
 let ``Ensure query params are camel cased`` () =
-    let tempDir, testProjectDir = createTestProjectStructure()
+    let tempDir, testProjectDir = createTestProjectStructure ()
     let projectDir = FilePath.fromString testProjectDir
     let absoluteProjectDir = AbsoluteProjectDir projectDir
     let pageFile = FilePath.appendParts [ "src"; "Pages"; "Test"; "Page.fs" ] projectDir
@@ -148,6 +160,7 @@ let ``Ensure query params are camel cased`` () =
         RouteName = "TestRoute"
         LayoutName = "Test"
         LayoutModuleName = "TestProject.Pages.Test.Layout"
+        LayoutModulePath = "Test"
         MsgName = "TestMsg"
         ModuleName = "TestProject.Pages.Test.Page"
         RecordDefinition = "{ QueryParam: string option }"
@@ -162,7 +175,11 @@ let ``Ensure query params are camel cased`` () =
     task {
         try
             let! result, logs =
-                fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
+                fileToRoute
+                    (ProjectName.fromAbsoluteProjectDir absoluteProjectDir)
+                    absoluteProjectDir
+                    routeParams
+                    pageFile
                 |> runEff
 
             result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
@@ -173,7 +190,7 @@ let ``Ensure query params are camel cased`` () =
 
 [<Fact>]
 let ``Ensure query param parse and format are generated correctly`` () =
-    let tempDir, testProjectDir = createTestProjectStructure()
+    let tempDir, testProjectDir = createTestProjectStructure ()
     let projectDir = FilePath.fromString testProjectDir
     let absoluteProjectDir = AbsoluteProjectDir projectDir
     let pageFile = FilePath.appendParts [ "src"; "Pages"; "Test"; "Page.fs" ] projectDir
@@ -194,6 +211,7 @@ let ``Ensure query param parse and format are generated correctly`` () =
         RouteName = "TestRoute"
         LayoutName = "Test"
         LayoutModuleName = "TestProject.Pages.Test.Layout"
+        LayoutModulePath = "Test"
         MsgName = "TestMsg"
         ModuleName = "TestProject.Pages.Test.Page"
         RecordDefinition = "{ FromDate: ApplicationDate option }"
@@ -209,7 +227,11 @@ let ``Ensure query param parse and format are generated correctly`` () =
     task {
         try
             let! result, logs =
-                fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
+                fileToRoute
+                    (ProjectName.fromAbsoluteProjectDir absoluteProjectDir)
+                    absoluteProjectDir
+                    routeParams
+                    pageFile
                 |> runEff
 
             result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
@@ -220,7 +242,7 @@ let ``Ensure query param parse and format are generated correctly`` () =
 
 [<Fact>]
 let ``Ensure required query params is generated correctly`` () =
-    let tempDir, testProjectDir = createTestProjectStructure()
+    let tempDir, testProjectDir = createTestProjectStructure ()
     let projectDir = FilePath.fromString testProjectDir
     let absoluteProjectDir = AbsoluteProjectDir projectDir
     let pageFile = FilePath.appendParts [ "src"; "Pages"; "Test"; "Page.fs" ] projectDir
@@ -241,6 +263,7 @@ let ``Ensure required query params is generated correctly`` () =
         RouteName = "TestRoute"
         LayoutName = "Test"
         LayoutModuleName = "TestProject.Pages.Test.Layout"
+        LayoutModulePath = "Test"
         MsgName = "TestMsg"
         ModuleName = "TestProject.Pages.Test.Page"
         RecordDefinition = "{ Order: InternalRevocationListOrder  }"
@@ -257,7 +280,11 @@ let ``Ensure required query params is generated correctly`` () =
     task {
         try
             let! result, logs =
-                fileToRoute (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir routeParams pageFile
+                fileToRoute
+                    (ProjectName.fromAbsoluteProjectDir absoluteProjectDir)
+                    absoluteProjectDir
+                    routeParams
+                    pageFile
                 |> runEff
 
             result |> Expects.ok logs |> Expects.equalsWLogs logs expectedRoute
@@ -272,15 +299,17 @@ let ``Ensure module names is wrapped in double ticks if project dir contains spe
     let testProjectDir = Path.Combine(tempDir, "test-project")
     let projectDir = FilePath.fromString testProjectDir
     let absoluteProjectDir = AbsoluteProjectDir projectDir
-    
+
     task {
         try
             // Create test structure with special characters in project name
-            Directory.CreateDirectory(Path.Combine(testProjectDir, "src", "Pages")) |> ignore
+            Directory.CreateDirectory(Path.Combine(testProjectDir, "src", "Pages"))
+            |> ignore
+
             File.WriteAllText(Path.Combine(testProjectDir, "src", "Pages", "Page.fs"), "module Page")
             File.WriteAllText(Path.Combine(testProjectDir, "src", "Pages", "Layout.fs"), "module Layout")
             File.WriteAllText(Path.Combine(testProjectDir, "elmish-land.json"), "{}")
-            
+
             let! result, logs =
                 getTemplateData (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir
                 |> runEff
@@ -298,6 +327,7 @@ let ``Ensure module names is wrapped in double ticks if project dir contains spe
                         RouteName = "HomeRoute"
                         LayoutName = "Main"
                         LayoutModuleName = "``test-project``.Pages.Layout"
+                        LayoutModulePath = ""
                         MsgName = "HomeMsg"
                         ModuleName = "``test-project``.Pages.Page"
                         RecordDefinition = "unit"
@@ -314,6 +344,7 @@ let ``Ensure module names is wrapped in double ticks if project dir contains spe
                         Name = "Main"
                         MsgName = "MainMsg"
                         ModuleName = "``test-project``.Pages.Layout"
+                        ModulePath = ""
                     }
                 |]
                 RouteParamModules = []
