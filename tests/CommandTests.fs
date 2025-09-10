@@ -2,6 +2,7 @@ module CommandTests
 
 open System
 open System.IO
+open System.Text
 open System.Text.RegularExpressions
 open ElmishLand.Base
 open ElmishLand.Effect
@@ -70,6 +71,170 @@ let createMinimalProject projectPath =
         "<Project />"
     )
 
+let verifyProjectBuilds (absoluteProjectDir: AbsoluteProjectDir) =
+    task {
+        let buildOutput = StringBuilder()
+
+        let! buildResult, _ =
+            eff {
+                return!
+                    ElmishLand.Process.runProcess
+                        false
+                        (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                        "dotnet"
+                        [| "build" |]
+                        (System.Threading.CancellationToken.None)
+                        (fun line -> buildOutput.AppendLine(line) |> ignore)
+            }
+            |> runEff
+
+        let output = buildOutput.ToString()
+
+        // Use regex to find actual compilation errors and warnings with file paths
+        // Patterns like "path/file.fs(10,5): error FS0001: message"
+        let errorWithPathPattern =
+            Regex(@"([^\s]+\.fs)\((\d+),(\d+)\):\s*(.*error[^:]*:\s*.*)", RegexOptions.IgnoreCase)
+
+        let warningWithPathPattern =
+            Regex(@"([^\s]+\.fs)\((\d+),(\d+)\):\s*(.*warning[^:]*:\s*.*)", RegexOptions.IgnoreCase)
+
+        // Also keep simple patterns for errors without paths
+        let errorPattern =
+            Regex(@"(\berror [A-Z]+\d+:|\.fs\(\d+,\d+\): .*error)", RegexOptions.IgnoreCase)
+
+        let warningPattern =
+            Regex(@"(\bwarning [A-Z]+\d+:|\.fs\(\d+,\d+\): .*warning)", RegexOptions.IgnoreCase)
+
+        // Extract errors with file information
+        let errorsWithContext =
+            errorWithPathPattern.Matches(output)
+            |> Seq.cast<Match>
+            |> Seq.map (fun m ->
+                let filePath = m.Groups.[1].Value
+                let line = int m.Groups.[2].Value
+                let col = int m.Groups.[3].Value
+                let message = m.Groups.[4].Value
+                (filePath, line, col, message))
+            |> Seq.toList
+
+        // Extract warnings with file information
+        let warningsWithContext =
+            warningWithPathPattern.Matches(output)
+            |> Seq.cast<Match>
+            |> Seq.map (fun m ->
+                let filePath = m.Groups.[1].Value
+                let line = int m.Groups.[2].Value
+                let col = int m.Groups.[3].Value
+                let message = m.Groups.[4].Value
+                (filePath, line, col, message))
+            |> Seq.toList
+
+        // Helper function to read file snippet around error/warning line
+        let readFileSnippet (projectDir: AbsoluteProjectDir) (relativeFilePath: string) (errorLine: int) =
+            try
+                let (FilePath projectPath) = AbsoluteProjectDir.asFilePath projectDir
+                let fullPath =
+                    if Path.IsPathRooted(relativeFilePath) then
+                        relativeFilePath
+                    else
+                        Path.Combine(projectPath, relativeFilePath)
+
+                if File.Exists(fullPath) then
+                    let lines = File.ReadAllLines(fullPath)
+                    let startLine = max 1 (errorLine - 5)
+                    let endLine = min lines.Length (errorLine + 5)
+
+                    let snippet = StringBuilder()
+                    snippet.AppendLine(sprintf "\n  File: %s (lines %d-%d)" relativeFilePath startLine endLine) |> ignore
+
+                    for i in startLine .. endLine do
+                        let prefix = if i = errorLine then " >>> " else "     "
+                        let lineContent = if i <= lines.Length then lines.[i - 1] else ""
+                        snippet.AppendLine(sprintf "%s%3d | %s" prefix i lineContent) |> ignore
+
+                    Some(snippet.ToString())
+                else
+                    None
+            with _ -> None
+
+        // Collect unique files that have errors/warnings
+        let filesWithIssues =
+            (errorsWithContext |> List.map (fun (f, l, _, _) -> (f, l)))
+            @ (warningsWithContext |> List.map (fun (f, l, _, _) -> (f, l)))
+            |> List.distinct
+            |> List.map (fun (filePath, line) ->
+                (filePath, line, readFileSnippet absoluteProjectDir filePath line))
+
+        // Fall back to simple error detection if no path-based errors found
+        let errors =
+            if errorsWithContext.IsEmpty then
+                errorPattern.Matches(output)
+                |> Seq.cast<Match>
+                |> Seq.map (fun m -> m.Value)
+                |> Seq.toList
+            else
+                []
+
+        let warnings =
+            if warningsWithContext.IsEmpty then
+                warningPattern.Matches(output)
+                |> Seq.cast<Match>
+                |> Seq.map (fun m -> m.Value)
+                |> Seq.toList
+            else
+                []
+
+        // Check if there are compilation errors/warnings
+        if errorsWithContext.Length > 0 || errors.Length > 0 then
+            let errorDetails = StringBuilder()
+
+            if errorsWithContext.Length > 0 then
+                errorDetails.AppendLine("Compilation errors found:") |> ignore
+                errorDetails.AppendLine("========================") |> ignore
+
+                for (filePath, line, col, message) in errorsWithContext do
+                    errorDetails.AppendLine(sprintf "\nError: %s(%d,%d): %s" filePath line col message) |> ignore
+
+                    // Find and append the file snippet for this error
+                    filesWithIssues
+                    |> List.tryFind (fun (f, l, _) -> f = filePath && l = line)
+                    |> Option.bind (fun (_, _, snippet) -> snippet)
+                    |> Option.iter (fun s -> errorDetails.Append(s) |> ignore)
+            elif errors.Length > 0 then
+                errorDetails.AppendLine(sprintf "Compilation errors found:\n%s" (String.concat "\n" errors)) |> ignore
+
+            return Error(sprintf "%s\n\nFull build output:\n%s" (errorDetails.ToString()) output)
+        elif warningsWithContext.Length > 0 || warnings.Length > 0 then
+            let warningDetails = StringBuilder()
+
+            if warningsWithContext.Length > 0 then
+                warningDetails.AppendLine("Build warnings found:") |> ignore
+                warningDetails.AppendLine("====================") |> ignore
+
+                for (filePath, line, col, message) in warningsWithContext do
+                    warningDetails.AppendLine(sprintf "\nWarning: %s(%d,%d): %s" filePath line col message) |> ignore
+
+                    // Find and append the file snippet for this warning
+                    filesWithIssues
+                    |> List.tryFind (fun (f, l, _) -> f = filePath && l = line)
+                    |> Option.bind (fun (_, _, snippet) -> snippet)
+                    |> Option.iter (fun s -> warningDetails.Append(s) |> ignore)
+            else
+                warningDetails.AppendLine(sprintf "Build warnings found:\n%s" (String.concat "\n" warnings)) |> ignore
+
+            return Error(sprintf "%s\n\nFull build output:\n%s" (warningDetails.ToString()) output)
+        else
+            // No compilation errors/warnings found, check build result
+            match buildResult with
+            | Error err ->
+                return Error(sprintf "Build process failed: %A\nBuild output:\n%s" err output)
+            | Ok(_, stderr) ->
+                let stderrStr = stderr.Trim()
+                if stderrStr.Length > 0 && not (stderrStr.Contains("0 Error(s)")) then
+                    return Error(sprintf "Build failed with stderr output:\n%s\n\nFull build output:\n%s" stderrStr output)
+                else
+                    return Ok()
+    }
 
 [<Fact>]
 let ``addPage creates page with correct indentation in preview and fsproj`` () =
@@ -727,7 +892,9 @@ let ``initFiles creates project files without CLI commands`` () =
     }
 
 [<Fact>]
-let ``Add page command with multiple URL parts, own layout and auto updating layout reference, updates correct layout reference in page`` () =
+let ``Add page command with multiple URL parts, own layout and auto updating layout reference, updates correct layout reference in page``
+    ()
+    =
     task {
         let folder = getFolder ()
 
@@ -748,6 +915,38 @@ let ``Add page command with multiple URL parts, own layout and auto updating lay
 
             File.ReadAllText(Path.Combine(folder, "src", "Pages", "About", "Me", "Page.fs"))
             |> Expects.containsSubstring "| LayoutMsg of About.Me.Layout.Msg" // Ensure that the auto accept write correct namespace
+
+        finally
+            if Directory.Exists(folder) then
+                Directory.Delete(folder, true)
+    }
+
+[<Fact>]
+let ``Init command create a buildable project`` () =
+    task {
+        let folder = getFolder ()
+
+        try
+            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
+            let dotnetSdkVersion = DotnetSdkVersion(Version(9, 0, 100))
+            let nodeVersion = Version(20, 0, 0)
+
+            let! result, logOutput =
+                eff {
+                    let! _ = initFiles absoluteProjectDir dotnetSdkVersion nodeVersion
+                    ()
+                }
+                |> runEff
+
+            Expects.ok logOutput result
+
+            // Verify the project builds without errors or warnings
+            let! buildVerificationResult =
+                verifyProjectBuilds absoluteProjectDir
+
+            match buildVerificationResult with
+            | Error errorMessage -> Assert.Fail(errorMessage)
+            | Ok() -> () // Build succeeded without errors or warnings
 
         finally
             if Directory.Exists(folder) then
