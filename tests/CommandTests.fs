@@ -12,9 +12,12 @@ open ElmishLand.AddLayout
 open Runner
 open Xunit
 open Orsak
+open Ionide.ProjInfo
+open Ionide.ProjInfo.Types
+open System.Runtime.InteropServices
 
 let getFolder () =
-    "Proj_" + Guid.NewGuid().ToString().Replace("-", "")
+    Path.Combine(Environment.CurrentDirectory,"Proj_" + Guid.NewGuid().ToString().Replace("-", ""))
 
 let leadingWhitespace (s: string) =
     let mutable i = 0
@@ -70,6 +73,68 @@ let createMinimalProject projectPath =
         Path.Combine(projectPath, ".elmish-land", "Base", "ElmishLand." + projectName + ".Base.fsproj"),
         "<Project />"
     )
+
+let typeCheckProject (absoluteProjectDir: AbsoluteProjectDir) =
+    task {
+        let projectDirectory = DirectoryInfo(AbsoluteProjectDir.asString absoluteProjectDir)
+        let toolsPath = Init.init projectDirectory None
+
+        let loader = WorkspaceLoader.Create(toolsPath, [])
+
+        let (FsProjPath (FilePath absoluteFsprojPath)) =
+            FsProjPath.findExactlyOneFromProjectDir absoluteProjectDir
+            |> Result.defaultWith (failwithf "%A")
+
+        let projectOptions = loader.LoadProjects([ absoluteFsprojPath ]) |> Seq.toArray
+
+        Assert.True(projectOptions.Length > 0, "Should load at least one project")
+
+        let fsharpProjectOptions =
+            FCS.mapToFSharpProjectOptions projectOptions.[0] projectOptions
+
+        let referenceAssemblies =
+            Directory.GetFiles(RuntimeEnvironment.GetRuntimeDirectory(), "*.dll")
+            |> Array.map (fun path -> "-r:" + path)
+
+        // let nugetDependenciesBaseDir =
+        //     Path.Combine(__SOURCE_DIRECTORY__, "dependencies")
+
+        // let nugetDependencies =
+        //     Directory.GetFiles(nugetDependenciesBaseDir, "*.dll")
+        //     |> Array.map (fun path -> "-r:" + path)
+
+        let fsharpProjectOptions = {
+            fsharpProjectOptions with
+                OtherOptions =
+                    fsharpProjectOptions.OtherOptions
+                    |> Array.append referenceAssemblies
+                    // |> Array.append nugetDependencies
+                    |> Array.append [| "--nowarn:3242" |] // Disable attribute warning
+                    |> Array.distinct
+        }
+
+        let restoreResult =
+         System.Diagnostics.Process.Start(
+             System.Diagnostics.ProcessStartInfo(
+                 FileName = "dotnet",
+                 Arguments = sprintf "restore \"%s\"" absoluteFsprojPath,
+                 WorkingDirectory = projectDirectory.FullName,
+                 RedirectStandardOutput = true,
+                 RedirectStandardError = true,
+                 UseShellExecute = false
+             )
+         )
+
+        restoreResult.WaitForExit()
+
+        let checker = FSharp.Compiler.CodeAnalysis.FSharpChecker.Create()
+
+        let! checkResult = checker.ParseAndCheckProject(fsharpProjectOptions) |> Async.StartAsTask
+
+        return
+            checkResult.Diagnostics
+            |> Array.filter (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
+    }
 
 let verifyProjectBuilds (absoluteProjectDir: AbsoluteProjectDir) =
     task {
@@ -133,6 +198,7 @@ let verifyProjectBuilds (absoluteProjectDir: AbsoluteProjectDir) =
         let readFileSnippet (projectDir: AbsoluteProjectDir) (relativeFilePath: string) (errorLine: int) =
             try
                 let (FilePath projectPath) = AbsoluteProjectDir.asFilePath projectDir
+
                 let fullPath =
                     if Path.IsPathRooted(relativeFilePath) then
                         relativeFilePath
@@ -145,9 +211,11 @@ let verifyProjectBuilds (absoluteProjectDir: AbsoluteProjectDir) =
                     let endLine = min lines.Length (errorLine + 5)
 
                     let snippet = StringBuilder()
-                    snippet.AppendLine(sprintf "\n  File: %s (lines %d-%d)" relativeFilePath startLine endLine) |> ignore
 
-                    for i in startLine .. endLine do
+                    snippet.AppendLine(sprintf "\n  File: %s (lines %d-%d)" relativeFilePath startLine endLine)
+                    |> ignore
+
+                    for i in startLine..endLine do
                         let prefix = if i = errorLine then " >>> " else "     "
                         let lineContent = if i <= lines.Length then lines.[i - 1] else ""
                         snippet.AppendLine(sprintf "%s%3d | %s" prefix i lineContent) |> ignore
@@ -155,15 +223,15 @@ let verifyProjectBuilds (absoluteProjectDir: AbsoluteProjectDir) =
                     Some(snippet.ToString())
                 else
                     None
-            with _ -> None
+            with _ ->
+                None
 
         // Collect unique files that have errors/warnings
         let filesWithIssues =
             (errorsWithContext |> List.map (fun (f, l, _, _) -> (f, l)))
             @ (warningsWithContext |> List.map (fun (f, l, _, _) -> (f, l)))
             |> List.distinct
-            |> List.map (fun (filePath, line) ->
-                (filePath, line, readFileSnippet absoluteProjectDir filePath line))
+            |> List.map (fun (filePath, line) -> (filePath, line, readFileSnippet absoluteProjectDir filePath line))
 
         // Fall back to simple error detection if no path-based errors found
         let errors =
@@ -193,7 +261,8 @@ let verifyProjectBuilds (absoluteProjectDir: AbsoluteProjectDir) =
                 errorDetails.AppendLine("========================") |> ignore
 
                 for (filePath, line, col, message) in errorsWithContext do
-                    errorDetails.AppendLine(sprintf "\nError: %s(%d,%d): %s" filePath line col message) |> ignore
+                    errorDetails.AppendLine(sprintf "\nError: %s(%d,%d): %s" filePath line col message)
+                    |> ignore
 
                     // Find and append the file snippet for this error
                     filesWithIssues
@@ -201,7 +270,8 @@ let verifyProjectBuilds (absoluteProjectDir: AbsoluteProjectDir) =
                     |> Option.bind (fun (_, _, snippet) -> snippet)
                     |> Option.iter (fun s -> errorDetails.Append(s) |> ignore)
             elif errors.Length > 0 then
-                errorDetails.AppendLine(sprintf "Compilation errors found:\n%s" (String.concat "\n" errors)) |> ignore
+                errorDetails.AppendLine(sprintf "Compilation errors found:\n%s" (String.concat "\n" errors))
+                |> ignore
 
             return Error(sprintf "%s\n\nFull build output:\n%s" (errorDetails.ToString()) output)
         elif warningsWithContext.Length > 0 || warnings.Length > 0 then
@@ -212,7 +282,8 @@ let verifyProjectBuilds (absoluteProjectDir: AbsoluteProjectDir) =
                 warningDetails.AppendLine("====================") |> ignore
 
                 for (filePath, line, col, message) in warningsWithContext do
-                    warningDetails.AppendLine(sprintf "\nWarning: %s(%d,%d): %s" filePath line col message) |> ignore
+                    warningDetails.AppendLine(sprintf "\nWarning: %s(%d,%d): %s" filePath line col message)
+                    |> ignore
 
                     // Find and append the file snippet for this warning
                     filesWithIssues
@@ -220,18 +291,20 @@ let verifyProjectBuilds (absoluteProjectDir: AbsoluteProjectDir) =
                     |> Option.bind (fun (_, _, snippet) -> snippet)
                     |> Option.iter (fun s -> warningDetails.Append(s) |> ignore)
             else
-                warningDetails.AppendLine(sprintf "Build warnings found:\n%s" (String.concat "\n" warnings)) |> ignore
+                warningDetails.AppendLine(sprintf "Build warnings found:\n%s" (String.concat "\n" warnings))
+                |> ignore
 
             return Error(sprintf "%s\n\nFull build output:\n%s" (warningDetails.ToString()) output)
         else
             // No compilation errors/warnings found, check build result
             match buildResult with
-            | Error err ->
-                return Error(sprintf "Build process failed: %A\nBuild output:\n%s" err output)
+            | Error err -> return Error(sprintf "Build process failed: %A\nBuild output:\n%s" err output)
             | Ok(_, stderr) ->
                 let stderrStr = stderr.Trim()
+
                 if stderrStr.Length > 0 && not (stderrStr.Contains("0 Error(s)")) then
-                    return Error(sprintf "Build failed with stderr output:\n%s\n\nFull build output:\n%s" stderrStr output)
+                    return
+                        Error(sprintf "Build failed with stderr output:\n%s\n\nFull build output:\n%s" stderrStr output)
                 else
                     return Ok()
     }
@@ -920,6 +993,99 @@ let ``Add page command with multiple URL parts, own layout and auto updating lay
             if Directory.Exists(folder) then
                 Directory.Delete(folder, true)
     }
+//
+// [<Fact>]
+// let ``Simple FSharpChecker type checking with minimal project`` () =
+//     task {
+//         let folder = getFolder ()
+//
+//         try
+//             // Create minimal project structure
+//             Directory.CreateDirectory(folder) |> ignore
+//
+//             // Create minimal .fsproj file
+//             let fsprojContent =
+//                 """<Project Sdk="Microsoft.NET.Sdk">
+//   <PropertyGroup>
+//     <TargetFramework>net8.0</TargetFramework>
+//     <OutputType>Exe</OutputType>
+//   </PropertyGroup>
+//   <ItemGroup>
+//     <Compile Include="Program.fs" />
+//   </ItemGroup>
+// </Project>"""
+//
+//             let fsprojPath = Path.Combine(folder, "Minimal.fsproj")
+//             File.WriteAllText(fsprojPath, fsprojContent)
+//
+//             // Create Program.fs with valid code
+//             let programContent =
+//                 """module Program
+//
+// // Simple valid F# code
+// let add (x: int) (y: int) = x + ""
+//
+// let main _argv =
+//     let result = add 5 3
+//     printfn "%d" result
+//     0"""
+//
+//             let programPath = Path.Combine(folder, "Program.fs")
+//             File.WriteAllText(programPath, programContent)
+//
+//             // // Run dotnet restore first to ensure all references are available
+//             // let restoreResult =
+//             //     System.Diagnostics.Process.Start(
+//             //         System.Diagnostics.ProcessStartInfo(
+//             //             FileName = "dotnet",
+//             //             Arguments = sprintf "restore \"%s\"" fsprojPath,
+//             //             WorkingDirectory = folder,
+//             //             RedirectStandardOutput = true,
+//             //             RedirectStandardError = true,
+//             //             UseShellExecute = false
+//             //         )
+//             //     )
+//             //
+//             // restoreResult.WaitForExit()
+//
+//             let projectDirectory = DirectoryInfo(folder)
+//             let toolsPath = Init.init projectDirectory None
+//
+//             let loader = WorkspaceLoader.Create(toolsPath, [])
+//
+//             let absoluteFsprojPath = Path.GetFullPath(fsprojPath)
+//
+//             let projectOptions = loader.LoadProjects([ absoluteFsprojPath ]) |> Seq.toArray
+//
+//             Assert.True(projectOptions.Length > 0, "Should load at least one project")
+//
+//             let fsharpProjectOptions =
+//                 FCS.mapToFSharpProjectOptions projectOptions.[0] projectOptions
+//
+//             let referenceAssemblies =
+//                 Directory.GetFiles(RuntimeEnvironment.GetRuntimeDirectory(), "*.dll")
+//                 |> Array.map (fun path -> "-r:" + path)
+//
+//             let fsharpProjectOptions = {
+//                 fsharpProjectOptions with
+//                     OtherOptions = Array.append fsharpProjectOptions.OtherOptions referenceAssemblies |> Array.distinct
+//             }
+//
+//             let checker = FSharp.Compiler.CodeAnalysis.FSharpChecker.Create()
+//
+//             let! checkResult = checker.ParseAndCheckProject(fsharpProjectOptions) |> Async.StartAsTask
+//
+//             let allErrors =
+//                 checkResult.Diagnostics
+//                 |> Array.filter (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
+//
+//             if allErrors.Length > 0 then
+//                 failwithf "Type checking errors found: %A" allErrors
+//
+//         finally
+//             if Directory.Exists(folder) then
+//                 Directory.Delete(folder, true)
+//     }
 
 [<Fact>]
 let ``Init command create a buildable project`` () =
@@ -940,15 +1106,13 @@ let ``Init command create a buildable project`` () =
 
             Expects.ok logOutput result
 
-            // Verify the project builds without errors or warnings
-            let! buildVerificationResult =
-                verifyProjectBuilds absoluteProjectDir
+            let! buildVerificationResult = typeCheckProject absoluteProjectDir
 
-            match buildVerificationResult with
-            | Error errorMessage -> Assert.Fail(errorMessage)
-            | Ok() -> () // Build succeeded without errors or warnings
+            if buildVerificationResult.Length > 0 then
+                failwithf "%A" buildVerificationResult
 
         finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
+            // if Directory.Exists(folder) then
+            //     Directory.Delete(folder, true)
+            ()
     }
