@@ -112,20 +112,20 @@ let fableWatch absoluteProjectDir stopSpinner =
                 outputHandler
     }
 
-let server absoluteProjectDir =
+let server workingDirectory absoluteProjectDir =
     let stopSpinner = createSpinner "Starting development server..."
 
     eff {
         let! log = Log().Get()
         let isVerbose = System.Environment.CommandLine.Contains("--verbose")
 
-        let! dotnetSdkVersion = getDotnetSdkVersion ()
+        let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
         log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
-        do! generate absoluteProjectDir dotnetSdkVersion
+        do! generate workingDirectory absoluteProjectDir dotnetSdkVersion
 
         do! validate absoluteProjectDir
-        do! ensureViteInstalled ()
+        do! ensureViteInstalled workingDirectory
 
         let! result =
             fableWatch absoluteProjectDir stopSpinner

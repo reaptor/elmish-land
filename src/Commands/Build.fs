@@ -49,20 +49,20 @@ let fableBuild absoluteProjectDir isVerbose =
         CancellationToken.None
         ignore
 
-let build absoluteProjectDir =
+let build workingDirectory absoluteProjectDir =
     let isVerbose = System.Environment.CommandLine.Contains("--verbose")
     let stopSpinner = createSpinner "Building your project..."
 
     eff {
         let! log = Log().Get()
 
-        let! dotnetSdkVersion = getDotnetSdkVersion ()
+        let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
         log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
-        do! generate absoluteProjectDir dotnetSdkVersion
+        do! generate workingDirectory absoluteProjectDir dotnetSdkVersion
 
         do! validate absoluteProjectDir
-        do! ensureViteInstalled ()
+        do! ensureViteInstalled workingDirectory
 
         let! result =
             fableBuild absoluteProjectDir isVerbose

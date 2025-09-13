@@ -6,7 +6,7 @@ open ElmishLand.Process
 open ElmishLand.AppError
 open Orsak
 
-let getDotnetSdkVersion () =
+let getDotnetSdkVersion workingDirectory =
     eff {
         let! versionOutput =
             runProcess false workingDirectory "dotnet" [| "--version" |] CancellationToken.None ignore

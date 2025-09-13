@@ -16,7 +16,7 @@ open ElmishLand.AppError
 open ElmishLand.FsProj
 open ElmishLand.Generate
 
-let getNodeVersion () =
+let getNodeVersion workingDirectory =
     runProcess false workingDirectory "node" [| "-v" |] CancellationToken.None ignore
     |> Effect.changeError (fun _ -> AppError.NodeNotFound)
     |> Effect.map (fun (output, _) ->
@@ -43,7 +43,12 @@ dotnet elmish-land server"""
 
     getFormattedCommandOutput header content
 
-let initFiles (absoluteProjectDir: AbsoluteProjectDir) (dotnetSdkVersion: DotnetSdkVersion) (nodeVersion: Version) =
+let initFiles
+    workingDirectory
+    (absoluteProjectDir: AbsoluteProjectDir)
+    (dotnetSdkVersion: DotnetSdkVersion)
+    (nodeVersion: Version)
+    =
     eff {
         let! log = Log().Get()
 
@@ -233,14 +238,14 @@ let initFiles (absoluteProjectDir: AbsoluteProjectDir) (dotnetSdkVersion: Dotnet
             [ "src"; "Shared.fs" ]
             (Shared_template routeData)
 
-        do! generate absoluteProjectDir dotnetSdkVersion
+        do! generate workingDirectory absoluteProjectDir dotnetSdkVersion
 
         do! validate absoluteProjectDir
 
         return routeData
     }
 
-let initCliCommands (absoluteProjectDir: AbsoluteProjectDir) (_routeData: TemplateData) =
+let initCliCommands workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (_routeData: TemplateData) =
     let isVerbose = System.Environment.CommandLine.Contains("--verbose")
 
     eff {
@@ -326,21 +331,21 @@ let initCliCommands (absoluteProjectDir: AbsoluteProjectDir) (_routeData: Templa
             |> Effect.map ignore<string * string>
     }
 
-let init (absoluteProjectDir: AbsoluteProjectDir) =
+let init workingDirectory (absoluteProjectDir: AbsoluteProjectDir) =
     let stopSpinner = createSpinner "Creating your project..."
 
     eff {
         let! log = Log().Get()
 
         // Get versions first using CLI
-        let! dotnetSdkVersion = getDotnetSdkVersion ()
-        let! nodeVersion = getNodeVersion ()
+        let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
+        let! nodeVersion = getNodeVersion workingDirectory
 
         // Create files without CLI commands
-        let! routeData = initFiles absoluteProjectDir dotnetSdkVersion nodeVersion
+        let! routeData = initFiles workingDirectory absoluteProjectDir dotnetSdkVersion nodeVersion
 
         // Run CLI commands
-        do! initCliCommands absoluteProjectDir routeData
+        do! initCliCommands workingDirectory absoluteProjectDir routeData
 
         stopSpinner ()
         log.Info(successMessage ())

@@ -314,7 +314,7 @@ module FilePath =
         else
             [||]
 
-let workingDirectory = FilePath.fromString Environment.CurrentDirectory
+// let workingDirectory = FilePath.fromString Environment.CurrentDirectory
 
 let relativeProjectDir commandLineArgs =
     match
@@ -330,19 +330,13 @@ let relativeProjectDir commandLineArgs =
 type AbsoluteProjectDir = | AbsoluteProjectDir of FilePath
 
 module AbsoluteProjectDir =
-    let create commandLineArgs =
+    let create workingDirectory commandLineArgs =
         workingDirectory
         |> FilePath.appendFilePath (relativeProjectDir commandLineArgs)
         |> AbsoluteProjectDir
 
     let asFilePath (AbsoluteProjectDir projectDir) = projectDir
     let asString (AbsoluteProjectDir(FilePath projectDir)) = projectDir
-
-    let asRelativeFilePath (AbsoluteProjectDir absoluteProjectDir) =
-        absoluteProjectDir
-        |> FilePath.asString
-        |> fun x -> x.Replace(FilePath.asString workingDirectory, "")
-        |> FilePath
 
 module FileName =
     let fromFilePath (FilePath filePath) = Path.GetFileName(filePath) |> FileName

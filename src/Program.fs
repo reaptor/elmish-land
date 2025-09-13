@@ -27,16 +27,18 @@ let run argv =
     eff {
         let! log = Log().Get()
 
+        let workingDir = FilePath.fromString Environment.CurrentDirectory
+        let absoluteProjectDir = AbsoluteProjectDir.create workingDir argv
+
         return!
             match List.ofArray argv with
-            | "init" :: _ -> init (AbsoluteProjectDir.create argv)
-            | "server" :: _ -> server (AbsoluteProjectDir.create argv)
-            | "build" :: _ -> build (AbsoluteProjectDir.create argv)
-            | "restore" :: _ -> restore (AbsoluteProjectDir.create argv)
-            | "add" :: "page" :: NotFlag url :: _ ->
-                addPage (AbsoluteProjectDir.create argv) url (hasAutoAcceptFlag argv)
+            | "init" :: _ -> init workingDir absoluteProjectDir
+            | "server" :: _ -> server workingDir absoluteProjectDir
+            | "build" :: _ -> build workingDir absoluteProjectDir
+            | "restore" :: _ -> restore workingDir absoluteProjectDir
+            | "add" :: "page" :: NotFlag url :: _ -> addPage workingDir absoluteProjectDir url (hasAutoAcceptFlag argv)
             | "add" :: "layout" :: NotFlag url :: _ ->
-                addLayout (AbsoluteProjectDir.create argv) url (hasAutoAcceptFlag argv)
+                addLayout workingDir absoluteProjectDir url (hasAutoAcceptFlag argv)
             | _ ->
                 $"""
     %s{getWelcomeTitle ()}

@@ -2,10 +2,8 @@ module CommandTests
 
 open System
 open System.IO
-open System.Text
-open System.Text.RegularExpressions
+open System.Threading.Tasks
 open ElmishLand.Base
-open ElmishLand.Effect
 open ElmishLand.Init
 open ElmishLand.AddPage
 open ElmishLand.AddLayout
@@ -13,11 +11,9 @@ open Runner
 open Xunit
 open Orsak
 open Ionide.ProjInfo
-open Ionide.ProjInfo.Types
-open System.Runtime.InteropServices
 
 let getFolder () =
-    Path.Combine(Environment.CurrentDirectory,"Proj_" + Guid.NewGuid().ToString().Replace("-", ""))
+    Path.Combine(Environment.CurrentDirectory, "Proj_" + Guid.NewGuid().ToString().Replace("-", ""))
 
 let leadingWhitespace (s: string) =
     let mutable i = 0
@@ -26,6 +22,34 @@ let leadingWhitespace (s: string) =
         i <- i + 1
 
     s.Substring(0, i)
+
+let withNewProject (f: AbsoluteProjectDir -> Effect<_, _, _>) : Task<unit> =
+    task {
+        let folder = getFolder ()
+
+        try
+            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
+            let dotnetSdkVersion = DotnetSdkVersion(Version(9, 0, 100))
+            let nodeVersion = Version(20, 0, 0)
+
+            let! result, logOutput =
+                eff {
+                    let! _ =
+                        initFiles
+                            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                            absoluteProjectDir
+                            dotnetSdkVersion
+                            nodeVersion
+
+                    do! f absoluteProjectDir
+                }
+                |> runEff
+
+            Expects.ok logOutput result
+        finally
+            if Directory.Exists(folder) then
+                Directory.Delete(folder, true)
+    }
 
 let createMinimalProject projectPath =
     let fsprojContent =
@@ -74,14 +98,29 @@ let createMinimalProject projectPath =
         "<Project />"
     )
 
-let typeCheckProject (absoluteProjectDir: AbsoluteProjectDir) =
+let expectProjectTypeChecks (absoluteProjectDir: AbsoluteProjectDir) =
     task {
         let projectDirectory = DirectoryInfo(AbsoluteProjectDir.asString absoluteProjectDir)
         let toolsPath = Init.init projectDirectory None
 
+        // Run dotnet restore first to ensure all references are available
+        let restoreResult =
+            System.Diagnostics.Process.Start(
+                System.Diagnostics.ProcessStartInfo(
+                    FileName = "dotnet",
+                    Arguments = "restore",
+                    WorkingDirectory = (AbsoluteProjectDir.asString absoluteProjectDir),
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false
+                )
+            )
+
+        restoreResult.WaitForExit()
+
         let loader = WorkspaceLoader.Create(toolsPath, [])
 
-        let (FsProjPath (FilePath absoluteFsprojPath)) =
+        let (FsProjPath(FilePath absoluteFsprojPath)) =
             FsProjPath.findExactlyOneFromProjectDir absoluteProjectDir
             |> Result.defaultWith (failwithf "%A")
 
@@ -92,225 +131,37 @@ let typeCheckProject (absoluteProjectDir: AbsoluteProjectDir) =
         let fsharpProjectOptions =
             FCS.mapToFSharpProjectOptions projectOptions.[0] projectOptions
 
-        let referenceAssemblies =
-            Directory.GetFiles(RuntimeEnvironment.GetRuntimeDirectory(), "*.dll")
-            |> Array.map (fun path -> "-r:" + path)
-
-        // let nugetDependenciesBaseDir =
-        //     Path.Combine(__SOURCE_DIRECTORY__, "dependencies")
-
-        // let nugetDependencies =
-        //     Directory.GetFiles(nugetDependenciesBaseDir, "*.dll")
-        //     |> Array.map (fun path -> "-r:" + path)
-
         let fsharpProjectOptions = {
             fsharpProjectOptions with
                 OtherOptions =
                     fsharpProjectOptions.OtherOptions
-                    |> Array.append referenceAssemblies
-                    // |> Array.append nugetDependencies
-                    |> Array.append [| "--nowarn:3242" |] // Disable attribute warning
+                    // |> Array.append [| "--nowarn:3242" |] // Disable attribute warning
                     |> Array.distinct
         }
-
-        let restoreResult =
-         System.Diagnostics.Process.Start(
-             System.Diagnostics.ProcessStartInfo(
-                 FileName = "dotnet",
-                 Arguments = sprintf "restore \"%s\"" absoluteFsprojPath,
-                 WorkingDirectory = projectDirectory.FullName,
-                 RedirectStandardOutput = true,
-                 RedirectStandardError = true,
-                 UseShellExecute = false
-             )
-         )
-
-        restoreResult.WaitForExit()
 
         let checker = FSharp.Compiler.CodeAnalysis.FSharpChecker.Create()
 
         let! checkResult = checker.ParseAndCheckProject(fsharpProjectOptions) |> Async.StartAsTask
 
-        return
+        let buildVerificationResult =
             checkResult.Diagnostics
             |> Array.filter (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
-    }
 
-let verifyProjectBuilds (absoluteProjectDir: AbsoluteProjectDir) =
-    task {
-        let buildOutput = StringBuilder()
-
-        let! buildResult, _ =
-            eff {
-                return!
-                    ElmishLand.Process.runProcess
-                        false
-                        (AbsoluteProjectDir.asFilePath absoluteProjectDir)
-                        "dotnet"
-                        [| "build" |]
-                        (System.Threading.CancellationToken.None)
-                        (fun line -> buildOutput.AppendLine(line) |> ignore)
-            }
-            |> runEff
-
-        let output = buildOutput.ToString()
-
-        // Use regex to find actual compilation errors and warnings with file paths
-        // Patterns like "path/file.fs(10,5): error FS0001: message"
-        let errorWithPathPattern =
-            Regex(@"([^\s]+\.fs)\((\d+),(\d+)\):\s*(.*error[^:]*:\s*.*)", RegexOptions.IgnoreCase)
-
-        let warningWithPathPattern =
-            Regex(@"([^\s]+\.fs)\((\d+),(\d+)\):\s*(.*warning[^:]*:\s*.*)", RegexOptions.IgnoreCase)
-
-        // Also keep simple patterns for errors without paths
-        let errorPattern =
-            Regex(@"(\berror [A-Z]+\d+:|\.fs\(\d+,\d+\): .*error)", RegexOptions.IgnoreCase)
-
-        let warningPattern =
-            Regex(@"(\bwarning [A-Z]+\d+:|\.fs\(\d+,\d+\): .*warning)", RegexOptions.IgnoreCase)
-
-        // Extract errors with file information
-        let errorsWithContext =
-            errorWithPathPattern.Matches(output)
-            |> Seq.cast<Match>
-            |> Seq.map (fun m ->
-                let filePath = m.Groups.[1].Value
-                let line = int m.Groups.[2].Value
-                let col = int m.Groups.[3].Value
-                let message = m.Groups.[4].Value
-                (filePath, line, col, message))
-            |> Seq.toList
-
-        // Extract warnings with file information
-        let warningsWithContext =
-            warningWithPathPattern.Matches(output)
-            |> Seq.cast<Match>
-            |> Seq.map (fun m ->
-                let filePath = m.Groups.[1].Value
-                let line = int m.Groups.[2].Value
-                let col = int m.Groups.[3].Value
-                let message = m.Groups.[4].Value
-                (filePath, line, col, message))
-            |> Seq.toList
-
-        // Helper function to read file snippet around error/warning line
-        let readFileSnippet (projectDir: AbsoluteProjectDir) (relativeFilePath: string) (errorLine: int) =
-            try
-                let (FilePath projectPath) = AbsoluteProjectDir.asFilePath projectDir
-
-                let fullPath =
-                    if Path.IsPathRooted(relativeFilePath) then
-                        relativeFilePath
-                    else
-                        Path.Combine(projectPath, relativeFilePath)
-
-                if File.Exists(fullPath) then
-                    let lines = File.ReadAllLines(fullPath)
-                    let startLine = max 1 (errorLine - 5)
-                    let endLine = min lines.Length (errorLine + 5)
-
-                    let snippet = StringBuilder()
-
-                    snippet.AppendLine(sprintf "\n  File: %s (lines %d-%d)" relativeFilePath startLine endLine)
-                    |> ignore
-
-                    for i in startLine..endLine do
-                        let prefix = if i = errorLine then " >>> " else "     "
-                        let lineContent = if i <= lines.Length then lines.[i - 1] else ""
-                        snippet.AppendLine(sprintf "%s%3d | %s" prefix i lineContent) |> ignore
-
-                    Some(snippet.ToString())
-                else
-                    None
-            with _ ->
-                None
-
-        // Collect unique files that have errors/warnings
-        let filesWithIssues =
-            (errorsWithContext |> List.map (fun (f, l, _, _) -> (f, l)))
-            @ (warningsWithContext |> List.map (fun (f, l, _, _) -> (f, l)))
-            |> List.distinct
-            |> List.map (fun (filePath, line) -> (filePath, line, readFileSnippet absoluteProjectDir filePath line))
-
-        // Fall back to simple error detection if no path-based errors found
-        let errors =
-            if errorsWithContext.IsEmpty then
-                errorPattern.Matches(output)
-                |> Seq.cast<Match>
-                |> Seq.map (fun m -> m.Value)
-                |> Seq.toList
-            else
-                []
-
-        let warnings =
-            if warningsWithContext.IsEmpty then
-                warningPattern.Matches(output)
-                |> Seq.cast<Match>
-                |> Seq.map (fun m -> m.Value)
-                |> Seq.toList
-            else
-                []
-
-        // Check if there are compilation errors/warnings
-        if errorsWithContext.Length > 0 || errors.Length > 0 then
-            let errorDetails = StringBuilder()
-
-            if errorsWithContext.Length > 0 then
-                errorDetails.AppendLine("Compilation errors found:") |> ignore
-                errorDetails.AppendLine("========================") |> ignore
-
-                for (filePath, line, col, message) in errorsWithContext do
-                    errorDetails.AppendLine(sprintf "\nError: %s(%d,%d): %s" filePath line col message)
-                    |> ignore
-
-                    // Find and append the file snippet for this error
-                    filesWithIssues
-                    |> List.tryFind (fun (f, l, _) -> f = filePath && l = line)
-                    |> Option.bind (fun (_, _, snippet) -> snippet)
-                    |> Option.iter (fun s -> errorDetails.Append(s) |> ignore)
-            elif errors.Length > 0 then
-                errorDetails.AppendLine(sprintf "Compilation errors found:\n%s" (String.concat "\n" errors))
-                |> ignore
-
-            return Error(sprintf "%s\n\nFull build output:\n%s" (errorDetails.ToString()) output)
-        elif warningsWithContext.Length > 0 || warnings.Length > 0 then
-            let warningDetails = StringBuilder()
-
-            if warningsWithContext.Length > 0 then
-                warningDetails.AppendLine("Build warnings found:") |> ignore
-                warningDetails.AppendLine("====================") |> ignore
-
-                for (filePath, line, col, message) in warningsWithContext do
-                    warningDetails.AppendLine(sprintf "\nWarning: %s(%d,%d): %s" filePath line col message)
-                    |> ignore
-
-                    // Find and append the file snippet for this warning
-                    filesWithIssues
-                    |> List.tryFind (fun (f, l, _) -> f = filePath && l = line)
-                    |> Option.bind (fun (_, _, snippet) -> snippet)
-                    |> Option.iter (fun s -> warningDetails.Append(s) |> ignore)
-            else
-                warningDetails.AppendLine(sprintf "Build warnings found:\n%s" (String.concat "\n" warnings))
-                |> ignore
-
-            return Error(sprintf "%s\n\nFull build output:\n%s" (warningDetails.ToString()) output)
-        else
-            // No compilation errors/warnings found, check build result
-            match buildResult with
-            | Error err -> return Error(sprintf "Build process failed: %A\nBuild output:\n%s" err output)
-            | Ok(_, stderr) ->
-                let stderrStr = stderr.Trim()
-
-                if stderrStr.Length > 0 && not (stderrStr.Contains("0 Error(s)")) then
-                    return
-                        Error(sprintf "Build failed with stderr output:\n%s\n\nFull build output:\n%s" stderrStr output)
-                else
-                    return Ok()
+        if buildVerificationResult.Length > 0 then
+            failwithf $"%A{buildVerificationResult}"
     }
 
 [<Fact>]
 let ``addPage creates page with correct indentation in preview and fsproj`` () =
+    withNewProject (fun projectDir ->
+        eff {
+            do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/Page1" true
+            ()
+        })
+
+[<Fact>]
+let ``addPage creates page with correct indentation in preview and fsproj'`` () =
+
     task {
         let folder = getFolder ()
 
@@ -321,7 +172,7 @@ let ``addPage creates page with correct indentation in preview and fsproj`` () =
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
 
             // Run addPage with auto-accept = true to avoid user interaction
-            let! result, logs = runEff (addPage absoluteProjectDir "/Page1" true)
+            let! result, logs = runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/Page1" true)
 
             // Verify the operation succeeded
             let _successResult = Expects.ok logs result
@@ -421,7 +272,9 @@ let ``addLayout after addPage updates project file order and page layout referen
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
 
             // Step 1: Add a page first
-            let! addPageResult, addPageLogs = runEff (addPage absoluteProjectDir "/AnotherPage" true)
+            let! addPageResult, addPageLogs =
+                runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/AnotherPage" true)
+
             let _addPageSuccess = Expects.ok addPageLogs addPageResult
 
             // Verify page was added to project file
@@ -439,7 +292,8 @@ let ``addLayout after addPage updates project file order and page layout referen
             Assert.True(File.Exists(pageFilePath), "Page file should be created")
 
             // Step 2: Add a layout for the same path
-            let! addLayoutResult, addLayoutLogs = runEff (addLayout absoluteProjectDir "/AnotherPage" true)
+            let! addLayoutResult, addLayoutLogs =
+                runEff (addLayout (FilePath.fromString folder) absoluteProjectDir "/AnotherPage" true)
 
             let _addLayoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
@@ -492,7 +346,8 @@ let ``nested layout with page uses correct layout message reference`` () =
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
 
             // Step 1: Add nested layout first
-            let! addLayoutResult, addLayoutLogs = runEff (addLayout absoluteProjectDir "/PageWithNestedLayout" true)
+            let! addLayoutResult, addLayoutLogs =
+                runEff (addLayout (FilePath.fromString folder) absoluteProjectDir "/PageWithNestedLayout" true)
 
             let _addLayoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
@@ -513,7 +368,8 @@ let ``nested layout with page uses correct layout message reference`` () =
             Assert.True(File.Exists(nestedLayoutFilePath), "Nested layout file should be created")
 
             // Step 2: Add page for the nested layout path
-            let! addPageResult, addPageLogs = runEff (addPage absoluteProjectDir "/PageWithNestedLayout" true)
+            let! addPageResult, addPageLogs =
+                runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/PageWithNestedLayout" true)
 
             let _addPageSuccess = Expects.ok addPageLogs addPageResult
 
@@ -694,10 +550,14 @@ let ``Wrong layout reference in page should generate helpful error message`` () 
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
 
             // Step 1: Add an About page with its own layout
-            let! addLayoutResult, addLayoutLogs = runEff (addLayout absoluteProjectDir "/About" true)
+            let! addLayoutResult, addLayoutLogs =
+                runEff (addLayout (FilePath.fromString folder) absoluteProjectDir "/About" true)
+
             let _layoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
-            let! addPageResult, addPageLogs = runEff (addPage absoluteProjectDir "/About" true)
+            let! addPageResult, addPageLogs =
+                runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/About" true)
+
             let _pageSuccess = Expects.ok addPageLogs addPageResult
 
             // Step 2: Manually edit the About page to use the wrong layout (root Layout instead of About.Layout)
@@ -762,10 +622,14 @@ let ``Correct layout reference in page should not generate any errors`` () =
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
 
             // Step 1: Add an About page with its own layout
-            let! addLayoutResult, addLayoutLogs = runEff (addLayout absoluteProjectDir "/About" true)
+            let! addLayoutResult, addLayoutLogs =
+                runEff (addLayout (FilePath.fromString folder) absoluteProjectDir "/About" true)
+
             let _layoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
-            let! addPageResult, addPageLogs = runEff (addPage absoluteProjectDir "/About" true)
+            let! addPageResult, addPageLogs =
+                runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/About" true)
+
             let _pageSuccess = Expects.ok addPageLogs addPageResult
 
             // Step 2: Verify the About page is using the correct layout (About.Layout.Msg)
@@ -821,15 +685,19 @@ let ``Nested page with wrong layout reference should generate correct error mess
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
 
             // Step 1: Add About layout
-            let! addLayoutResult, addLayoutLogs = runEff (addLayout absoluteProjectDir "/About" true)
+            let! addLayoutResult, addLayoutLogs =
+                runEff (addLayout (FilePath.fromString folder) absoluteProjectDir "/About" true)
+
             let _layoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
             // Step 2: Add About page
-            let! aboutResult, aboutLogs = runEff (addPage absoluteProjectDir "/About" true)
+            let! aboutResult, aboutLogs = runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/About" true)
             let _aboutSuccess = Expects.ok aboutLogs aboutResult
 
             // Step 3: Add nested About/Me page
-            let! nestedResult, nestedLogs = runEff (addPage absoluteProjectDir "/About/Me" true)
+            let! nestedResult, nestedLogs =
+                runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/About/Me" true)
+
             let _nestedSuccess = Expects.ok nestedLogs nestedResult
 
             // Step 4: Manually change the About/Me page to use wrong layout (root Layout instead of About.Layout)
@@ -888,7 +756,14 @@ let ``initFiles creates project files without CLI commands`` () =
             let nodeVersion = System.Version(20, 0, 0)
 
             // Call initFiles with mocked versions
-            let! result, logs = runEff (ElmishLand.Init.initFiles absoluteProjectDir dotnetSdkVersion nodeVersion)
+            let! result, logs =
+                runEff (
+                    ElmishLand.Init.initFiles
+                        (FilePath.fromString folder)
+                        absoluteProjectDir
+                        dotnetSdkVersion
+                        nodeVersion
+                )
 
             // Verify the operation succeeded
             let routeData = Expects.ok logs result
@@ -978,9 +853,9 @@ let ``Add page command with multiple URL parts, own layout and auto updating lay
 
             let! result, logOutput =
                 eff {
-                    let! _ = initFiles absoluteProjectDir dotnetSdkVersion nodeVersion
-                    do! addLayout absoluteProjectDir "/About/Me" true
-                    do! addPage absoluteProjectDir "/About/Me" true
+                    let! _ = initFiles (FilePath.fromString folder) absoluteProjectDir dotnetSdkVersion nodeVersion
+                    do! addLayout (FilePath.fromString folder) absoluteProjectDir "/About/Me" true
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/About/Me" true
                 }
                 |> runEff
 
@@ -993,102 +868,9 @@ let ``Add page command with multiple URL parts, own layout and auto updating lay
             if Directory.Exists(folder) then
                 Directory.Delete(folder, true)
     }
-//
-// [<Fact>]
-// let ``Simple FSharpChecker type checking with minimal project`` () =
-//     task {
-//         let folder = getFolder ()
-//
-//         try
-//             // Create minimal project structure
-//             Directory.CreateDirectory(folder) |> ignore
-//
-//             // Create minimal .fsproj file
-//             let fsprojContent =
-//                 """<Project Sdk="Microsoft.NET.Sdk">
-//   <PropertyGroup>
-//     <TargetFramework>net8.0</TargetFramework>
-//     <OutputType>Exe</OutputType>
-//   </PropertyGroup>
-//   <ItemGroup>
-//     <Compile Include="Program.fs" />
-//   </ItemGroup>
-// </Project>"""
-//
-//             let fsprojPath = Path.Combine(folder, "Minimal.fsproj")
-//             File.WriteAllText(fsprojPath, fsprojContent)
-//
-//             // Create Program.fs with valid code
-//             let programContent =
-//                 """module Program
-//
-// // Simple valid F# code
-// let add (x: int) (y: int) = x + ""
-//
-// let main _argv =
-//     let result = add 5 3
-//     printfn "%d" result
-//     0"""
-//
-//             let programPath = Path.Combine(folder, "Program.fs")
-//             File.WriteAllText(programPath, programContent)
-//
-//             // // Run dotnet restore first to ensure all references are available
-//             // let restoreResult =
-//             //     System.Diagnostics.Process.Start(
-//             //         System.Diagnostics.ProcessStartInfo(
-//             //             FileName = "dotnet",
-//             //             Arguments = sprintf "restore \"%s\"" fsprojPath,
-//             //             WorkingDirectory = folder,
-//             //             RedirectStandardOutput = true,
-//             //             RedirectStandardError = true,
-//             //             UseShellExecute = false
-//             //         )
-//             //     )
-//             //
-//             // restoreResult.WaitForExit()
-//
-//             let projectDirectory = DirectoryInfo(folder)
-//             let toolsPath = Init.init projectDirectory None
-//
-//             let loader = WorkspaceLoader.Create(toolsPath, [])
-//
-//             let absoluteFsprojPath = Path.GetFullPath(fsprojPath)
-//
-//             let projectOptions = loader.LoadProjects([ absoluteFsprojPath ]) |> Seq.toArray
-//
-//             Assert.True(projectOptions.Length > 0, "Should load at least one project")
-//
-//             let fsharpProjectOptions =
-//                 FCS.mapToFSharpProjectOptions projectOptions.[0] projectOptions
-//
-//             let referenceAssemblies =
-//                 Directory.GetFiles(RuntimeEnvironment.GetRuntimeDirectory(), "*.dll")
-//                 |> Array.map (fun path -> "-r:" + path)
-//
-//             let fsharpProjectOptions = {
-//                 fsharpProjectOptions with
-//                     OtherOptions = Array.append fsharpProjectOptions.OtherOptions referenceAssemblies |> Array.distinct
-//             }
-//
-//             let checker = FSharp.Compiler.CodeAnalysis.FSharpChecker.Create()
-//
-//             let! checkResult = checker.ParseAndCheckProject(fsharpProjectOptions) |> Async.StartAsTask
-//
-//             let allErrors =
-//                 checkResult.Diagnostics
-//                 |> Array.filter (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
-//
-//             if allErrors.Length > 0 then
-//                 failwithf "Type checking errors found: %A" allErrors
-//
-//         finally
-//             if Directory.Exists(folder) then
-//                 Directory.Delete(folder, true)
-//     }
 
 [<Fact>]
-let ``Init command create a buildable project`` () =
+let ``Init command creates a buildable project`` () =
     task {
         let folder = getFolder ()
 
@@ -1099,20 +881,16 @@ let ``Init command create a buildable project`` () =
 
             let! result, logOutput =
                 eff {
-                    let! _ = initFiles absoluteProjectDir dotnetSdkVersion nodeVersion
+                    let! _ = initFiles (FilePath.fromString folder) absoluteProjectDir dotnetSdkVersion nodeVersion
                     ()
                 }
                 |> runEff
 
             Expects.ok logOutput result
 
-            let! buildVerificationResult = typeCheckProject absoluteProjectDir
-
-            if buildVerificationResult.Length > 0 then
-                failwithf "%A" buildVerificationResult
+            do! expectProjectTypeChecks absoluteProjectDir
 
         finally
-            // if Directory.Exists(folder) then
-            //     Directory.Delete(folder, true)
-            ()
+            if Directory.Exists(folder) then
+                Directory.Delete(folder, true)
     }
