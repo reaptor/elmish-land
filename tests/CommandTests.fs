@@ -23,7 +23,7 @@ let leadingWhitespace (s: string) =
 
     s.Substring(0, i)
 
-let withNewProject (f: AbsoluteProjectDir -> Effect<_, _, _>) : Task<unit> =
+let withNewProject (f: AbsoluteProjectDir -> Task<_>) : Task<unit> =
     task {
         let folder = getFolder ()
 
@@ -41,11 +41,13 @@ let withNewProject (f: AbsoluteProjectDir -> Effect<_, _, _>) : Task<unit> =
                             dotnetSdkVersion
                             nodeVersion
 
-                    do! f absoluteProjectDir
+                    ()
                 }
                 |> runEff
 
             Expects.ok logOutput result
+
+            do! f absoluteProjectDir
         finally
             if Directory.Exists(folder) then
                 Directory.Delete(folder, true)
@@ -133,10 +135,7 @@ let expectProjectTypeChecks (absoluteProjectDir: AbsoluteProjectDir) =
 
         let fsharpProjectOptions = {
             fsharpProjectOptions with
-                OtherOptions =
-                    fsharpProjectOptions.OtherOptions
-                    // |> Array.append [| "--nowarn:3242" |] // Disable attribute warning
-                    |> Array.distinct
+                OtherOptions = fsharpProjectOptions.OtherOptions |> Array.distinct
         }
 
         let checker = FSharp.Compiler.CodeAnalysis.FSharpChecker.Create()
@@ -145,7 +144,9 @@ let expectProjectTypeChecks (absoluteProjectDir: AbsoluteProjectDir) =
 
         let buildVerificationResult =
             checkResult.Diagnostics
-            |> Array.filter (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
+            |> Array.filter (fun d ->
+                d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Warning
+                || d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
 
         if buildVerificationResult.Length > 0 then
             failwithf $"%A{buildVerificationResult}"
@@ -154,25 +155,9 @@ let expectProjectTypeChecks (absoluteProjectDir: AbsoluteProjectDir) =
 [<Fact>]
 let ``addPage creates page with correct indentation in preview and fsproj`` () =
     withNewProject (fun projectDir ->
-        eff {
-            do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/Page1" true
-            ()
-        })
-
-[<Fact>]
-let ``addPage creates page with correct indentation in preview and fsproj'`` () =
-
-    task {
-        let folder = getFolder ()
-
-        try
-            // Create minimal project structure - much faster than using init
-            createMinimalProject folder
-
-            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
-
+        task {
             // Run addPage with auto-accept = true to avoid user interaction
-            let! result, logs = runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/Page1" true)
+            let! result, logs = runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/Page1" true)
 
             // Verify the operation succeeded
             let _successResult = Expects.ok logs result
@@ -223,9 +208,11 @@ let ``addPage creates page with correct indentation in preview and fsproj'`` () 
             Assert.Equal(previewExistingIndent, previewNewIndent)
 
             // Read the updated project file
-            let projectName = Path.GetFileName(folder)
-            let fsprojPath = Path.Combine(folder, projectName + ".fsproj")
-            let fsprojContent = File.ReadAllText(fsprojPath)
+            let fsprojPath =
+                FsProjPath.findExactlyOneFromProjectDir projectDir
+                |> Result.defaultWith (failwithf "%A")
+
+            let fsprojContent = File.ReadAllText(FsProjPath.asString fsprojPath)
             let lines = fsprojContent.Replace("\r\n", "\n").Split('\n')
 
             // Find the new compile line
@@ -252,13 +239,11 @@ let ``addPage creates page with correct indentation in preview and fsproj'`` () 
             Assert.Equal(prevIndent, newIndent)
 
             // Verify the page file was created
-            let pageFilePath = Path.Combine(folder, "src", "Pages", "Page1", "Page.fs")
-            Assert.True(File.Exists(pageFilePath), "Page file should be created")
+            let pageFilePath =
+                Path.Combine(AbsoluteProjectDir.asString projectDir, "src", "Pages", "Page1", "Page.fs")
 
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
-    }
+            Assert.True(File.Exists(pageFilePath), "Page file should be created")
+        })
 
 [<Fact>]
 let ``addLayout after addPage updates project file order and page layout reference`` () =
