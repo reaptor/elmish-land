@@ -7,6 +7,7 @@ open ElmishLand.Base
 open ElmishLand.Init
 open ElmishLand.AddPage
 open ElmishLand.AddLayout
+open FSharp.Compiler.CodeAnalysis
 open Runner
 open Xunit
 open Orsak
@@ -52,53 +53,6 @@ let withNewProject (f: AbsoluteProjectDir -> Task<_>) : Task<unit> =
             if Directory.Exists(folder) then
                 Directory.Delete(folder, true)
     }
-
-let createMinimalProject projectPath =
-    let fsprojContent =
-        """<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <LangVersion>latest</LangVersion>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <Compile Include="src/Shared.fs"/>
-        <Compile Include="src/Pages/NotFound.fs"/>
-        <Compile Include="src/Pages/Layout.fs"/>
-        <Compile Include="src/Pages/Page.fs"/>
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include=".elmish-land/Base/ElmishLand.TestProject.Base.fsproj" />
-    </ItemGroup>
-</Project>
-"""
-
-    // Create directory structure
-    Directory.CreateDirectory(projectPath) |> ignore
-    Directory.CreateDirectory(Path.Combine(projectPath, "src", "Pages")) |> ignore
-
-    Directory.CreateDirectory(Path.Combine(projectPath, ".elmish-land", "Base"))
-    |> ignore
-
-    // Create files
-    let projectName = Path.GetFileName(projectPath)
-    File.WriteAllText(Path.Combine(projectPath, projectName + ".fsproj"), fsprojContent)
-    File.WriteAllText(Path.Combine(projectPath, "src", "Shared.fs"), "module Shared")
-    File.WriteAllText(Path.Combine(projectPath, "src", "Pages", "NotFound.fs"), "module NotFound")
-    File.WriteAllText(Path.Combine(projectPath, "src", "Pages", "Layout.fs"), "module Layout")
-    File.WriteAllText(Path.Combine(projectPath, "src", "Pages", "Page.fs"), "module Page")
-
-    File.WriteAllText(
-        Path.Combine(projectPath, "elmish-land.json"),
-        """{"view": {"module": "Feliz", "type": "ReactElement", "textElement": "Html.text"}}"""
-    )
-
-    File.WriteAllText(
-        Path.Combine(projectPath, ".elmish-land", "Base", "ElmishLand." + projectName + ".Base.fsproj"),
-        "<Project />"
-    )
 
 let expectProjectTypeChecks (absoluteProjectDir: AbsoluteProjectDir) =
     task {
@@ -247,25 +201,20 @@ let ``addPage creates page with correct indentation in preview and fsproj`` () =
 
 [<Fact>]
 let ``addLayout after addPage updates project file order and page layout reference`` () =
-    task {
-        let folder = getFolder ()
-
-        try
-            // Create minimal project structure - much faster than using init
-            createMinimalProject folder
-
-            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
-
+    withNewProject (fun projectDir ->
+        task {
             // Step 1: Add a page first
             let! addPageResult, addPageLogs =
-                runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/AnotherPage" true)
+                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/AnotherPage" true)
 
             let _addPageSuccess = Expects.ok addPageLogs addPageResult
 
             // Verify page was added to project file
-            let projectName = Path.GetFileName(folder)
-            let fsprojPath = Path.Combine(folder, projectName + ".fsproj")
-            let fsprojContent1 = File.ReadAllText(fsprojPath)
+            let fsprojPath =
+                FsProjPath.findExactlyOneFromProjectDir projectDir
+                |> Result.defaultWith (failwithf "%A")
+
+            let fsprojContent1 = File.ReadAllText(FsProjPath.asString fsprojPath)
 
             Assert.True(
                 fsprojContent1.Contains("src/Pages/AnotherPage/Page.fs"),
@@ -273,17 +222,19 @@ let ``addLayout after addPage updates project file order and page layout referen
             )
 
             // Verify page file was created
-            let pageFilePath = Path.Combine(folder, "src", "Pages", "AnotherPage", "Page.fs")
+            let pageFilePath =
+                Path.Combine(AbsoluteProjectDir.asString projectDir, "src", "Pages", "AnotherPage", "Page.fs")
+
             Assert.True(File.Exists(pageFilePath), "Page file should be created")
 
             // Step 2: Add a layout for the same path
             let! addLayoutResult, addLayoutLogs =
-                runEff (addLayout (FilePath.fromString folder) absoluteProjectDir "/AnotherPage" true)
+                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/AnotherPage" true)
 
             let _addLayoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
             // Verify layout was added to project file
-            let fsprojContent2 = File.ReadAllText(fsprojPath)
+            let fsprojContent2 = File.ReadAllText(FsProjPath.asString fsprojPath)
 
             Assert.True(
                 fsprojContent2.Contains("src/Pages/AnotherPage/Layout.fs"),
@@ -292,7 +243,7 @@ let ``addLayout after addPage updates project file order and page layout referen
 
             // Verify layout file was created
             let layoutFilePath =
-                Path.Combine(folder, "src", "Pages", "AnotherPage", "Layout.fs")
+                Path.Combine(AbsoluteProjectDir.asString projectDir, "src", "Pages", "AnotherPage", "Layout.fs")
 
             Assert.True(File.Exists(layoutFilePath), "Layout file should be created")
 
@@ -313,33 +264,24 @@ let ``addLayout after addPage updates project file order and page layout referen
             // Step 5: Verify the logs show auto-accept behavior
             let addLayoutLogsText = addLayoutLogs.Info.ToString()
             Assert.True(addLayoutLogsText.Contains("Auto-accepting"), "Should show auto-accept messages")
-
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
-    }
+        })
 
 [<Fact>]
 let ``nested layout with page uses correct layout message reference`` () =
-    task {
-        let folder = getFolder ()
-
-        try
-            // Create minimal project structure - much faster than using init
-            createMinimalProject folder
-
-            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
-
+    withNewProject (fun projectDir ->
+        task {
             // Step 1: Add nested layout first
             let! addLayoutResult, addLayoutLogs =
-                runEff (addLayout (FilePath.fromString folder) absoluteProjectDir "/PageWithNestedLayout" true)
+                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/PageWithNestedLayout" true)
 
             let _addLayoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
             // Verify layout was added to project file
-            let projectName = Path.GetFileName(folder)
-            let fsprojPath = Path.Combine(folder, projectName + ".fsproj")
-            let fsprojContent1 = File.ReadAllText(fsprojPath)
+            let fsprojPath =
+                FsProjPath.findExactlyOneFromProjectDir projectDir
+                |> Result.defaultWith (failwithf "%A")
+
+            let fsprojContent1 = File.ReadAllText(FsProjPath.asString fsprojPath)
 
             Assert.True(
                 fsprojContent1.Contains("src/Pages/PageWithNestedLayout/Layout.fs"),
@@ -348,18 +290,24 @@ let ``nested layout with page uses correct layout message reference`` () =
 
             // Verify nested layout file was created
             let nestedLayoutFilePath =
-                Path.Combine(folder, "src", "Pages", "PageWithNestedLayout", "Layout.fs")
+                Path.Combine(
+                    AbsoluteProjectDir.asString projectDir,
+                    "src",
+                    "Pages",
+                    "PageWithNestedLayout",
+                    "Layout.fs"
+                )
 
             Assert.True(File.Exists(nestedLayoutFilePath), "Nested layout file should be created")
 
             // Step 2: Add page for the nested layout path
             let! addPageResult, addPageLogs =
-                runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/PageWithNestedLayout" true)
+                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/PageWithNestedLayout" true)
 
             let _addPageSuccess = Expects.ok addPageLogs addPageResult
 
             // Verify page was added to project file
-            let fsprojContent2 = File.ReadAllText(fsprojPath)
+            let fsprojContent2 = File.ReadAllText(FsProjPath.asString fsprojPath)
 
             Assert.True(
                 fsprojContent2.Contains("src/Pages/PageWithNestedLayout/Page.fs"),
@@ -368,7 +316,7 @@ let ``nested layout with page uses correct layout message reference`` () =
 
             // Verify nested page file was created
             let nestedPageFilePath =
-                Path.Combine(folder, "src", "Pages", "PageWithNestedLayout", "Page.fs")
+                Path.Combine(AbsoluteProjectDir.asString projectDir, "src", "Pages", "PageWithNestedLayout", "Page.fs")
 
             Assert.True(File.Exists(nestedPageFilePath), "Nested page file should be created")
 
@@ -378,8 +326,10 @@ let ``nested layout with page uses correct layout message reference`` () =
             Assert.True(layoutIndex >= 0 && pageIndex >= 0, "Both nested files should be in project")
             Assert.True(layoutIndex < pageIndex, "Nested layout file should come before nested page file")
 
-            // Step 4: Verify main page exists (it's created by createMinimalProject)
-            let mainPageFilePath = Path.Combine(folder, "src", "Pages", "Page.fs")
+            // Step 4: Verify main page exists (it's created by withNewProject)
+            let mainPageFilePath =
+                Path.Combine(AbsoluteProjectDir.asString projectDir, "src", "Pages", "Page.fs")
+
             Assert.True(File.Exists(mainPageFilePath), "Main page file should exist")
 
             // Step 5: Verify nested page uses correct specific layout message
@@ -391,31 +341,24 @@ let ``nested layout with page uses correct layout message reference`` () =
             )
 
             // Step 6: Verify that both layout files exist
-            let mainLayoutFilePath = Path.Combine(folder, "src", "Pages", "Layout.fs")
+            let mainLayoutFilePath =
+                Path.Combine(AbsoluteProjectDir.asString projectDir, "src", "Pages", "Layout.fs")
+
             Assert.True(File.Exists(mainLayoutFilePath), "Main layout file should exist")
             Assert.True(File.Exists(nestedLayoutFilePath), "Nested layout file should exist")
-
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
-    }
+        })
 
 [<Fact>]
 let ``validate should only check layout references for pages in project file`` () =
-    task {
-        let folder = getFolder ()
-
-        try
-            // Create minimal project structure
-            createMinimalProject folder
-
-            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
-
+    withNewProject (fun projectDir ->
+        task {
             // Create an additional page file that is NOT in the project file
             // This page uses the main Layout.Msg which would normally be flagged as wrong
             // if there's a closer layout, but since it's not in the project file,
             // it should not be validated
-            let orphanPageDir = Path.Combine(folder, "src", "Pages", "OrphanPage")
+            let orphanPageDir =
+                Path.Combine(AbsoluteProjectDir.asString projectDir, "src", "Pages", "OrphanPage")
+
             Directory.CreateDirectory(orphanPageDir) |> ignore
 
             let orphanPagePath = Path.Combine(orphanPageDir, "Page.fs")
@@ -462,7 +405,7 @@ let update msg model =
             // Run validation - should succeed because the orphan page is not in the project file
             // Note: This test verifies that pages not in the project file are completely ignored,
             // not reported as missing, and not validated for layout references
-            let! result, logs = runEff (ElmishLand.FsProj.validate absoluteProjectDir)
+            let! result, logs = runEff (ElmishLand.FsProj.validate projectDir)
 
             // The validation should succeed (no errors about the orphan page)
             let _successResult = Expects.ok logs result
@@ -470,16 +413,14 @@ let update msg model =
             // Verify that the orphan page file exists but is not in the project
             Assert.True(File.Exists(orphanPagePath), "Orphan page file should exist on disk")
 
-            let projectName = Path.GetFileName(folder)
-            let fsprojPath = Path.Combine(folder, projectName + ".fsproj")
-            let fsprojContent = File.ReadAllText(fsprojPath)
+            let fsprojPath =
+                FsProjPath.findExactlyOneFromProjectDir projectDir
+                |> Result.defaultWith (failwithf "%A")
+
+            let fsprojContent = File.ReadAllText(FsProjPath.asString fsprojPath)
 
             Assert.False(fsprojContent.Contains("OrphanPage"), "Orphan page should not be in project file")
-
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
-    }
+        })
 
 [<Fact>]
 let ``Fable build errors should be deduplicated and displayed correctly`` () =
@@ -525,28 +466,23 @@ Compilation failed
 
 [<Fact>]
 let ``Wrong layout reference in page should generate helpful error message`` () =
-    task {
-        let folder = getFolder ()
-
-        try
-            // Create project structure with a page that uses the wrong layout
-            createMinimalProject folder
-
-            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
-
+    withNewProject (fun projectDir ->
+        task {
             // Step 1: Add an About page with its own layout
             let! addLayoutResult, addLayoutLogs =
-                runEff (addLayout (FilePath.fromString folder) absoluteProjectDir "/About" true)
+                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" true)
 
             let _layoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
             let! addPageResult, addPageLogs =
-                runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/About" true)
+                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" true)
 
             let _pageSuccess = Expects.ok addPageLogs addPageResult
 
             // Step 2: Manually edit the About page to use the wrong layout (root Layout instead of About.Layout)
-            let aboutPagePath = Path.Combine(folder, "src", "Pages", "About", "Page.fs")
+            let aboutPagePath =
+                Path.Combine(AbsoluteProjectDir.asString projectDir, "src", "Pages", "About", "Page.fs")
+
             let aboutPageContent = File.ReadAllText(aboutPagePath)
 
             // Replace the correct layout reference with the wrong one
@@ -588,37 +524,28 @@ Compilation failed"""
 
             Assert.Equal("Layout.Msg", mismatch.WrongLayout)
             Assert.Equal("About.Layout.Msg", mismatch.CorrectLayout)
-
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
-    }
+        })
 
 
 [<Fact>]
 let ``Correct layout reference in page should not generate any errors`` () =
-    task {
-        let folder = getFolder ()
-
-        try
-            // Create project structure with a page that uses the correct layout
-            createMinimalProject folder
-
-            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
-
+    withNewProject (fun projectDir ->
+        task {
             // Step 1: Add an About page with its own layout
             let! addLayoutResult, addLayoutLogs =
-                runEff (addLayout (FilePath.fromString folder) absoluteProjectDir "/About" true)
+                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" true)
 
             let _layoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
             let! addPageResult, addPageLogs =
-                runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/About" true)
+                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" true)
 
             let _pageSuccess = Expects.ok addPageLogs addPageResult
 
             // Step 2: Verify the About page is using the correct layout (About.Layout.Msg)
-            let aboutPagePath = Path.Combine(folder, "src", "Pages", "About", "Page.fs")
+            let aboutPagePath =
+                Path.Combine(AbsoluteProjectDir.asString projectDir, "src", "Pages", "About", "Page.fs")
+
             let aboutPageContent = File.ReadAllText(aboutPagePath)
 
             // Confirm it has the correct layout reference
@@ -652,41 +579,34 @@ dist/assets/index-4a8b2c3d.js   142.87 kB │ gzip: 51.67 kB
 
             // Most importantly, verify no layout mismatches were detected
             Assert.Equal(0, result.LayoutMismatches |> List.length)
-
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
-    }
+        })
 
 [<Fact>]
 let ``Nested page with wrong layout reference should generate correct error message`` () =
-    task {
-        let folder = getFolder ()
-
-        try
-            // Create minimal project structure
-            createMinimalProject folder
-
-            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
-
+    withNewProject (fun projectDir ->
+        task {
             // Step 1: Add About layout
             let! addLayoutResult, addLayoutLogs =
-                runEff (addLayout (FilePath.fromString folder) absoluteProjectDir "/About" true)
+                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" true)
 
             let _layoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
             // Step 2: Add About page
-            let! aboutResult, aboutLogs = runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/About" true)
+            let! aboutResult, aboutLogs =
+                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" true)
+
             let _aboutSuccess = Expects.ok aboutLogs aboutResult
 
             // Step 3: Add nested About/Me page
             let! nestedResult, nestedLogs =
-                runEff (addPage (FilePath.fromString folder) absoluteProjectDir "/About/Me" true)
+                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About/Me" true)
 
             let _nestedSuccess = Expects.ok nestedLogs nestedResult
 
             // Step 4: Manually change the About/Me page to use wrong layout (root Layout instead of About.Layout)
-            let aboutMePagePath = Path.Combine(folder, "src", "Pages", "About", "Me", "Page.fs")
+            let aboutMePagePath =
+                Path.Combine(AbsoluteProjectDir.asString projectDir, "src", "Pages", "About", "Me", "Page.fs")
+
             let content = File.ReadAllText(aboutMePagePath)
 
             let wrongContent =
@@ -722,11 +642,7 @@ Compilation failed"""
             let mismatch = result.LayoutMismatches |> List.head
             Assert.Equal("Pages.Layout.Msg", mismatch.WrongLayout)
             Assert.Equal("About.Layout.Msg", mismatch.CorrectLayout)
-
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
-    }
+        })
 
 [<Fact>]
 let ``initFiles creates project files without CLI commands`` () =
