@@ -18,3 +18,4 @@ integration-tests/**/dist/
 integration-tests/**/TestProject*
 quicktest/TestProject
 quicktest/Test
+**/*.fs.js

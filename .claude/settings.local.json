@@ -1,31 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:keepachangelog.com)",
-      "Bash(gh issue view:*)",
-      "WebFetch(domain:github.com)",
-      "WebFetch(domain:github.com)",
-      "WebFetch(domain:github.com)",
-      "WebFetch(domain:github.com)",
-      "Bash(timeout 15 dotnet fsi:*)",
-      "Bash(dotnet --list-sdks)",
-      "Bash(dotnet fsi:*)",
-      "Bash(dotnet build:*)",
-      "Bash(.init.ps1 TestFormatOutput)",
-      "Bash(./init.sh:*)",
-      "Bash(./add-page.sh:*)",
-      "Bash(dotnet:*)",
-      "Bash(./build.sh:*)",
-      "Bash(./el.sh:*)",
-      "Bash(./el.sh:*)",
-      "Bash(grep:*)",
-      "Bash(timeout:*)",
-      "Bash(true)",
-      "Bash(gtimeout:*)",
-      "Read(/Users/klofberg/Projects/**)",
-      "Bash(git tag:*)",
-      "Bash(git log:*)",
-      "Bash(git add:*)"
+      "Bash(Remove-Item -Force)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
