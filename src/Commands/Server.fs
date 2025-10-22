@@ -3,6 +3,7 @@ module ElmishLand.Server
 open System
 open System.IO
 open System.Threading
+open System.Threading.Tasks
 open ElmishLand.Base
 open ElmishLand.Effect
 open ElmishLand.Log
@@ -49,10 +50,12 @@ let fableWatch absoluteProjectDir stopSpinner =
                     "vite.config.js"
                 |]
 
+        let cancellationSource = new CancellationTokenSource()
+
         let outputHandler (output: string) =
             // Check if this is the VITE ready message
             if output.Contains("VITE") && output.Contains("ready in") then
-                stopSpinner ()
+                // stopSpinner ()
                 isViteReady <- true
             // Capture the Local URL and display the final message
             elif isViteReady && output.Contains("Local:") then
@@ -88,6 +91,10 @@ let fableWatch absoluteProjectDir stopSpinner =
                     // In non-verbose mode, display errors and warnings with colors
                     let result = FableOutput.processOutput output "" false
 
+                    if result.Errors.Length > 0 then
+                        stopSpinner ()
+                        cancellationSource.Cancel()
+
                     for error in result.Errors do
                         Console.ForegroundColor <- ConsoleColor.Red
                         Console.WriteLine(error)
@@ -108,39 +115,46 @@ let fableWatch absoluteProjectDir stopSpinner =
                 (AbsoluteProjectDir.asFilePath absoluteProjectDir)
                 command
                 args
-                CancellationToken.None
+                cancellationSource.Token
                 outputHandler
     }
 
 let server workingDirectory absoluteProjectDir =
-    let stopSpinner = createSpinner "Starting development server..."
-
     eff {
         let! log = Log().Get()
-        let isVerbose = System.Environment.CommandLine.Contains("--verbose")
 
-        let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
-        log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
+        do!
+            withSpinner "Starting development server..." (fun stopSpinner ->
+                eff {
+                    let isVerbose = System.Environment.CommandLine.Contains("--verbose")
 
-        do! generate workingDirectory absoluteProjectDir dotnetSdkVersion
+                    let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
+                    log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
-        do! validate absoluteProjectDir
-        do! ensureViteInstalled workingDirectory
+                    do! generate workingDirectory absoluteProjectDir dotnetSdkVersion
 
-        let! result =
-            fableWatch absoluteProjectDir stopSpinner
-            |> Effect.map Ok
-            |> Effect.onError (fun e -> eff { return Error e })
+                    do! validate absoluteProjectDir
+                    do! ensureViteInstalled workingDirectory
 
-        match result with
-        | Ok _ -> return! Ok()
-        | Error(AppError.ProcessError e) when e.Contains "dotnet tool restore" ->
-            do!
-                runProcess isVerbose workingDirectory "dotnet" [| "tool"; "restore" |] CancellationToken.None ignore
-                |> Effect.map ignore
+                    let! result =
+                        fableWatch absoluteProjectDir stopSpinner
+                        |> Effect.map Ok
+                        |> Effect.onError (fun e -> eff { return Error e })
 
-            do! fableWatch absoluteProjectDir stopSpinner |> Effect.map ignore
-        | Error e ->
-            stopSpinner ()
-            return! Error e
+                    match result with
+                    | Ok _ -> return! Ok()
+                    | Error(AppError.ProcessError e) when e.Contains "dotnet tool restore" ->
+                        do!
+                            runProcess
+                                isVerbose
+                                workingDirectory
+                                "dotnet"
+                                [| "tool"; "restore" |]
+                                CancellationToken.None
+                                ignore
+                            |> Effect.map ignore
+
+                        do! fableWatch absoluteProjectDir stopSpinner |> Effect.map ignore
+                    | Error e -> return! Error e
+                })
     }

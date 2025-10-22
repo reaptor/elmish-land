@@ -20,35 +20,36 @@ dotnet elmish-land server"""
     getFormattedCommandOutput header content
 
 let restore workingDirectory absoluteProjectDir =
-    let stopSpinner = createSpinner "Restoring your project..."
-
     eff {
         let! log = Log().Get()
 
-        let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
-        log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
+        do!
+            withSpinner "Restoring your project..." (fun _ ->
+                eff {
+                    let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
+                    log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
-        let settingsFiles =
-            Directory.EnumerateFiles(
-                AbsoluteProjectDir.asString absoluteProjectDir,
-                "elmish-land.json",
-                SearchOption.AllDirectories
-            )
+                    let settingsFiles =
+                        Directory.EnumerateFiles(
+                            AbsoluteProjectDir.asString absoluteProjectDir,
+                            "elmish-land.json",
+                            SearchOption.AllDirectories
+                        )
 
-        if Seq.isEmpty settingsFiles then
-            stopSpinner ()
-            return! Error AppError.ElmishLandProjectMissing
-        else
-            for settingsFile in settingsFiles do
-                let subAbsoluteProjectDir =
-                    settingsFile
-                    |> FilePath.fromString
-                    |> FilePath.directoryPath
-                    |> AbsoluteProjectDir
+                    if Seq.isEmpty settingsFiles then
+                        return! Error AppError.ElmishLandProjectMissing
+                    else
+                        for settingsFile in settingsFiles do
+                            let subAbsoluteProjectDir =
+                                settingsFile
+                                |> FilePath.fromString
+                                |> FilePath.directoryPath
+                                |> AbsoluteProjectDir
 
-                do! generate workingDirectory subAbsoluteProjectDir dotnetSdkVersion
-                do! validate subAbsoluteProjectDir
+                            do! generate workingDirectory subAbsoluteProjectDir dotnetSdkVersion
+                            do! validate subAbsoluteProjectDir
 
-            stopSpinner ()
-            log.Info(successMessage ())
+                })
+
+        log.Info(successMessage ())
     }

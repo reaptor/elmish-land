@@ -6,6 +6,7 @@ open System.IO
 open System.Reflection
 open System.Text.RegularExpressions
 open ElmishLand.AppError
+open Orsak
 
 type DotnetSdkVersion = | DotnetSdkVersion of Version
 
@@ -218,36 +219,41 @@ let showWaitingIndicator (message: string) (action: unit -> 'a) =
             spinnerTask.Wait(1000) |> ignore
             reraise ()
 
-let createSpinner (message: string) =
-    let isVerbose = System.Environment.CommandLine.Contains("--verbose")
-    let spinChars = [| '⠋'; '⠙'; '⠹'; '⠸'; '⠼'; '⠴'; '⠦'; '⠧'; '⠇'; '⠏' |]
-    let mutable spinIndex = 0
-    let mutable isCompleted = false
-    let mutable spinnerTask = None
+let withSpinner (message: string) (f: (unit -> unit) -> Effect<_, _, _>) =
+    eff {
+        let isVerbose = System.Environment.CommandLine.Contains("--verbose")
+        let spinChars = [| '⠋'; '⠙'; '⠹'; '⠸'; '⠼'; '⠴'; '⠦'; '⠧'; '⠇'; '⠏' |]
+        let mutable spinIndex = 0
+        let mutable isCompleted = false
+        let mutable spinnerTask = None
 
-    if not isVerbose then
-        let task =
-            System.Threading.Tasks.Task.Run(fun () ->
-                while not isCompleted do
-                    printf $"\r%c{spinChars[spinIndex]} %s{message}"
-                    Console.Out.Flush()
-                    spinIndex <- (spinIndex + 1) % spinChars.Length
-                    System.Threading.Thread.Sleep(100)
-
-                printf "\r%s\r" (String(' ', message.Length + 2)) // Clear the line completely
-                Console.Out.Flush())
-
-        spinnerTask <- Some task
-
-    let stopSpinner () =
         if not isVerbose then
-            isCompleted <- true
+            let task =
+                System.Threading.Tasks.Task.Run(fun () ->
+                    while not isCompleted do
+                        printf $"\r%c{spinChars[spinIndex]} %s{message}"
+                        Console.Out.Flush()
+                        spinIndex <- (spinIndex + 1) % spinChars.Length
+                        System.Threading.Thread.Sleep(100)
 
-            match spinnerTask with
-            | Some task -> task.Wait(1000) |> ignore // Wait max 1 second for cleanup
-            | None -> ()
+                    printf "\r%s\r" (String(' ', message.Length + 2)) // Clear the line completely
+                    Console.Out.Flush())
 
-    stopSpinner
+            spinnerTask <- Some task
+
+        let stopSpinner () =
+            if not isVerbose && not isCompleted then
+                isCompleted <- true
+
+                match spinnerTask with
+                | Some task -> task.Wait(1000) |> ignore // Wait max 1 second for cleanup
+                | None -> ()
+
+        try
+            return! f stopSpinner
+        finally
+            stopSpinner ()
+    }
 
 let canonicalizePath (path: string) =
     let p = path.Replace("\\", "/")

@@ -332,21 +332,22 @@ let initCliCommands workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (_
     }
 
 let init workingDirectory (absoluteProjectDir: AbsoluteProjectDir) =
-    let stopSpinner = createSpinner "Creating your project..."
-
     eff {
         let! log = Log().Get()
 
-        // Get versions first using CLI
-        let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
-        let! nodeVersion = getNodeVersion workingDirectory
+        do!
+            withSpinner "Creating your project..." (fun _ ->
+                eff {
+                    // Get versions first using CLI
+                    let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
+                    let! nodeVersion = getNodeVersion workingDirectory
 
-        // Create files without CLI commands
-        let! routeData = initFiles workingDirectory absoluteProjectDir dotnetSdkVersion nodeVersion
+                    // Create files without CLI commands
+                    let! routeData = initFiles workingDirectory absoluteProjectDir dotnetSdkVersion nodeVersion
 
-        // Run CLI commands
-        do! initCliCommands workingDirectory absoluteProjectDir routeData
+                    // Run CLI commands
+                    do! initCliCommands workingDirectory absoluteProjectDir routeData
+                })
 
-        stopSpinner ()
         log.Info(successMessage ())
     }
