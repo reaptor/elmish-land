@@ -19,3 +19,4 @@ integration-tests/**/TestProject*
 quicktest/TestProject
 quicktest/Test
 **/*.fs.js
+.claude/

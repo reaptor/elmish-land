@@ -8,8 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Enhanced error messages for layout reference mismatches during build and server commands
-- Automatic fix prompt for incorrect layout references with interactive confirmation
+- Replace cryptic type mismatch errors with clear messages identifying which pages have incorrect layout references during build and server commands
+- Interactive prompt during build failures to automatically fix layout reference mismatches in page files (e.g., when a page uses `Layout.Msg` but should use `About.Layout.Msg`)
 
 ## [1.1.0 beta 2] - 2025-09-04
 
