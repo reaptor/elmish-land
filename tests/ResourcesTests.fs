@@ -15,6 +15,7 @@ let templateData: TemplateData = {
             RouteName = "RoutesRouteName"
             LayoutName = "RoutesLayoutName"
             LayoutModuleName = "RoutesLayoutModuleName"
+            LayoutModulePath = "Test"
             MsgName = "RoutesMsgName"
             ModuleName = "RoutesModuleName"
             RecordDefinition = "RoutesRecordDefinition"
@@ -31,6 +32,7 @@ let templateData: TemplateData = {
             Name = "LayoutsName"
             MsgName = "LayoutsMsgName"
             ModuleName = "LayoutsModuleName"
+            ModulePath = "Test"
         }
     |]
     RouteParamModules = [ "RouteParamModules" ]
@@ -46,6 +48,7 @@ let AddLayout_template () =
             Name = "LayoutName"
             MsgName = "LayoutMsgName"
             ModuleName = "LayoutModuleName"
+            ModulePath = "Test"
         }
     }
     |> Expects.equals
@@ -91,6 +94,7 @@ let AddPage_template () =
             RouteName = "RouteRouteName"
             LayoutName = "RouteLayoutName"
             LayoutModuleName = "RouteLayoutModuleName"
+            LayoutModulePath = "Test"
             MsgName = "RouteMsgName"
             ModuleName = "RouteModuleName"
             RecordDefinition = "RouteRecordDefinition"
@@ -113,7 +117,7 @@ open RootModule.Pages
 type Model = unit
 
 type Msg =
-    | LayoutMsg of RouteLayoutName.Layout.Msg
+    | LayoutMsg of Test.Layout.Msg
 
 let init () =
     (),
@@ -939,6 +943,7 @@ let ``Routes_template with F# keyword route parameters`` () =
                 RouteName = "HomeRoute"
                 LayoutName = "Main"
                 LayoutModuleName = "TestApp.Pages.Layout"
+                LayoutModulePath = ""
                 MsgName = "HomeMsg"
                 ModuleName = "TestApp.Pages.Page"
                 RecordDefinition = "unit"
@@ -954,6 +959,7 @@ let ``Routes_template with F# keyword route parameters`` () =
                 RouteName = "ArbitraryPage_NewRoute"
                 LayoutName = "Main"
                 LayoutModuleName = "TestApp.Pages.Layout"
+                LayoutModulePath = ""
                 MsgName = "ArbitraryPage_NewMsg"
                 ModuleName = "TestApp.Pages.ArbitraryPage.New.Page"
                 RecordDefinition = "{ New: string }"
@@ -970,6 +976,7 @@ let ``Routes_template with F# keyword route parameters`` () =
                 Name = "Main"
                 MsgName = "MainMsg"
                 ModuleName = "TestApp.Pages.Layout"
+                ModulePath = ""
             }
         |]
         RouteParamModules = []

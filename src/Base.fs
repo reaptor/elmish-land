@@ -303,7 +303,18 @@ module FilePath =
         |> Option.ofObj
         |> Option.map (fun di -> di.FullName |> canonicalizePath |> FilePath)
 
-let workingDirectory = FilePath.fromString Environment.CurrentDirectory
+    let directoryExists (FilePath path) = Directory.Exists(path)
+
+    let readAllText (FilePath path) = File.ReadAllText(path)
+
+    let getFilesRecursive (FilePath path) searchPattern =
+        if Directory.Exists(path) then
+            Directory.GetFiles(path, searchPattern, SearchOption.AllDirectories)
+            |> Array.map fromString
+        else
+            [||]
+
+// let workingDirectory = FilePath.fromString Environment.CurrentDirectory
 
 let relativeProjectDir commandLineArgs =
     match
@@ -319,19 +330,13 @@ let relativeProjectDir commandLineArgs =
 type AbsoluteProjectDir = | AbsoluteProjectDir of FilePath
 
 module AbsoluteProjectDir =
-    let create commandLineArgs =
+    let create workingDirectory commandLineArgs =
         workingDirectory
         |> FilePath.appendFilePath (relativeProjectDir commandLineArgs)
         |> AbsoluteProjectDir
 
     let asFilePath (AbsoluteProjectDir projectDir) = projectDir
     let asString (AbsoluteProjectDir(FilePath projectDir)) = projectDir
-
-    let asRelativeFilePath (AbsoluteProjectDir absoluteProjectDir) =
-        absoluteProjectDir
-        |> FilePath.asString
-        |> fun x -> x.Replace(FilePath.asString workingDirectory, "")
-        |> FilePath
 
 module FileName =
     let fromFilePath (FilePath filePath) = Path.GetFileName(filePath) |> FileName

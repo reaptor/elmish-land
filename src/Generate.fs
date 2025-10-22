@@ -28,7 +28,7 @@ let getNugetPackageReferences () =
     |> String.concat "\n"
     |> fun deps -> $"<ItemGroup>\n%s{deps}\n    </ItemGroup>"
 
-let ensureViteInstalled () =
+let ensureViteInstalled workingDirectory =
     eff {
         do!
             runProcess false workingDirectory "npm" [| "run"; "vite"; "--version" |] CancellationToken.None ignore
@@ -36,7 +36,7 @@ let ensureViteInstalled () =
     }
     |> Effect.changeError (fun _ -> AppError.ViteNotInstalled)
 
-let generate absoluteProjectDir dotnetSdkVersion =
+let generate workingDirectory absoluteProjectDir dotnetSdkVersion =
     eff {
         let! logger = Log().Get()
 

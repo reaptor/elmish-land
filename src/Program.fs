@@ -27,16 +27,18 @@ let run argv =
     eff {
         let! log = Log().Get()
 
+        let workingDir = FilePath.fromString Environment.CurrentDirectory
+        let absoluteProjectDir = AbsoluteProjectDir.create workingDir argv
+
         return!
             match List.ofArray argv with
-            | "init" :: _ -> init (AbsoluteProjectDir.create argv)
-            | "server" :: _ -> server (AbsoluteProjectDir.create argv)
-            | "build" :: _ -> build (AbsoluteProjectDir.create argv)
-            | "restore" :: _ -> restore (AbsoluteProjectDir.create argv)
-            | "add" :: "page" :: NotFlag url :: _ ->
-                addPage (AbsoluteProjectDir.create argv) url (hasAutoAcceptFlag argv)
+            | "init" :: _ -> init workingDir absoluteProjectDir
+            | "server" :: _ -> server workingDir absoluteProjectDir
+            | "build" :: _ -> build workingDir absoluteProjectDir
+            | "restore" :: _ -> restore workingDir absoluteProjectDir
+            | "add" :: "page" :: NotFlag url :: _ -> addPage workingDir absoluteProjectDir url (hasAutoAcceptFlag argv)
             | "add" :: "layout" :: NotFlag url :: _ ->
-                addLayout (AbsoluteProjectDir.create argv) url (hasAutoAcceptFlag argv)
+                addLayout workingDir absoluteProjectDir url (hasAutoAcceptFlag argv)
             | _ ->
                 $"""
     %s{getWelcomeTitle ()}
@@ -127,20 +129,6 @@ let main argv =
             |> Effect.run
                 { new IEffectEnv with
                     member _.GetLogger(memberName, path, line) = ConsoleLogger(memberName, path, line)
-
-                    member _.FilePathExists(filePath, isDirectory: bool) =
-                        if isDirectory then
-                            Directory.Exists(FilePath.asString filePath)
-                        else
-                            FilePath.exists filePath
-
-                    member _.GetParentDirectory(filePath) = FilePath.parent filePath
-
-                    member _.GetFilesRecursive(FilePath filePath, searchPattern) =
-                        Directory.GetFiles(filePath, searchPattern, EnumerationOptions(RecurseSubdirectories = true))
-                        |> Array.map FilePath.fromString
-
-                    member _.ReadAllText(FilePath filePath) = File.ReadAllText(filePath)
                 }
 
         return handleAppResult (ConsoleLogger("", "", 0)) ignore result

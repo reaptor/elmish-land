@@ -28,6 +28,17 @@ let ok logs (x: Result<'a, 'e>) : 'a =
     | Ok x -> x
     | Error e -> failwithf $"Expected Ok. Got Error '%A{e}'\n%s{LogOutput.asString logs}"
 
+let effectOk runEff e =
+    task {
+        let! result, logs = runEff e
+
+        return
+            match result with
+            | Ok x -> x
+            | Error e -> failwithf $"Expected Ok. Got Error '%A{e}'\n%s{LogOutput.asString logs}"
+    }
+
+
 let equalsWLogs (logs: LogOutput) expected actual =
     if expected <> actual then
         try
@@ -38,9 +49,17 @@ let equalsWLogs (logs: LogOutput) expected actual =
 
 let equals expected actual = Assert.Equivalent(expected, actual) // Equivalent makes a object comparion and prints the diffing properties on the object.
 
+let isTrue msg x = Assert.True(x, msg)
+
 let equalsIgnoringWhitespace logs expected actual =
     if
         (expected |> String.eachLine String.trimWhitespace)
         <> (actual |> String.eachLine String.trimWhitespace)
     then
         failwithf $"Expected %A{expected}.\n\nActual %A{actual}\n\nLogs:\n%s{LogOutput.asString logs}"
+
+let containsSubstring (expected: string) (actual: string) =
+    if actual.Contains expected then
+        ()
+    else
+        failwithf $"Expected substring %A{expected}.\n\nActual %A{actual}"

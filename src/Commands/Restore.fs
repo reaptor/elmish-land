@@ -19,13 +19,13 @@ dotnet elmish-land server"""
 
     getFormattedCommandOutput header content
 
-let restore absoluteProjectDir =
+let restore workingDirectory absoluteProjectDir =
     let stopSpinner = createSpinner "Restoring your project..."
 
     eff {
         let! log = Log().Get()
 
-        let! dotnetSdkVersion = getDotnetSdkVersion ()
+        let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
         log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
 
         let settingsFiles =
@@ -46,7 +46,7 @@ let restore absoluteProjectDir =
                     |> FilePath.directoryPath
                     |> AbsoluteProjectDir
 
-                do! generate subAbsoluteProjectDir dotnetSdkVersion
+                do! generate workingDirectory subAbsoluteProjectDir dotnetSdkVersion
                 do! validate subAbsoluteProjectDir
 
             stopSpinner ()

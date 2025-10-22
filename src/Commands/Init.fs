@@ -16,7 +16,7 @@ open ElmishLand.AppError
 open ElmishLand.FsProj
 open ElmishLand.Generate
 
-let getNodeVersion () =
+let getNodeVersion workingDirectory =
     runProcess false workingDirectory "node" [| "-v" |] CancellationToken.None ignore
     |> Effect.changeError (fun _ -> AppError.NodeNotFound)
     |> Effect.map (fun (output, _) ->
@@ -43,10 +43,12 @@ dotnet elmish-land server"""
 
     getFormattedCommandOutput header content
 
-let init (absoluteProjectDir: AbsoluteProjectDir) =
-    let isVerbose = System.Environment.CommandLine.Contains("--verbose")
-    let stopSpinner = createSpinner "Creating your project..."
-
+let initFiles
+    workingDirectory
+    (absoluteProjectDir: AbsoluteProjectDir)
+    (dotnetSdkVersion: DotnetSdkVersion)
+    (nodeVersion: Version)
+    =
     eff {
         let! log = Log().Get()
 
@@ -54,10 +56,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
             Directory.CreateDirectory(absoluteProjectDir |> AbsoluteProjectDir.asString)
             |> ignore
 
-        let! dotnetSdkVersion = getDotnetSdkVersion ()
         log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
-
-        let! nodeVersion = getNodeVersion ()
         log.Debug("Using Node.js: {}", nodeVersion)
 
         log.Debug("Initializing project. {}", AbsoluteProjectDir.asString absoluteProjectDir)
@@ -163,6 +162,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     RouteName = "HomeRoute"
                     LayoutName = ""
                     LayoutModuleName = $"%s{rootModuleName}.Pages.Layout"
+                    LayoutModulePath = "" // Main layout has no module path
                     MsgName = "HomeMsg"
                     ModuleName = $"%s{rootModuleName}.Pages.Page"
                     RecordDefinition = ""
@@ -178,6 +178,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                     Name = "Main"
                     MsgName = "MainLayoutMsg"
                     ModuleName = $"%s{rootModuleName}.Pages.Layout"
+                    ModulePath = "" // Main layout has no module path
                 }
 
                 let routeData = {
@@ -237,9 +238,19 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
             [ "src"; "Shared.fs" ]
             (Shared_template routeData)
 
-        do! generate absoluteProjectDir dotnetSdkVersion
+        do! generate workingDirectory absoluteProjectDir dotnetSdkVersion
 
         do! validate absoluteProjectDir
+
+        return routeData
+    }
+
+let initCliCommands workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (_routeData: TemplateData) =
+    let isVerbose = System.Environment.CommandLine.Contains("--verbose")
+
+    eff {
+        let! log = Log().Get()
+        let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir
 
         // Generate solution file
         log.Debug("Generating solution file")
@@ -282,8 +293,7 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
             let filepath = FilePath.asString dotnetToolsJsonPath
             File.Exists filepath && (File.ReadAllText filepath).Contains($"\"%s{name}\"")
 
-        let! fs = FileSystem.get ()
-        let dotnetToolJsonExists = fs.FilePathExists(dotnetToolsJsonPath, false)
+        let dotnetToolJsonExists = FilePath.exists dotnetToolsJsonPath
 
         do!
             [
@@ -319,6 +329,23 @@ let init (absoluteProjectDir: AbsoluteProjectDir) =
                 CancellationToken.None
                 ignore
             |> Effect.map ignore<string * string>
+    }
+
+let init workingDirectory (absoluteProjectDir: AbsoluteProjectDir) =
+    let stopSpinner = createSpinner "Creating your project..."
+
+    eff {
+        let! log = Log().Get()
+
+        // Get versions first using CLI
+        let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
+        let! nodeVersion = getNodeVersion workingDirectory
+
+        // Create files without CLI commands
+        let! routeData = initFiles workingDirectory absoluteProjectDir dotnetSdkVersion nodeVersion
+
+        // Run CLI commands
+        do! initCliCommands workingDirectory absoluteProjectDir routeData
 
         stopSpinner ()
         log.Info(successMessage ())

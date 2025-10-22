@@ -23,16 +23,5 @@ type Log
     member _.Get() =
         Effect.Create(fun (provider: #ILogProvider) -> provider.GetLogger(memberName, path, line))
 
-type IFileSystem =
-    abstract member FilePathExists: FilePath * isDirectory: bool -> bool
-    abstract member GetParentDirectory: FilePath -> FilePath option
-    abstract member GetFilesRecursive: FilePath * searchPattern: string -> FilePath array
-    abstract member ReadAllText: FilePath -> string
-
-module FileSystem =
-    let get () =
-        Effect.Create(fun (fs: #IFileSystem) -> fs)
-
 type IEffectEnv =
     inherit ILogProvider
-    inherit IFileSystem

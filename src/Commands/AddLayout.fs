@@ -255,7 +255,7 @@ let addCompileIncludeToProject (log: ILog) (projectPath: FsProjPath) (filePath: 
         log.Info $"⚠️  Failed to update project file: %s{ex.Message}. Please add manually."
         false
 
-let addLayout absoluteProjectDir (url: string) (autoAccept: bool) =
+let addLayout workingDirectory absoluteProjectDir (url: string) (autoAccept: bool) =
     eff {
         let! log = Log().Get()
 

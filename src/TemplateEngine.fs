@@ -120,6 +120,7 @@ type Route = {
     RouteName: string
     LayoutName: string
     LayoutModuleName: string
+    LayoutModulePath: string // Module path with dots for nested layouts (e.g., "About.Me")
     MsgName: string
     ModuleName: string
     RecordDefinition: string
@@ -135,6 +136,7 @@ type Layout = {
     Name: string
     MsgName: string
     ModuleName: string
+    ModulePath: string // Module path with dots for nested layouts (e.g., "About.Me")
 }
 
 type TemplateData = {
@@ -151,18 +153,16 @@ type TemplateData = {
 
 let getSortedPageFiles absoluteProjectDir =
     eff {
-        let! fs = FileSystem.get ()
-
         let pageFilesDir =
             absoluteProjectDir
             |> AbsoluteProjectDir.asFilePath
             |> FilePath.appendParts [ "src"; "Pages" ]
 
         return!
-            if not (fs.FilePathExists(pageFilesDir, true)) then
+            if not (FilePath.directoryExists pageFilesDir) then
                 Error AppError.PagesDirectoryMissing
             else
-                fs.GetFilesRecursive(pageFilesDir, "Page.fs")
+                FilePath.getFilesRecursive pageFilesDir "Page.fs"
                 |> Array.sortByDescending (fun x ->
                     if x |> FilePath.endsWithParts [ "src"; "Pages"; "Page.fs" ] then
                         0
@@ -173,18 +173,16 @@ let getSortedPageFiles absoluteProjectDir =
 
 let getSortedLayoutFiles absoluteProjectDir =
     eff {
-        let! fs = FileSystem.get ()
-
         let layoutFilesDir =
             absoluteProjectDir
             |> AbsoluteProjectDir.asFilePath
             |> FilePath.appendParts [ "src"; "Pages" ]
 
         return!
-            if not (fs.FilePathExists(layoutFilesDir, true)) then
+            if not (FilePath.directoryExists layoutFilesDir) then
                 Ok Array.empty
             else
-                fs.GetFilesRecursive(layoutFilesDir, "Layout.fs")
+                FilePath.getFilesRecursive layoutFilesDir "Layout.fs"
                 |> Array.sortByDescending (fun x ->
                     if x |> FilePath.endsWithParts [ "src"; "Pages"; "Page.fs" ] then
                         0
@@ -255,11 +253,18 @@ let fileToLayout projectName absoluteProjectDir (FilePath file) =
                 |> String.concat "."
                 |> fun x -> $".%s{x}"
 
+        let modulePath =
+            if parts.Length = 0 then
+                ""
+            else
+                parts |> List.rev |> List.map toPascalCase |> String.concat "."
+
         {
             Name = wrapWithTicksIfNeeded name
             MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
             ModuleName =
                 $"%s{projectName |> ProjectName.asString |> wrapWithTicksIfNeeded}.Pages%s{moduleNamePart}.Layout"
+            ModulePath = modulePath
         }
 
 let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (file: FilePath) =
@@ -301,8 +306,6 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                     |> String.concat "."
                     |> fun x -> $".%s{x}"
 
-            let! fs = FileSystem.get ()
-
             let! layout =
                 let rec findLayoutRecurse (dir: FilePath) =
                     eff {
@@ -311,7 +314,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                         else
                             let layoutFile = FilePath.appendParts [ "Layout.fs" ] dir
 
-                            let layoutExists = fs.FilePathExists(layoutFile, false)
+                            let layoutExists = FilePath.exists layoutFile
 
                             if layoutExists then
                                 return! Ok <| fileToLayout projectName absoluteProjectDir layoutFile
@@ -522,6 +525,7 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                 RouteName = wrapWithTicksIfNeeded $"%s{name}Route"
                 LayoutName = layout.Name
                 LayoutModuleName = layout.ModuleName
+                LayoutModulePath = layout.ModulePath
                 MsgName = wrapWithTicksIfNeeded $"%s{name}Msg"
                 ModuleName =
                     $"%s{projectName |> ProjectName.asString |> wrapWithTicksIfNeeded}.Pages%s{moduleNamePart}.Page"
