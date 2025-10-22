@@ -67,18 +67,23 @@ let private detectLayoutMismatch (errorLine: string) (_allErrors: string list) =
                         ""
 
                 // Try to infer which pages should use this layout
-                // For About.Layout.Msg, any page under About/ directory should use it
+                // For any nested layout (e.g., Products.Layout.Msg, Users.Settings.Layout.Msg)
                 let inferredPage =
-                    if expectedLayout.Contains("About.Layout.Msg") then
-                        // This could be About/Page.fs or any nested page like About/Me/Page.fs
-                        "a page in src/Pages/About/ directory"
-                    elif expectedLayout.Contains(".Layout.Msg") then
-                        // Extract the directory name
-                        let parts = expectedLayout.Replace(".Layout.Msg", "").Split('.')
-                        let dirName = if parts.Length > 0 then parts.[parts.Length - 1] else ""
-
-                        if dirName <> "" && dirName <> "Pages" then
-                            sprintf "a page in src/Pages/%s/ directory" dirName
+                    if expectedLayout.Contains(".Layout.Msg") then
+                        // Extract the directory path from the layout name
+                        // Examples:
+                        // "Products.Layout.Msg" -> "Products"
+                        // "Users.Settings.Layout.Msg" -> "Users/Settings"
+                        // "Admin.Dashboard.Layout.Msg" -> "Admin/Dashboard"
+                        let layoutPath = 
+                            expectedLayout
+                                .Replace("Pages.", "")  // Remove Pages prefix if present
+                                .Replace(".Layout.Msg", "")  // Remove suffix
+                        
+                        if layoutPath <> "" && layoutPath <> "Pages" then
+                            // Convert dots to directory separators
+                            let dirPath = layoutPath.Replace(".", "/")
+                            sprintf "src/Pages/%s/Page.fs" dirPath
                         else
                             "one of your pages"
                     else
@@ -99,15 +104,21 @@ let private detectLayoutMismatch (errorLine: string) (_allErrors: string list) =
                 // If the error says "Layout.Msg doesn't match About.Layout.Msg"
                 // then the page is using Layout.Msg (wrong) when it should use About.Layout.Msg (correct)
                 let wrongLayout =
-                    if type1 = "Layout.Msg" || type1 = "Pages.Layout.Msg" then
-                        // The page is using the root layout when it shouldn't
-                        "Pages.Layout.Msg"
-                    elif type2 = "Layout.Msg" || type2 = "Pages.Layout.Msg" then
-                        "Pages.Layout.Msg"
-                    else if type1 = correctLayout then
-                        type2
+                    // The wrong layout is the one that's NOT the correct layout
+                    if type1 = correctLayout then
+                        // If type1 is correct, then type2 is wrong
+                        // Normalize "Layout.Msg" to "Pages.Layout.Msg" for consistency
+                        if type2 = "Layout.Msg" || type2 = "Pages.Layout.Msg" then 
+                            "Pages.Layout.Msg" 
+                        else 
+                            type2
                     else
-                        type1
+                        // If type2 is correct, then type1 is wrong
+                        // Normalize "Layout.Msg" to "Pages.Layout.Msg" for consistency
+                        if type1 = "Layout.Msg" || type1 = "Pages.Layout.Msg" then 
+                            "Pages.Layout.Msg" 
+                        else 
+                            type1
 
                 Some(inferredPage, wrongLayout, correctLayout)
             else
@@ -119,13 +130,16 @@ let private detectLayoutMismatch (errorLine: string) (_allErrors: string list) =
                     let pagePath = pathMatch.Groups.[1].Value
 
                     // Determine the correct layout based on context
+                    // The more specific layout (not Pages.Layout.Msg or Layout.Msg) is usually correct
                     let correctLayout =
-                        if type1.Contains(".Layout.Msg") && type1 <> "Layout.Msg" then
+                        if type1 <> "Layout.Msg" && type1 <> "Pages.Layout.Msg" && type1.Contains(".Layout.Msg") then
                             type1
-                        elif type2.Contains(".Layout.Msg") && type2 <> "Layout.Msg" then
+                        elif type2 <> "Layout.Msg" && type2 <> "Pages.Layout.Msg" && type2.Contains(".Layout.Msg") then
+                            type2
+                        else if type1 = "Pages.Layout.Msg" || type1 = "Layout.Msg" then
                             type2
                         else
-                            "Layout.Msg"
+                            type1
 
                     let wrongLayout = if type1 = correctLayout then type2 else type1
 
@@ -327,19 +341,22 @@ let findPagesWithWrongLayout (_wrongLayout: string) (correctLayout: string) =
                     // This page uses Layout.Msg - check if it should use something else
                     // based on its directory structure
                     let relativePath = Path.GetRelativePath(pagesDir, pageFile)
-                    let pathParts = relativePath.Split(Path.DirectorySeparatorChar)
 
                     // If the page is in a subdirectory that has its own layout, it's wrong
                     if correctLayout.Contains(".Layout.Msg") && correctLayout <> "Pages.Layout.Msg" then
-                        // Extract the expected directory from the correct layout
-                        let layoutDir =
-                            let parts =
-                                correctLayout.Replace("Pages.", "").Replace(".Layout.Msg", "").Split('.')
-
-                            if parts.Length > 0 then parts.[parts.Length - 1] else ""
+                        // Extract the expected directory path from the correct layout
+                        // Examples:
+                        // "Products.Layout.Msg" -> check if page is in "Products/" 
+                        // "Users.Settings.Layout.Msg" -> check if page is in "Users/Settings/"
+                        let layoutPath =
+                            correctLayout
+                                .Replace("Pages.", "")
+                                .Replace(".Layout.Msg", "")
+                                .Replace(".", "/")  // Convert dots to path separators
 
                         // Check if this page is in that directory
-                        if layoutDir <> "" && pathParts.Length > 1 && pathParts.[0] = layoutDir then
+                        let pageDir = Path.GetDirectoryName(relativePath).Replace("\\", "/")
+                        if layoutPath <> "" && (pageDir = layoutPath || pageDir.StartsWith(layoutPath + "/")) then
                             foundPages <- pageFile :: foundPages
             with _ ->
                 ()

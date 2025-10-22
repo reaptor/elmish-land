@@ -4,9 +4,12 @@ open System
 open System.IO
 open System.Threading.Tasks
 open ElmishLand.Base
+open ElmishLand.FsProj
+open ElmishLand.Generate
 open ElmishLand.Init
 open ElmishLand.AddPage
 open ElmishLand.AddLayout
+open ElmishLand.TemplateEngine
 open FSharp.Compiler.CodeAnalysis
 open Runner
 open Xunit
@@ -24,34 +27,41 @@ let leadingWhitespace (s: string) =
 
     s.Substring(0, i)
 
-let withNewProject (f: AbsoluteProjectDir -> Task<_>) : Task<unit> =
+let dotnetSdkVersion = DotnetSdkVersion(Version(9, 0, 100))
+
+let withNewProject (f: AbsoluteProjectDir -> TemplateData -> Task<_>) : Task<unit> =
     task {
         let folder = getFolder ()
 
         try
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
-            let dotnetSdkVersion = DotnetSdkVersion(Version(9, 0, 100))
             let nodeVersion = Version(20, 0, 0)
 
             let! result, logOutput =
                 eff {
-                    let! _ =
+                    let! routeData =
                         initFiles
                             (AbsoluteProjectDir.asFilePath absoluteProjectDir)
                             absoluteProjectDir
                             dotnetSdkVersion
                             nodeVersion
 
-                    ()
+                    return routeData
                 }
                 |> runEff
 
-            Expects.ok logOutput result
+            let routeData = Expects.ok logOutput result
 
-            do! f absoluteProjectDir
+            do! f absoluteProjectDir routeData
         finally
             if Directory.Exists(folder) then
                 Directory.Delete(folder, true)
+    }
+
+let expectProjectIsValid projectDir =
+    eff {
+        do! generate (AbsoluteProjectDir.asFilePath projectDir) projectDir dotnetSdkVersion
+        do! validate projectDir
     }
 
 let expectProjectTypeChecks (absoluteProjectDir: AbsoluteProjectDir) =
@@ -108,7 +118,7 @@ let expectProjectTypeChecks (absoluteProjectDir: AbsoluteProjectDir) =
 
 [<Fact>]
 let ``addPage creates page with correct indentation in preview and fsproj`` () =
-    withNewProject (fun projectDir ->
+    withNewProject (fun projectDir _ ->
         task {
             // Run addPage with auto-accept = true to avoid user interaction
             let! result, logs = runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/Page1" true)
@@ -201,7 +211,7 @@ let ``addPage creates page with correct indentation in preview and fsproj`` () =
 
 [<Fact>]
 let ``addLayout after addPage updates project file order and page layout reference`` () =
-    withNewProject (fun projectDir ->
+    withNewProject (fun projectDir _ ->
         task {
             // Step 1: Add a page first
             let! addPageResult, addPageLogs =
@@ -268,7 +278,7 @@ let ``addLayout after addPage updates project file order and page layout referen
 
 [<Fact>]
 let ``nested layout with page uses correct layout message reference`` () =
-    withNewProject (fun projectDir ->
+    withNewProject (fun projectDir _ ->
         task {
             // Step 1: Add nested layout first
             let! addLayoutResult, addLayoutLogs =
@@ -350,7 +360,7 @@ let ``nested layout with page uses correct layout message reference`` () =
 
 [<Fact>]
 let ``validate should only check layout references for pages in project file`` () =
-    withNewProject (fun projectDir ->
+    withNewProject (fun projectDir _ ->
         task {
             // Create an additional page file that is NOT in the project file
             // This page uses the main Layout.Msg which would normally be flagged as wrong
@@ -466,7 +476,7 @@ Compilation failed
 
 [<Fact>]
 let ``Wrong layout reference in page should generate helpful error message`` () =
-    withNewProject (fun projectDir ->
+    withNewProject (fun projectDir _ ->
         task {
             // Step 1: Add an About page with its own layout
             let! addLayoutResult, addLayoutLogs =
@@ -526,64 +536,36 @@ Compilation failed"""
             Assert.Equal("About.Layout.Msg", mismatch.CorrectLayout)
         })
 
+[<Fact>]
+let ``Add layout and then page, page uses correct layout`` () =
+    withNewProject (fun projectDir _ ->
+        eff {
+            do! addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" true
+            do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" true
+
+            do! expectProjectIsValid projectDir
+            do! expectProjectTypeChecks projectDir
+        }
+        |> Expects.effectOk runEff)
 
 [<Fact>]
-let ``Correct layout reference in page should not generate any errors`` () =
-    withNewProject (fun projectDir ->
-        task {
-            // Step 1: Add an About page with its own layout
-            let! addLayoutResult, addLayoutLogs =
-                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" true)
+let ``Add nested layouts and then pages, page uses correct layout`` () =
+    withNewProject (fun projectDir _ ->
+        eff {
+            do! addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" true
+            do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" true
 
-            let _layoutSuccess = Expects.ok addLayoutLogs addLayoutResult
+            do! addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About/Me" true
+            do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About/Me" true
 
-            let! addPageResult, addPageLogs =
-                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" true)
-
-            let _pageSuccess = Expects.ok addPageLogs addPageResult
-
-            // Step 2: Verify the About page is using the correct layout (About.Layout.Msg)
-            let aboutPagePath =
-                Path.Combine(AbsoluteProjectDir.asString projectDir, "src", "Pages", "About", "Page.fs")
-
-            let aboutPageContent = File.ReadAllText(aboutPagePath)
-
-            // Confirm it has the correct layout reference
-            Assert.True(
-                aboutPageContent.Contains("| LayoutMsg of About.Layout.Msg"),
-                "Page should be using About.Layout.Msg"
-            )
-
-            // Step 3: Mock a successful Fable build output (no errors)
-            let mockBuildOutput =
-                """Fable 4.25.0: F# to JavaScript compiler
-Parsing .elmish-land/App/ElmishLand.TestProject.App.fsproj...
-Started Fable compilation...
-Fable compilation finished in 2500ms
-
-vite v5.0.0 building for production...
-✓ 42 modules transformed.
-dist/index.html                   0.45 kB │ gzip:  0.30 kB
-dist/assets/index-4a8b2c3d.js   142.87 kB │ gzip: 51.67 kB
-✓ built in 1.25s"""
-
-            let mockErrorOutput = ""
-
-            // Step 4: Process the output - should not detect any layout mismatches
-            let result =
-                ElmishLand.FableOutput.processOutput mockBuildOutput mockErrorOutput false
-
-            // Verify no errors were captured
-            Assert.Equal(0, result.Errors |> List.length)
-            Assert.Equal(0, result.Warnings |> List.length)
-
-            // Most importantly, verify no layout mismatches were detected
-            Assert.Equal(0, result.LayoutMismatches |> List.length)
-        })
+            do! expectProjectIsValid projectDir
+            do! expectProjectTypeChecks projectDir
+        }
+        |> Expects.effectOk runEff)
 
 [<Fact>]
 let ``Nested page with wrong layout reference should generate correct error message`` () =
-    withNewProject (fun projectDir ->
+    withNewProject (fun projectDir _ ->
         task {
             // Step 1: Add About layout
             let! addLayoutResult, addLayoutLogs =
@@ -646,28 +628,9 @@ Compilation failed"""
 
 [<Fact>]
 let ``initFiles creates project files without CLI commands`` () =
-    task {
-        let folder = getFolder ()
-
-        try
-            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
-
-            // Mock versions to avoid CLI calls
-            let dotnetSdkVersion = DotnetSdkVersion(System.Version(9, 0, 100))
-            let nodeVersion = System.Version(20, 0, 0)
-
-            // Call initFiles with mocked versions
-            let! result, logs =
-                runEff (
-                    ElmishLand.Init.initFiles
-                        (FilePath.fromString folder)
-                        absoluteProjectDir
-                        dotnetSdkVersion
-                        nodeVersion
-                )
-
-            // Verify the operation succeeded
-            let routeData = Expects.ok logs result
+    withNewProject (fun absoluteProjectDir routeData ->
+        task {
+            let folder = AbsoluteProjectDir.asString absoluteProjectDir
 
             // Verify project directory was created
             Assert.True(Directory.Exists(folder), "Project directory should be created")
@@ -734,64 +697,54 @@ let ``initFiles creates project files without CLI commands`` () =
             Assert.NotNull(routeData)
             Assert.True(routeData.Routes.Length > 0, "Should have at least one route")
             Assert.True(routeData.Layouts.Length > 0, "Should have at least one layout")
-
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
-    }
+        })
 
 [<Fact>]
 let ``Add page command with multiple URL parts, own layout and auto updating layout reference, updates correct layout reference in page``
     ()
     =
-    task {
-        let folder = getFolder ()
+    withNewProject (fun absoluteProjectDir _ ->
+        task {
+            let folder = AbsoluteProjectDir.asString absoluteProjectDir
 
-        try
-            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
-            let dotnetSdkVersion = DotnetSdkVersion(Version(9, 0, 100))
-            let nodeVersion = Version(20, 0, 0)
-
-            let! result, logOutput =
+            do!
                 eff {
-                    let! _ = initFiles (FilePath.fromString folder) absoluteProjectDir dotnetSdkVersion nodeVersion
                     do! addLayout (FilePath.fromString folder) absoluteProjectDir "/About/Me" true
                     do! addPage (FilePath.fromString folder) absoluteProjectDir "/About/Me" true
                 }
-                |> runEff
-
-            Expects.ok logOutput result
+                |> Expects.effectOk runEff
 
             File.ReadAllText(Path.Combine(folder, "src", "Pages", "About", "Me", "Page.fs"))
             |> Expects.containsSubstring "| LayoutMsg of About.Me.Layout.Msg" // Ensure that the auto accept write correct namespace
+        })
 
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
-    }
+[<Fact>]
+let ``apa``
+    ()
+    =
+    withNewProject (fun absoluteProjectDir _ ->
+        task {
+            let folder = AbsoluteProjectDir.asString absoluteProjectDir
+
+            do!
+                eff {
+                    do! addLayout (FilePath.fromString folder) absoluteProjectDir "/Hello/Me" true
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/Hello/Me" true
+                    do! addLayout (FilePath.fromString folder) absoluteProjectDir "/Hello" true
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/Hello" true
+
+                    // replace:
+                    // | LayoutMsg of Hello.Me.Layout.Msg
+                    // with
+                    // | LayoutMsg of Hello.Layout.Msg
+                    // in file src/Pages/Hello/Me/Page.fs
+                }
+                |> Expects.effectOk runEff
+
+            File.ReadAllText(Path.Combine(folder, "src", "Pages", "About", "Me", "Page.fs"))
+            |> Expects.containsSubstring "| LayoutMsg of About.Me.Layout.Msg" // Ensure that the auto accept write correct namespace
+        })
 
 [<Fact>]
 let ``Init command creates a buildable project`` () =
-    task {
-        let folder = getFolder ()
-
-        try
-            let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
-            let dotnetSdkVersion = DotnetSdkVersion(Version(9, 0, 100))
-            let nodeVersion = Version(20, 0, 0)
-
-            let! result, logOutput =
-                eff {
-                    let! _ = initFiles (FilePath.fromString folder) absoluteProjectDir dotnetSdkVersion nodeVersion
-                    ()
-                }
-                |> runEff
-
-            Expects.ok logOutput result
-
-            do! expectProjectTypeChecks absoluteProjectDir
-
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
-    }
+    withNewProject (fun projectDir _ -> expectProjectTypeChecks projectDir)

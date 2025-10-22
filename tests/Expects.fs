@@ -28,6 +28,16 @@ let ok logs (x: Result<'a, 'e>) : 'a =
     | Ok x -> x
     | Error e -> failwithf $"Expected Ok. Got Error '%A{e}'\n%s{LogOutput.asString logs}"
 
+let effectOk runEff e=
+    task {
+        let! result, logs = runEff e
+        return
+            match result with
+            | Ok x -> x
+            | Error e -> failwithf $"Expected Ok. Got Error '%A{e}'\n%s{LogOutput.asString logs}"
+    }
+
+
 let equalsWLogs (logs: LogOutput) expected actual =
     if expected <> actual then
         try
