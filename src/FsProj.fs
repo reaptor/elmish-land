@@ -134,6 +134,14 @@ let validate absoluteProjectDir =
 
         log.Debug("Using pagesDir {}", pagesDir)
 
+        let actualPageFiles =
+            Directory.GetFiles(FilePath.asString pagesDir, "Page.fs", SearchOption.AllDirectories)
+            |> Array.map FilePath.fromString
+            |> Array.map (FilePath.removePath (absoluteProjectDir |> AbsoluteProjectDir.asFilePath))
+            |> Set.ofArray
+
+        log.Debug("actualPageFiles {}", actualPageFiles)
+
         let includedPageFiles =
             includedFSharpFileInfo
             |> List.map (fun (_, _, filePath) -> filePath)
@@ -141,6 +149,27 @@ let validate absoluteProjectDir =
             |> Set.ofList
 
         log.Debug("includedPageFiles {}", includedPageFiles)
+
+        let actualLayoutFiles =
+            Directory.GetFiles(FilePath.asString pagesDir, "Layout.fs", SearchOption.AllDirectories)
+            |> Array.map FilePath.fromString
+            |> Array.map (FilePath.removePath (absoluteProjectDir |> AbsoluteProjectDir.asFilePath))
+            |> Set.ofArray
+
+        log.Debug("actualLayoutFiles {}", actualLayoutFiles)
+
+        let includedLayoutFiles =
+            includedFSharpFileInfo
+            |> List.map (fun (_, _, filePath) -> filePath)
+            |> List.filter (fun x -> (FileName.fromFilePath x |> FileName.asString) = "Layout.fs")
+            |> Set.ofList
+
+        log.Debug("includedLayoutFiles {}", includedLayoutFiles)
+
+        let pageFilesMissingFromFsProj = Set.difference actualPageFiles includedPageFiles
+
+        let layoutFilesMissingFromFsProj =
+            Set.difference actualLayoutFiles includedLayoutFiles
 
         let errors: string list = [
             yield!
@@ -166,8 +195,19 @@ let validate absoluteProjectDir =
                 |> snd
                 |> List.rev
 
-        // Note: We do NOT report pages missing from the project file
-        // This allows having test/temporary pages on disk that aren't included in the build
+            for pageFile in pageFilesMissingFromFsProj do
+                $"""The page '%s{FilePath.asString pageFile}' is missing from the project file. Please add the file to the project using an IDE
+    or add the following line to a ItemGroup in the project file '%s{FsProjPath.asString projectPath}':
+
+    <Compile Include="%s{FilePath.asString pageFile}" />
+       """
+
+            for layoutFile in layoutFilesMissingFromFsProj do
+                $"""The layout '%s{FilePath.asString layoutFile}' is missing from the project file. Please add the file to the project using an IDE
+    or add the following line to a ItemGroup in the project file '%s{FsProjPath.asString projectPath}':
+
+    <Compile Include="%s{FilePath.asString layoutFile}" />
+       """
         ]
 
         return!

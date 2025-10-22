@@ -17,13 +17,22 @@ let private showProjectDiffPreview (log: ILog) (projectPath: FsProjPath) (filePa
     if not (String.IsNullOrWhiteSpace snippet) then
         log.Info("Planned project file change (preview):" + snippet)
 
-let promptUserForProjectFileUpdate (log: ILog) (projectPath: FsProjPath) (filePath: string) (autoAccept: bool) =
+let promptUserForProjectFileUpdate
+    (log: ILog)
+    (projectPath: FsProjPath)
+    (filePath: string)
+    (promptAccept: AutoUpdateCode)
+    =
     showProjectDiffPreview log projectPath filePath
 
-    if autoAccept then
+    match promptAccept with
+    | Accept ->
         log.Info $"🤖 Auto-accepting: Adding '%s{filePath}' to project file"
         true
-    else
+    | Decline ->
+        log.Info $"🤖 Auto-declining: Adding '%s{filePath}' to project file"
+        false
+    | Ask ->
         log.Info $"\nDo you want to add the new page to your project file '%s{FsProjPath.asString projectPath}'? [y/N]"
 
         let response = Console.ReadLine()
@@ -175,7 +184,7 @@ let addCompileIncludeToProject (log: ILog) (projectPath: FsProjPath) (filePath: 
         log.Info $"⚠️  Failed to update project file: %s{ex.Message}. Please add manually."
         false
 
-let addPage workingDirectory absoluteProjectDir (url: string) (autoAccept: bool) =
+let addPage workingDirectory absoluteProjectDir (url: string) (promptAccept: AutoUpdateCode) =
     eff {
         let! log = Log().Get()
 
@@ -220,7 +229,7 @@ let addPage workingDirectory absoluteProjectDir (url: string) (autoAccept: bool)
 
         // Ask user if they want to automatically add the file to the project
         let shouldUpdateProject =
-            promptUserForProjectFileUpdate log projectPath relativefilePathString autoAccept
+            promptUserForProjectFileUpdate log projectPath relativefilePathString promptAccept
 
         let projectUpdateResult =
             if shouldUpdateProject then

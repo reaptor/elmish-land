@@ -28,6 +28,11 @@ let ok logs (x: Result<'a, 'e>) : 'a =
     | Ok x -> x
     | Error e -> failwithf $"Expected Ok. Got Error '%A{e}'\n%s{LogOutput.asString logs}"
 
+let error logs (x: Result<'a, 'e>) : 'e =
+    match x with
+    | Ok x -> failwithf $"Expected Error. Got Ok '%A{x}'\n%s{LogOutput.asString logs}"
+    | Error e -> e
+
 let effectOk runEff e =
     task {
         let! result, logs = runEff e

@@ -406,3 +406,8 @@ let nugetDependencies =
 let npmDependencies = Set [ "react", "19"; "react-dom", "19" ]
 
 let npmDevDependencies = Set [ "vite", "6" ]
+
+type AutoUpdateCode =
+    | Accept
+    | Decline
+    | Ask

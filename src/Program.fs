@@ -20,8 +20,13 @@ let (|NotFlag|_|) (x: string) =
     else
         Some x
 
-let hasAutoAcceptFlag (argv: string[]) =
-    argv |> Array.exists (fun arg -> arg = "--auto-accept" || arg = "-y")
+let getPromptAcceptFlag (argv: string[]) =
+    if argv |> Array.exists (fun arg -> arg = "--auto-accept" || arg = "-y") then
+        Accept
+    else if argv |> Array.exists (fun arg -> arg = "--auto-decline" || arg = "-n") then
+        Decline
+    else
+        Ask
 
 let run argv =
     eff {
@@ -36,9 +41,10 @@ let run argv =
             | "server" :: _ -> server workingDir absoluteProjectDir
             | "build" :: _ -> build workingDir absoluteProjectDir
             | "restore" :: _ -> restore workingDir absoluteProjectDir
-            | "add" :: "page" :: NotFlag url :: _ -> addPage workingDir absoluteProjectDir url (hasAutoAcceptFlag argv)
+            | "add" :: "page" :: NotFlag url :: _ ->
+                addPage workingDir absoluteProjectDir url (getPromptAcceptFlag argv)
             | "add" :: "layout" :: NotFlag url :: _ ->
-                addLayout workingDir absoluteProjectDir url (hasAutoAcceptFlag argv)
+                addLayout workingDir absoluteProjectDir url (getPromptAcceptFlag argv)
             | _ ->
                 $"""
     %s{getWelcomeTitle ()}

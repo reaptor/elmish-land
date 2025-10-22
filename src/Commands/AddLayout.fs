@@ -85,16 +85,24 @@ let findAffectedPages absoluteProjectDir layoutFilePath (routeData: TemplateData
         else
             None)
 
-let promptUserForUpdates (log: ILog) (pageUpdates: PageUpdate[]) (autoAccept: bool) =
+let promptUserForUpdates (log: ILog) (pageUpdates: PageUpdate[]) (promptAccept: AutoUpdateCode) =
     if pageUpdates.Length > 0 then
-        if autoAccept then
+        match promptAccept with
+        | Accept ->
             log.Info $"🤖 Auto-accepting: Updating %i{pageUpdates.Length} page(s) to use the new layout:"
 
             for pageUpdate in pageUpdates do
                 log.Info $"  📄 %s{pageUpdate.RelativePath}"
 
             true
-        else
+        | Decline ->
+            log.Info $"🤖 Auto-declining: Updating %i{pageUpdates.Length} page(s) to use the new layout:"
+
+            for pageUpdate in pageUpdates do
+                log.Info $"  📄 %s{pageUpdate.RelativePath}"
+
+            false
+        | Ask ->
             log.Info
                 $"\n%i{pageUpdates.Length} page(s) are currently using a higher level layout and must be updated to use the new closer layout:"
 
@@ -122,12 +130,22 @@ let private showProjectDiffPreview (log: ILog) (projectPath: FsProjPath) (filePa
     if not (String.IsNullOrWhiteSpace snippet) then
         log.Info("Planned project file change (preview):" + snippet)
 
-let promptUserForProjectFileUpdate (log: ILog) (projectPath: FsProjPath) (filePath: string) (autoAccept: bool) =
-    if autoAccept then
+let promptUserForProjectFileUpdate
+    (log: ILog)
+    (projectPath: FsProjPath)
+    (filePath: string)
+    (promptAccept: AutoUpdateCode)
+    =
+    match promptAccept with
+    | Accept ->
         showProjectDiffPreview log projectPath filePath
         log.Info $"🤖 Auto-accepting: Adding '%s{filePath}' to project file"
         true
-    else
+    | Decline ->
+        showProjectDiffPreview log projectPath filePath
+        log.Info $"🤖 Auto-declining: Adding '%s{filePath}' to project file"
+        false
+    | Ask ->
         showProjectDiffPreview log projectPath filePath
 
         log.Info
@@ -255,7 +273,7 @@ let addCompileIncludeToProject (log: ILog) (projectPath: FsProjPath) (filePath: 
         log.Info $"⚠️  Failed to update project file: %s{ex.Message}. Please add manually."
         false
 
-let addLayout workingDirectory absoluteProjectDir (url: string) (autoAccept: bool) =
+let addLayout workingDirectory absoluteProjectDir (url: string) (promptAccept: AutoUpdateCode) =
     eff {
         let! log = Log().Get()
 
@@ -301,7 +319,7 @@ let addLayout workingDirectory absoluteProjectDir (url: string) (autoAccept: boo
         let affectedPages = findAffectedPages absoluteProjectDir layoutFilePath routeData
 
         // Ask user if they want to update the affected pages
-        let shouldUpdate = promptUserForUpdates log affectedPages autoAccept
+        let shouldUpdate = promptUserForUpdates log affectedPages promptAccept
 
         if shouldUpdate then
             applyPageUpdates log affectedPages
@@ -315,7 +333,7 @@ let addLayout workingDirectory absoluteProjectDir (url: string) (autoAccept: boo
                 // Don't ask about project file if we already prompted about page updates and user declined
                 false
             else
-                promptUserForProjectFileUpdate log projectPath relativefilePathString autoAccept
+                promptUserForProjectFileUpdate log projectPath relativefilePathString promptAccept
 
         let projectUpdateResult =
             if shouldUpdateProject then
