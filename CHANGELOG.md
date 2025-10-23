@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0 beta 4] - 2025-10-24
+
+### Added
+- Interactive prompts for automatic page file reordering in project files with preview
+
+### Fixed
+- Project file management now preserves Content entries and handles mixed path separators
+- Commands from Shared.init now work properly ([#34](https://github.com/reaptor/elmish-land/issues/34))
+
 ## [1.1.0 beta 3] - 2025-10-22
 
 ### Added
