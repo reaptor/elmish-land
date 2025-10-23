@@ -1,4 +1,4 @@
 /src/templates
 /MyProject
-bin
-obj
+**/bin/
+**/obj/

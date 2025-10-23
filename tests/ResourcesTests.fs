@@ -765,7 +765,7 @@ let init () =
 
     match initialUrl with
     | Route.RoutesName route ->
-        initRoutesNamePage defaultModel route sharedCmd
+        initRoutesNamePage defaultModel route (Command.map SharedMsg id sharedCmd)
     | Route.NotFound ->
         {
             defaultModel with

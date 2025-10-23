@@ -11,12 +11,14 @@
   <ItemGroup>
     <Compile Include="Expects.fs" />
     <Compile Include="Runner.fs" />
+    <Compile Include="TestProjectGeneration.fs" />
     <Compile Include="Tests.fs" />
     <Compile Include="TemplateEngineTests.fs" />
     <Compile Include="ResourcesTests.fs" />
     <Compile Include="CommandTests.fs" />
     <Compile Include="EnsurePageFilesLastTests.fs" />
     <Compile Include="FsProjReorderPagesTests.fs" />
+    <Compile Include="SharedModuleTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
