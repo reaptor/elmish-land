@@ -342,7 +342,7 @@ let addLayout workingDirectory absoluteProjectDir (url: string) (promptAccept: A
                 false
 
         // Ensure Page.fs entries are last in their directories
-        do! ElmishLand.FsProj.ensurePageFilesLast absoluteProjectDir
+        do! ElmishLand.FsProj.writePageFilesLast absoluteProjectDir
 
         // Generate files (this will include any updated pages if user chose to update them)
         generateFiles log (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData

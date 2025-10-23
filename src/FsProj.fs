@@ -8,69 +8,62 @@ open ElmishLand.Base
 open ElmishLand.Log
 open ElmishLand.AppError
 
-/// Ensure that within each folder, any Compile Include ending with 'Page.fs' appears
-/// after other Compile entries from the same folder. This function rewrites the project file
-/// in-place if reordering is needed.
-let ensurePageFilesLast absoluteProjectDir =
-    eff {
-        let! log = Log().Get()
-        let! projectPath = FsProjPath.findExactlyOneFromProjectDir absoluteProjectDir
-        let path = FsProjPath.asString projectPath
-        let original = File.ReadAllText(path)
+let ensurePageFilesLast fsprojContent =
+    let itemGroupPattern =
+        Regex(@"(<ItemGroup[^>]*>[\s\S]*?</ItemGroup>)", RegexOptions.IgnoreCase)
 
-        let itemGroupPattern =
-            Regex(@"(<ItemGroup[^>]*>[\s\S]*?</ItemGroup>)", RegexOptions.IgnoreCase)
+    let compilePattern =
+        Regex(@"[ \t]*<Compile\s+Include=""([^""]+)""\s*/>", RegexOptions.IgnoreCase)
 
-        let compilePattern =
-            Regex(@"[ \t]*<Compile\s+Include=""([^""]+)""\s*/>", RegexOptions.IgnoreCase)
+    let mutable changed = false
 
-        let mutable changed = false
+    let newContent =
+        itemGroupPattern.Replace(
+            fsprojContent,
+            MatchEvaluator(fun ig ->
+                let groupText = ig.Value
+                let matches = compilePattern.Matches(groupText)
 
-        let newContent =
-            itemGroupPattern.Replace(
-                original,
-                MatchEvaluator(fun ig ->
-                    let groupText = ig.Value
-                    let matches = compilePattern.Matches(groupText)
+                if matches.Count = 0 then
+                    groupText
+                else
 
-                    if matches.Count = 0 then
-                        groupText
-                    else
+                    // Build entries list preserving original text and metadata
+                    let entries = [
+                        for i in 0 .. matches.Count - 1 do
+                            let m = matches[i]
+                            let includePath = m.Groups[1].Value
 
-                        // Build entries list preserving original text and metadata
-                        let entries = [
-                            for i in 0 .. matches.Count - 1 do
-                                let m = matches[i]
-                                let includePath = m.Groups[1].Value
+                            let normalizedPath = includePath.Replace('\\', '/')
 
-                                let dir =
-                                    if includePath.Contains("/") then
-                                        includePath.Substring(0, includePath.LastIndexOf('/'))
-                                    else
-                                        ""
+                            let dir =
+                                if normalizedPath.Contains("/") then
+                                    normalizedPath.Substring(0, normalizedPath.LastIndexOf('/'))
+                                else
+                                    ""
 
-                                let isPage = includePath.EndsWith("Page.fs", System.StringComparison.Ordinal)
-                                yield (i, m.Index, m.Length, includePath, dir, isPage, m.Value)
-                        ]
+                            let isPage = includePath.EndsWith("Page.fs", System.StringComparison.Ordinal)
+                            yield (i, m.Index, m.Length, includePath, dir, isPage, m.Value)
+                    ]
 
-                        // Bubble-sort to push Page.fs to end within the same directory
-                        let arr = entries |> List.toArray
-                        let mutable swappedAny = false
+                    // Bubble-sort to push Page.fs to end within the same directory
+                    let arr = entries |> List.toArray
+                    let mutable swappedAny = false
 
-                        for _round in 0 .. (arr.Length) do
-                            for i in 0 .. (arr.Length - 2) do
-                                let (_, _, _, _, dirA, isPageA, _) = arr[i]
-                                let (_, _, _, _, dirB, isPageB, _) = arr[i + 1]
+                    for _round in 0 .. (arr.Length) do
+                        for i in 0 .. (arr.Length - 2) do
+                            let (_, _, _, _, dirA, isPageA, _) = arr[i]
+                            let (_, _, _, _, dirB, isPageB, _) = arr[i + 1]
 
-                                if isPageA && (dirA = dirB) && (not isPageB) then
-                                    // swap
-                                    let tmp = arr[i]
-                                    arr[i] <- arr[i + 1]
-                                    arr[i + 1] <- tmp
-                                    swappedAny <- true
+                            if isPageA && (dirA = dirB) && (not isPageB) then
+                                // swap
+                                let tmp = arr[i]
+                                arr[i] <- arr[i + 1]
+                                arr[i + 1] <- tmp
+                                swappedAny <- true
 
-                        if swappedAny then
-                            changed <- true
+                    if swappedAny then
+                        changed <- true
 
                         // Detect newline style
                         let newline = if groupText.Contains("\r\n") then "\r\n" else "\n"
@@ -84,14 +77,24 @@ let ensurePageFilesLast absoluteProjectDir =
                         let middle =
                             arr |> Array.map (fun (_, _, _, _, _, _, text) -> text) |> String.concat newline
 
-                        prefix + middle + suffix)
-            )
+                        prefix + middle + suffix
+                    else
+                        groupText)
+        )
 
-        if changed && newContent <> original then
+    newContent
+
+let writePageFilesLast absoluteProjectDir =
+    eff {
+        let! log = Log().Get()
+        let! projectPath = FsProjPath.findExactlyOneFromProjectDir absoluteProjectDir
+        let path = FsProjPath.asString projectPath
+        let original = File.ReadAllText(path)
+        let newContent = ensurePageFilesLast original
+
+        if newContent <> original then
             log.Info("Rewriting project file to ensure Page.fs files are last within their directories: {}", path)
             File.WriteAllText(path, newContent)
-
-        return! Ok()
     }
 
 let validate absoluteProjectDir =
@@ -99,8 +102,7 @@ let validate absoluteProjectDir =
         let! log = Log().Get()
         let! projectPath = FsProjPath.findExactlyOneFromProjectDir absoluteProjectDir
 
-        // Auto-fix ordering so Page.fs is last within its directory
-        do! ensurePageFilesLast absoluteProjectDir
+        do! writePageFilesLast absoluteProjectDir
 
         log.Debug("Using {}", absoluteProjectDir)
         log.Debug("Using {}", projectPath)

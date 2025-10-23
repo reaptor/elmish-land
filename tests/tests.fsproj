@@ -15,6 +15,7 @@
     <Compile Include="TemplateEngineTests.fs" />
     <Compile Include="ResourcesTests.fs" />
     <Compile Include="CommandTests.fs" />
+    <Compile Include="EnsurePageFilesLastTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
