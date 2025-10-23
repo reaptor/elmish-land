@@ -46,6 +46,7 @@ let withNewProject (f: AbsoluteProjectDir -> TemplateData -> Task<_>) : Task<uni
                             absoluteProjectDir
                             dotnetSdkVersion
                             nodeVersion
+                            Accept
 
                     return routeData
                 }
@@ -62,7 +63,7 @@ let withNewProject (f: AbsoluteProjectDir -> TemplateData -> Task<_>) : Task<uni
 let expectProjectIsValid projectDir =
     eff {
         do! generate (AbsoluteProjectDir.asFilePath projectDir) projectDir dotnetSdkVersion
-        do! validate projectDir
+        do! validate projectDir Accept
     }
 
 let expectProjectTypeChecks (absoluteProjectDir: AbsoluteProjectDir) =
@@ -418,7 +419,7 @@ let update msg model =
             // 1. Pages/layouts missing from project file ARE reported as errors
             // 2. Layout references are NOT validated for pages not in the project file
             //    (i.e., the error should be about missing file, not incorrect layout reference)
-            let! result, _logs = runEff (ElmishLand.FsProj.validate projectDir)
+            let! result, _logs = runEff (ElmishLand.FsProj.validate projectDir Accept)
 
             // The validation should fail with errors about missing files
             match result with
@@ -776,7 +777,7 @@ let ``Ensure orphan page files are reported as validation errors`` () =
             let! result, logs =
                 eff {
                     do! addPage (FilePath.fromString folder) absoluteProjectDir "/Hello/Me" Decline
-                    do! validate absoluteProjectDir
+                    do! validate absoluteProjectDir Accept
                 }
                 |> runEff
 

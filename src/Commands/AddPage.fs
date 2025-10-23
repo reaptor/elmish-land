@@ -238,7 +238,7 @@ let addPage workingDirectory absoluteProjectDir (url: string) (promptAccept: Aut
                 false
 
         // Ensure Page.fs entries are last in their directories
-        do! ElmishLand.FsProj.writePageFilesLast absoluteProjectDir
+        do! ElmishLand.FsProj.writePageFilesLast absoluteProjectDir promptAccept
 
         let! routeData = getTemplateData projectName absoluteProjectDir
         log.Debug("routeData: {}", routeData)

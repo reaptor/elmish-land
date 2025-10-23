@@ -19,7 +19,7 @@ dotnet elmish-land server"""
 
     getFormattedCommandOutput header content
 
-let restore workingDirectory absoluteProjectDir =
+let restore workingDirectory absoluteProjectDir (promptAccept: AutoUpdateCode) =
     eff {
         let! log = Log().Get()
 
@@ -47,7 +47,7 @@ let restore workingDirectory absoluteProjectDir =
                                 |> AbsoluteProjectDir
 
                             do! generate workingDirectory subAbsoluteProjectDir dotnetSdkVersion
-                            do! validate subAbsoluteProjectDir
+                            do! validate subAbsoluteProjectDir promptAccept
 
                 })
 

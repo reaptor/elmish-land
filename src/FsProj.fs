@@ -1,5 +1,6 @@
 module ElmishLand.FsProj
 
+open System
 open ElmishLand.Effect
 open Orsak
 open System.IO
@@ -84,7 +85,68 @@ let ensurePageFilesLast fsprojContent =
 
     newContent
 
-let writePageFilesLast absoluteProjectDir =
+/// Build a preview showing which Compile Include lines will be reordered
+/// to ensure Page.fs files are last within their directories.
+/// Returns empty string if no reordering is needed.
+let previewPageFilesReordering (projectFileContent: string) : string =
+    try
+        let newContent = ensurePageFilesLast projectFileContent
+
+        if newContent = projectFileContent then
+            ""
+        else
+            let itemGroupPattern =
+                Regex(@"(<ItemGroup[^>]*>[\s\S]*?</ItemGroup>)", RegexOptions.IgnoreCase)
+
+            let compilePattern =
+                Regex(@"[ \t]*<Compile\s+Include=""([^""]+)""\s*/>", RegexOptions.IgnoreCase)
+
+            let originalMatches = itemGroupPattern.Matches(projectFileContent)
+            let newMatches = itemGroupPattern.Matches(newContent)
+
+            let mutable preview = ""
+
+            for i in 0 .. originalMatches.Count - 1 do
+                let originalGroup = originalMatches[i].Value
+                let newGroup = newMatches[i].Value
+
+                if originalGroup <> newGroup then
+                    let originalCompiles = compilePattern.Matches(originalGroup)
+                    let newCompiles = compilePattern.Matches(newGroup)
+
+                    if originalCompiles.Count > 0 && newCompiles.Count > 0 then
+                        let originalPaths = [| for m in originalCompiles -> m.Groups[1].Value |]
+                        let newPaths = [| for m in newCompiles -> m.Groups[1].Value |]
+
+                        // Find which entries moved
+                        let movedEntries =
+                            newPaths
+                            |> Array.indexed
+                            |> Array.filter (fun (newIdx, path) ->
+                                let oldIdx = Array.IndexOf(originalPaths, path)
+                                oldIdx >= 0 && oldIdx <> newIdx)
+
+                        if movedEntries.Length > 0 then
+                            let green (s: string) = "\u001b[32m" + s + "\u001b[0m"
+                            let red (s: string) = "\u001b[31m" + s + "\u001b[0m"
+
+                            preview <- preview + "\nReordered Compile entries:\n"
+
+                            for (newIdx, path) in movedEntries do
+                                let oldIdx = Array.IndexOf(originalPaths, path)
+
+                                if path.EndsWith("Page.fs") then
+                                    preview <-
+                                        preview
+                                        + red $"  - %s{path} (moved from position %i{oldIdx + 1} to %i{newIdx + 1})\n"
+
+                                    preview <- preview + green $"  + %s{path} (moved to end of directory)\n"
+
+            if preview = "" then "" else "\n..." + preview + "..."
+    with _ ->
+        ""
+
+let writePageFilesLast absoluteProjectDir (autoUpdate: AutoUpdateCode) =
     eff {
         let! log = Log().Get()
         let! projectPath = FsProjPath.findExactlyOneFromProjectDir absoluteProjectDir
@@ -93,16 +155,41 @@ let writePageFilesLast absoluteProjectDir =
         let newContent = ensurePageFilesLast original
 
         if newContent <> original then
-            log.Info("Rewriting project file to ensure Page.fs files are last within their directories: {}", path)
-            File.WriteAllText(path, newContent)
+            let preview = previewPageFilesReordering original
+
+            if not (String.IsNullOrWhiteSpace preview) then
+                log.Info("Planned project file change (preview):" + preview)
+
+            let shouldUpdate =
+                match autoUpdate with
+                | Accept ->
+                    log.Info
+                        $"🤖 Auto-accepting: Reordering Page.fs files in project file to be last within their directories"
+
+                    true
+                | Decline ->
+                    log.Info $"🤖 Auto-declining: Reordering Page.fs files in project file"
+                    false
+                | Ask ->
+                    log.Info
+                        $"\nDo you want to reorder Page.fs files in your project file '%s{path}' to be last within their directories? [y/N]"
+
+                    let response = Console.ReadLine()
+
+                    String.Equals(response, "y", StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(response, "yes", StringComparison.OrdinalIgnoreCase)
+
+            if shouldUpdate then
+                log.Info("Rewriting project file to ensure Page.fs files are last within their directories: {}", path)
+                File.WriteAllText(path, newContent)
     }
 
-let validate absoluteProjectDir =
+let validate absoluteProjectDir (autoUpdate: AutoUpdateCode) =
     eff {
         let! log = Log().Get()
         let! projectPath = FsProjPath.findExactlyOneFromProjectDir absoluteProjectDir
 
-        do! writePageFilesLast absoluteProjectDir
+        do! writePageFilesLast absoluteProjectDir autoUpdate
 
         log.Debug("Using {}", absoluteProjectDir)
         log.Debug("Using {}", projectPath)

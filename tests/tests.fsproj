@@ -16,6 +16,7 @@
     <Compile Include="ResourcesTests.fs" />
     <Compile Include="CommandTests.fs" />
     <Compile Include="EnsurePageFilesLastTests.fs" />
+    <Compile Include="FsProjReorderPagesTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

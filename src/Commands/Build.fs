@@ -49,7 +49,7 @@ let fableBuild absoluteProjectDir isVerbose =
         CancellationToken.None
         ignore
 
-let build workingDirectory absoluteProjectDir =
+let build workingDirectory absoluteProjectDir (promptAccept: AutoUpdateCode) =
     let isVerbose = System.Environment.CommandLine.Contains("--verbose")
 
     eff {
@@ -63,7 +63,7 @@ let build workingDirectory absoluteProjectDir =
 
                     do! generate workingDirectory absoluteProjectDir dotnetSdkVersion
 
-                    do! validate absoluteProjectDir
+                    do! validate absoluteProjectDir promptAccept
                     do! ensureViteInstalled workingDirectory
 
                     let! result =

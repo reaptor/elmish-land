@@ -48,6 +48,7 @@ let initFiles
     (absoluteProjectDir: AbsoluteProjectDir)
     (dotnetSdkVersion: DotnetSdkVersion)
     (nodeVersion: Version)
+    (promptAccept: AutoUpdateCode)
     =
     eff {
         let! log = Log().Get()
@@ -240,7 +241,7 @@ let initFiles
 
         do! generate workingDirectory absoluteProjectDir dotnetSdkVersion
 
-        do! validate absoluteProjectDir
+        do! validate absoluteProjectDir promptAccept
 
         return routeData
     }
@@ -331,7 +332,7 @@ let initCliCommands workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (_
             |> Effect.map ignore<string * string>
     }
 
-let init workingDirectory (absoluteProjectDir: AbsoluteProjectDir) =
+let init workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (promptAccept: AutoUpdateCode) =
     eff {
         let! log = Log().Get()
 
@@ -343,7 +344,8 @@ let init workingDirectory (absoluteProjectDir: AbsoluteProjectDir) =
                     let! nodeVersion = getNodeVersion workingDirectory
 
                     // Create files without CLI commands
-                    let! routeData = initFiles workingDirectory absoluteProjectDir dotnetSdkVersion nodeVersion
+                    let! routeData =
+                        initFiles workingDirectory absoluteProjectDir dotnetSdkVersion nodeVersion promptAccept
 
                     // Run CLI commands
                     do! initCliCommands workingDirectory absoluteProjectDir routeData

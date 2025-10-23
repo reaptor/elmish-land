@@ -37,10 +37,10 @@ let run argv =
 
         return!
             match List.ofArray argv with
-            | "init" :: _ -> init workingDir absoluteProjectDir
-            | "server" :: _ -> server workingDir absoluteProjectDir
-            | "build" :: _ -> build workingDir absoluteProjectDir
-            | "restore" :: _ -> restore workingDir absoluteProjectDir
+            | "init" :: _ -> init workingDir absoluteProjectDir (getPromptAcceptFlag argv)
+            | "server" :: _ -> server workingDir absoluteProjectDir (getPromptAcceptFlag argv)
+            | "build" :: _ -> build workingDir absoluteProjectDir (getPromptAcceptFlag argv)
+            | "restore" :: _ -> restore workingDir absoluteProjectDir (getPromptAcceptFlag argv)
             | "add" :: "page" :: NotFlag url :: _ ->
                 addPage workingDir absoluteProjectDir url (getPromptAcceptFlag argv)
             | "add" :: "layout" :: NotFlag url :: _ ->
