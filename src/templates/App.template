@@ -173,7 +173,7 @@ let init () =
     match initialUrl with
     {{#each Routes}}
     | Route.{{Name}} route ->
-        init{{Name}}Page defaultModel route sharedCmd
+        init{{Name}}Page defaultModel route (Command.map SharedMsg id sharedCmd)
     {{/each}}
     | Route.NotFound ->
         {
