@@ -55,7 +55,7 @@ let fableWatch absoluteProjectDir stopSpinner =
         let outputHandler (output: string) =
             // Check if this is the VITE ready message
             if output.Contains("VITE") && output.Contains("ready in") then
-                // stopSpinner ()
+                stopSpinner ()
                 isViteReady <- true
             // Capture the Local URL and display the final message
             elif isViteReady && output.Contains("Local:") then
