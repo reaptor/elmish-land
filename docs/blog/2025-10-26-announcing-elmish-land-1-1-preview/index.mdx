@@ -1,0 +1,69 @@
+---
+slug: announcing-elmish-land-1-1-preview
+title: Announcing Elmish Land 1.1 Preview
+authors: [klofberg]
+---
+
+# Elmish Land 1.1: Smarter CLI Tooling
+
+Version 1.1 of Elmish Land brings significant improvements to the CLI, focusing on automation and better error handling. Here's what changed since 1.0.
+
+<!-- truncate -->
+
+## Automatic Project File Management
+
+F# requires explicit file ordering in `.fsproj` files. Version 1.0 made you handle this manually whenever you added pages or layouts. Version 1.1 automates it entirely ([#29](https://github.com/reaptor/elmish-land/issues/29)).
+
+When you add pages or layouts, the CLI now:
+- Adds files to your project in the correct order
+- Maintains compilation dependencies
+- Preserves existing Content entries
+- Handles mixed path separators correctly
+
+## Interactive Prompts
+
+The CLI now offers to fix common problems instead of just reporting them.
+
+### Layout Reference Fixes
+
+When you run `build` or `server`, the CLI validates layout references. If a page uses `Layout.Msg` when it should use `About.Layout.Msg`, you get a clear error message identifying the page and the issue. The CLI then offers to fix it automatically with an interactive prompt.
+
+### Page Reordering
+
+When files need reordering in your project, the CLI shows a preview of the changes and asks for confirmation before making updates.
+
+## Solution File Generation
+
+Running `init` now generates a solution file automatically ([#22](https://github.com/reaptor/elmish-land/issues/22)), which improves the experience in Visual Studio and Rider.
+
+## Better Feedback
+
+Commands like `init`, `build`, `restore`, and `server` now show loading indicators. Use `--verbose` for detailed output.
+
+## Bug Fixes
+
+- Commands from Shared.init now work properly ([#34](https://github.com/reaptor/elmish-land/issues/34))
+- Fixed nested layout assignment issues ([#21](https://github.com/reaptor/elmish-land/issues/21))
+- Route parameters can use F# keywords like "new" ([#25](https://github.com/reaptor/elmish-land/issues/25))
+- Validation only checks pages included in the project file ([#28](https://github.com/reaptor/elmish-land/issues/28))
+- Fixed Shared module command handling ([#27](https://github.com/reaptor/elmish-land/issues/27))
+
+## Getting Started
+
+Update your installation:
+
+```bash
+dotnet tool update elmish-land --prerelease
+```
+
+Or install fresh:
+
+```bash
+dotnet new tool-manifest
+dotnet tool install elmish-land --prerelease
+dotnet elmish-land init
+```
+
+---
+
+*Elmish Land is a framework for building F# browser apps with Fable, React, and Elmish. [GitHub repository](https://github.com/reaptor/elmish-land)*
