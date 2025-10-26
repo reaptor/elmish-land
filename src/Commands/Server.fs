@@ -1,12 +1,10 @@
 module ElmishLand.Server
 
 open System
-open System.IO
+open System.Text
 open System.Threading
-open System.Threading.Tasks
 open ElmishLand.Base
 open ElmishLand.Effect
-open ElmishLand.Log
 open ElmishLand.FsProj
 open ElmishLand.Process
 open ElmishLand.Generate
@@ -31,8 +29,6 @@ let fableWatch absoluteProjectDir stopSpinner =
 
         let! settings = getSettings absoluteProjectDir
         let isVerbose = System.Environment.CommandLine.Contains("--verbose")
-        let mutable isViteReady = false
-        let mutable localUrl = ""
 
         let command, args =
             match settings.ServerCommand with
@@ -51,23 +47,33 @@ let fableWatch absoluteProjectDir stopSpinner =
                 |]
 
         let cancellationSource = new CancellationTokenSource()
+        let mutable isViteReady = false
+        let mutable hasReadyMessageBeenPrinted = false
+        let viteReadyOutputBuilder = StringBuilder()
 
         let outputHandler (output: string) =
-            // Check if this is the VITE ready message
-            if output.Contains("VITE") && output.Contains("ready in") then
-                stopSpinner ()
+            if
+                output.Contains("vite", StringComparison.InvariantCultureIgnoreCase)
+                && output.Contains("ready", StringComparison.InvariantCultureIgnoreCase)
+            then
                 isViteReady <- true
-            // Capture the Local URL and display the final message
-            elif isViteReady && output.Contains("Local:") then
-                // Extract URL from "  ➜  Local:   http://localhost:5173/"
-                let urlStart = output.IndexOf("http://")
 
-                if urlStart >= 0 then
-                    localUrl <- output.Substring(urlStart).Trim()
+            if isViteReady then
+                viteReadyOutputBuilder.AppendLine(output) |> ignore
 
-                    System.Console.WriteLine(getCommandHeader $"development server is running at %s{localUrl}.")
-                    System.Console.WriteLine "Ctrl-C to stop."
-            elif not isVerbose then
+            let viteReadyOutput = viteReadyOutputBuilder.ToString()
+
+            let urlStart =
+                viteReadyOutput.IndexOf("http://", StringComparison.InvariantCultureIgnoreCase)
+
+            if isViteReady && urlStart >= 0 && not hasReadyMessageBeenPrinted then
+                stopSpinner ()
+                hasReadyMessageBeenPrinted <- true
+                let localUrl = viteReadyOutput.Substring(urlStart).Trim()
+                Console.WriteLine(getCommandHeader $"development server is running at %s{localUrl}.")
+                Console.WriteLine "Ctrl-C to stop."
+
+            if not isVerbose then
                 // Check for Vite HMR update messages and rewrite them
                 if output.Contains("[vite]") && output.Contains("hmr update") then
                     // Extract timestamp (supports various formats)
