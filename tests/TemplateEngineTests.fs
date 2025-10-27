@@ -2,14 +2,12 @@ module TemplateEngineTests
 
 open System
 open System.IO
-open System.Text
-open System.Threading
+open ElmishLand.AddPage
 open ElmishLand.Base
-open ElmishLand.Effect
-open ElmishLand.Log
 open ElmishLand.Settings
 open ElmishLand.TemplateEngine
 open Runner
+open TestProjectGeneration
 open Xunit
 open Orsak
 
@@ -353,3 +351,36 @@ let ``Ensure module names is wrapped in double ticks if project dir contains spe
             if Directory.Exists(tempDir) then
                 Directory.Delete(tempDir, true)
     }
+
+[<Fact>]
+let ``Ensure static routes takes precedence over dynamic routes`` () =
+    withNewProject (fun absoluteProjectDir _ ->
+        task {
+            let folder = AbsoluteProjectDir.asString absoluteProjectDir
+
+            let! routes =
+                eff {
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/_HomeParam" Accept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/A" Accept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/A/_AParam" Accept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/B/C/_BCParam" Accept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/B/C" Accept
+
+                    let! templateData =
+                        getTemplateData (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir
+
+                    return templateData.Routes
+                }
+                |> Expects.effectOk runEff
+
+            Expects.equals 6 routes.Length
+
+            Expects.equals [ "Home"; "A"; "B_C"; "HomeParam"; "A_AParam"; "B_C_BCParam" ] [
+                routes[0].Name
+                routes[1].Name
+                routes[2].Name
+                routes[3].Name
+                routes[4].Name
+                routes[5].Name
+            ]
+        })

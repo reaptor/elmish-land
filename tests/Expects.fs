@@ -52,7 +52,7 @@ let equalsWLogs (logs: LogOutput) expected actual =
             raise
             <| XunitException($"Expected %A{expected}.\n\nActual %A{actual}\n\nLogs:\n%s{LogOutput.asString logs}", ex)
 
-let equals expected actual = Assert.Equivalent(expected, actual) // Equivalent makes a object comparion and prints the diffing properties on the object.
+let equals<'a> (expected: 'a) (actual: 'a) = Assert.Equal<'a>(expected, actual) // Equivalent makes a object comparion and prints the diffing properties on the object.
 
 let isTrue msg x = Assert.True(x, msg)
 

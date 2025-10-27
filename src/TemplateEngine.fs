@@ -163,11 +163,15 @@ let getSortedPageFiles absoluteProjectDir =
                 Error AppError.PagesDirectoryMissing
             else
                 FilePath.getFilesRecursive pageFilesDir "Page.fs"
-                |> Array.sortByDescending (fun x ->
-                    if x |> FilePath.endsWithParts [ "src"; "Pages"; "Page.fs" ] then
-                        0
-                    else
-                        x |> FilePath.parts |> Array.length)
+                |> Array.sortBy (fun x ->
+                    let parts = FilePath.parts x
+                    let hasDynamicSegment = parts |> Array.exists (fun part -> part.StartsWith("_"))
+                    let pagesIndex = parts |> Array.findIndex (fun p -> p = "Pages")
+                    let pathDepth = parts.Length - pagesIndex - 2 // -2 for "Pages" and "Page.fs"
+                    let pathStr = FilePath.asString x
+
+                    // Sort by: (1) static routes first, (2) path depth, (3) alphabetically
+                    (hasDynamicSegment, pathDepth, pathStr))
                 |> Ok
     }
 
@@ -572,7 +576,7 @@ let getTemplateData projectName absoluteProjectDir =
                         return route :: routes
                     })
                 (eff { return! Ok [] })
-            |> Effect.map List.toArray
+            |> Effect.map (List.rev >> List.toArray)
 
         return {
             ViewModule = settings.View.Module
