@@ -315,6 +315,8 @@ let ``Ensure module names is wrapped in double ticks if project dir contains spe
             result
             |> Expects.ok logs
             |> Expects.equalsWLogs logs {
+                RenderFunction = "withReactSynchronous"
+                RenderTargetElementId = "app"
                 ViewModule = "Feliz"
                 ViewType = "ReactElement"
                 RootModule = "``test-project``"

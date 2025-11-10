@@ -183,6 +183,8 @@ let initFiles
                 }
 
                 let routeData = {
+                    RenderFunction = RenderMethod.asElmishReactFunction settings.Program.RenderMethod
+                    RenderTargetElementId = settings.Program.RenderTargetElementId
                     ViewModule = settings.View.Module
                     ViewType = settings.View.Type
                     RootModule = rootModuleName

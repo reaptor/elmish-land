@@ -1,4 +1,8 @@
 {
+  "program": {
+    "renderMethod": "synchronous",
+    "renderTargetElementId": "app"
+  },
   "view": {
     "module": "Feliz",
     "type": "ReactElement",

@@ -5,6 +5,8 @@ open Xunit
 open ElmishLand.Resources
 
 let templateData: TemplateData = {
+    RenderFunction = "withReactSynchronous"
+    RenderTargetElementId = "app"
     ViewModule = "ViewModule" // Ex. Feliz
     ViewType = "ViewType" // Ex. ReactElement
     RootModule = "RootModule" // Ex. MyApp or my-app
@@ -691,14 +693,14 @@ let rec commandToCmd fromSharedMsg fromLayoutMsg command =
     | Command.SharedMsg msg -> Cmd.ofMsg (fromSharedMsg msg)
     | Command.LayoutMsg msg -> Cmd.ofMsg (fromLayoutMsg msg)
 
-let rec sharedCommandToCmd (command: Command<SharedMsg, SharedMsg, _>): Cmd<Msg> = 
+let rec sharedCommandToCmd (command: Command<SharedMsg, SharedMsg, _>): Cmd<Msg> =
     match command with
     | Command.None -> Cmd.none
     | Command.Batch cmds -> Cmd.batch (List.map sharedCommandToCmd cmds)
     | Command.Cmd cmd -> Cmd.map SharedMsg cmd
     | Command.SharedMsg msg -> Cmd.ofMsg (SharedMsg msg)
     | Command.LayoutMsg msg -> failwith "Layout messages should not occur in shared commands"
-    
+
 let getLayoutsNameLayout currentLayout currentRoute sharedModel layoutProps =
     let layout = LayoutsModuleName.layout layoutProps currentRoute sharedModel
     match currentLayout with
@@ -883,7 +885,7 @@ let subscribe model =
 
 Program.mkProgram init update view
 |> Program.withErrorHandler (fun (msg, ex) -> printfn "Program error handler:\r\n%s\r\n%O" msg ex)
-|> Program.withReactBatched "app"
+|> Program.withReactSynchronous "app"
 |> Program.withSubscription subscribe
 |> Program.run
 """
@@ -908,6 +910,10 @@ let ``elmish-land_json`` () =
     getResource<``elmish-land_json``> Elmish_land_json
     |> Expects.equals
         """{
+  "program": {
+    "renderMethod": "synchronous",
+    "renderTargetElementId": "app"
+  },
   "view": {
     "module": "Feliz",
     "type": "ReactElement",
@@ -933,6 +939,8 @@ export default defineConfig({
 [<Fact>]
 let ``Routes_template with F# keyword route parameters`` () =
     let templateDataWithKeyword = {
+        RenderFunction = "withReactSynchronous"
+        RenderTargetElementId = "app"
         ViewModule = "Feliz"
         ViewType = "ReactElement"
         RootModule = "TestApp"

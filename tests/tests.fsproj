@@ -19,6 +19,7 @@
     <Compile Include="EnsurePageFilesLastTests.fs" />
     <Compile Include="FsProjReorderPagesTests.fs" />
     <Compile Include="SharedModuleTests.fs" />
+    <Compile Include="SettingsTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

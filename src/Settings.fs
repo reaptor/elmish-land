@@ -34,20 +34,135 @@ type RouteParameters = | RouteParameters of List<string * (RoutePathParameter op
 module RouteParameters =
     let value (RouteParameters x) = x
 
+type RenderMethod =
+    /// Uses `requestAnimationFrame` to batch updates to prevent drops in frame rate.
+    /// NOTE: This may have unexpected effects in React controlled inputs, see https://github.com/elmish/react/issues/12
+    | Batched
+    /// New renders are triggered immediately after an update.
+    | Synchronous
 
+module RenderMethod =
+    let tryParse ok err =
+        function
+        | "batched" -> ok Batched
+        | "synchronous" -> ok Synchronous
+        | other ->
+            err
+                $"program:renderMethod '%s{other}' is not supported. Allowed values are: batched, synchronous and hydrate"
+
+    let decode: Decoder<RenderMethod> =
+        Decode.string
+        |> Decode.andThen (function
+            | "batched" -> Decode.succeed Batched
+            | "synchronous" -> Decode.succeed Synchronous
+            | other ->
+                Decode.fail
+                    $"program:renderMethod '%s{other}' is not supported. Allowed values are: batched, synchronous and hydrate")
+
+    let asElmishReactFunction =
+        function
+        | Batched -> "withReactBatched"
+        | Synchronous -> "withReactSynchronous"
+
+type ViewSettings = {
+    Module: string
+    Type: string
+    TextElement: string
+}
+
+type ProgramSettings = {
+    RenderMethod: RenderMethod
+    RenderTargetElementId: string
+}
 
 type Settings = {
-    View: {|
-        Module: string
-        Type: string
-        TextElement: string
-    |}
+    View: ViewSettings
     ProjectReferences: string list
     DefaultLayoutTemplate: string option
     DefaultPageTemplate: string option
     RouteSettings: RouteParameters
     ServerCommand: (string * string array) option
+    Program: ProgramSettings
 }
+
+let elmishLandSettingsDecoder pageSettings =
+    let trimLeadingSpaces (s: string) =
+        s.Split('\n')
+        |> Array.fold
+            (fun (state: string list, trimCount) s ->
+                if state.Length = 0 && s.Trim().Length = 0 then
+                    state, trimCount
+                else
+                    let trimCount =
+                        match trimCount with
+                        | Some trimCount' -> trimCount'
+                        | None -> s.Length - s.TrimStart().Length
+
+                    $"    %s{s[trimCount..]}" :: state, Some trimCount)
+            ([], None)
+        |> fun (xs, _) -> List.rev xs
+        |> String.concat "\n"
+
+    Decode.object (fun get -> {
+        View =
+            get.Optional.Field
+                "view"
+                (Decode.object (fun get -> {
+                    Module = get.Optional.Field "module" Decode.string |> Option.defaultValue "Feliz"
+                    Type = get.Optional.Field "type" Decode.string |> Option.defaultValue "ReactElement"
+                    TextElement =
+                        get.Optional.Field "textElement" Decode.string
+                        |> Option.defaultValue "Html.text"
+                }))
+            |> Option.defaultWith (fun () -> {
+                Module = "Feliz"
+                Type =
+                    get.Optional.Field "viewType" Decode.string
+                    |> Option.defaultValue "ReactElement"
+                TextElement = "Html.text"
+            })
+        ProjectReferences =
+            get.Optional.Field "projectReferences" (Decode.list Decode.string)
+            |> Option.defaultValue []
+            |> List.map (fun x -> $"../../%s{x}")
+        DefaultLayoutTemplate =
+            get.Optional.Field "defaultLayoutTemplate" Decode.string
+            |> Option.map trimLeadingSpaces
+        DefaultPageTemplate =
+            get.Optional.Field "defaultPageTemplate" Decode.string
+            |> Option.map trimLeadingSpaces
+        RouteSettings = RouteParameters(pageSettings)
+        ServerCommand =
+            let decodeServerCommand =
+                Decode.string
+                |> Decode.andThen (fun serverCommand ->
+                    match serverCommand.Split(" ", StringSplitOptions.RemoveEmptyEntries) |> List.ofArray with
+                    | [] -> Decode.fail "Exe command is missing"
+                    | [ command ] -> Decode.succeed (command, [||])
+                    | command :: args -> Decode.succeed (command, List.toArray args))
+
+            get.Optional.Field "serverCommand" decodeServerCommand
+        Program =
+            get.Optional.Field
+                "program"
+                (Decode.object (fun get ->
+                    let decodeRenderMethod =
+                        Decode.string
+                        |> Decode.andThen (RenderMethod.tryParse Decode.succeed Decode.fail)
+
+                    {
+                        RenderMethod =
+                            get.Optional.Field "renderMethod" decodeRenderMethod
+                            |> Option.defaultValue Synchronous
+                        RenderTargetElementId =
+                            get.Optional.Field "renderTargetElementId" Decode.string
+                            |> Option.defaultValue "app"
+                    }))
+            |> Option.defaultWith (fun () -> {
+                RenderMethod = Synchronous
+                RenderTargetElementId = "app"
+            })
+    })
 
 let getSettings absoluteProjectDir =
     eff {
@@ -61,23 +176,6 @@ let getSettings absoluteProjectDir =
                 Ok()
             else
                 Error ElmishLandProjectMissing
-
-        let trimLeadingSpaces (s: string) =
-            s.Split('\n')
-            |> Array.fold
-                (fun (state: string list, trimCount) s ->
-                    if state.Length = 0 && s.Trim().Length = 0 then
-                        state, trimCount
-                    else
-                        let trimCount =
-                            match trimCount with
-                            | Some trimCount' -> trimCount'
-                            | None -> s.Length - s.TrimStart().Length
-
-                        $"    %s{s[trimCount..]}" :: state, Some trimCount)
-                ([], None)
-            |> fun (xs, _) -> List.rev xs
-            |> String.concat "\n"
 
         let paramsDecoder =
             Decode.object (fun get ->
@@ -124,50 +222,10 @@ let getSettings absoluteProjectDir =
             |> Array.toList
             |> Result.sequence
 
-        let decoder =
-            Decode.object (fun get -> {
-                View =
-                    get.Optional.Field
-                        "view"
-                        (Decode.object (fun get -> {|
-                            Module = get.Optional.Field "module" Decode.string |> Option.defaultValue "Feliz"
-                            Type = get.Optional.Field "type" Decode.string |> Option.defaultValue "ReactElement"
-                            TextElement =
-                                get.Optional.Field "textElement" Decode.string
-                                |> Option.defaultValue "Html.text"
-                        |}))
-                    |> Option.defaultWith (fun () -> {|
-                        Module = "Feliz"
-                        Type =
-                            get.Optional.Field "viewType" Decode.string
-                            |> Option.defaultValue "ReactElement"
-                        TextElement = "Html.text"
-                    |})
-                ProjectReferences =
-                    get.Optional.Field "projectReferences" (Decode.list Decode.string)
-                    |> Option.defaultValue []
-                    |> List.map (fun x -> $"../../%s{x}")
-                DefaultLayoutTemplate =
-                    get.Optional.Field "defaultLayoutTemplate" Decode.string
-                    |> Option.map trimLeadingSpaces
-                DefaultPageTemplate =
-                    get.Optional.Field "defaultPageTemplate" Decode.string
-                    |> Option.map trimLeadingSpaces
-                RouteSettings = RouteParameters(pageSettings)
-                ServerCommand =
-                    let decodeServerCommand =
-                        Decode.string
-                        |> Decode.andThen (fun serverCommand ->
-                            match serverCommand.Split(" ", StringSplitOptions.RemoveEmptyEntries) |> List.ofArray with
-                            | [] -> Decode.fail "Exe command is missing"
-                            | [ command ] -> Decode.succeed (command, [||])
-                            | command :: args -> Decode.succeed (command, List.toArray args))
 
-                    get.Optional.Field "serverCommand" decodeServerCommand
-            })
 
         return!
             FilePath.readAllText settingsPath
-            |> Decode.fromString decoder
+            |> Decode.fromString (elmishLandSettingsDecoder pageSettings)
             |> Result.mapError InvalidSettings
     }

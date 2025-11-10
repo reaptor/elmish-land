@@ -94,14 +94,14 @@ let rec commandToCmd fromSharedMsg fromLayoutMsg command =
     | Command.SharedMsg msg -> Cmd.ofMsg (fromSharedMsg msg)
     | Command.LayoutMsg msg -> Cmd.ofMsg (fromLayoutMsg msg)
 
-let rec sharedCommandToCmd (command: Command<SharedMsg, SharedMsg, _>): Cmd<Msg> = 
+let rec sharedCommandToCmd (command: Command<SharedMsg, SharedMsg, _>): Cmd<Msg> =
     match command with
     | Command.None -> Cmd.none
     | Command.Batch cmds -> Cmd.batch (List.map sharedCommandToCmd cmds)
     | Command.Cmd cmd -> Cmd.map SharedMsg cmd
     | Command.SharedMsg msg -> Cmd.ofMsg (SharedMsg msg)
     | Command.LayoutMsg msg -> failwith "Layout messages should not occur in shared commands"
-    
+
 {{#each Layouts}}
 let get{{Name}}Layout currentLayout currentRoute sharedModel layoutProps =
     let layout = {{ModuleName}}.layout layoutProps currentRoute sharedModel
@@ -312,6 +312,6 @@ let subscribe model =
 
 Program.mkProgram init update view
 |> Program.withErrorHandler (fun (msg, ex) -> printfn "Program error handler:\r\n%s\r\n%O" msg ex)
-|> Program.withReactBatched "app"
+|> Program.{{RenderFunction}} "{{RenderTargetElementId}}"
 |> Program.withSubscription subscribe
 |> Program.run

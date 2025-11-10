@@ -140,6 +140,8 @@ type Layout = {
 }
 
 type TemplateData = {
+    RenderFunction: string
+    RenderTargetElementId: string
     ViewModule: string
     ViewType: string
     RootModule: string
@@ -579,6 +581,8 @@ let getTemplateData projectName absoluteProjectDir =
             |> Effect.map (List.rev >> List.toArray)
 
         return {
+            RenderFunction = RenderMethod.asElmishReactFunction settings.Program.RenderMethod
+            RenderTargetElementId = settings.Program.RenderTargetElementId
             ViewModule = settings.View.Module
             ViewType = settings.View.Type
             RootModule = projectName |> ProjectName.asString |> wrapWithTicksIfNeeded
