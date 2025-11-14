@@ -43,13 +43,8 @@ For community support, collaboration, or to seek assistance, consider joining th
 
 ## Editor Configuration
 
-For an optimal development experience, we recommend using [Visual Studio Code](https://code.visualstudio.com/) accompanied by the [Ionide plugin](https://ionide.io/Editors/Code/overview.html). If you prefer alternative editors, explore [other available options](/docs/advanced/other-editors).​
+For an optimal development experience, we recommend using one of the following editors: 
 
-### To set up VS Code:
-
-1. Install [Visual Studio Code](https://code.visualstudio.com/)
-2. Add the [Ionide](https://ionide.io/Editors/Code/overview.html) extension
-
-This setup provides a robust environment tailored for F# and Elmish Land development, enhancing productivity and code management.​
-
-By following these guidelines, you are well-equipped to embark on your Elmish Land development journey, crafting scalable and maintainable web applications with F# and Elmish.
+* [Visual Studio Code](https://code.visualstudio.com/) with the [Ionide plugin](https://ionide.io/Editors/Code/overview.html)
+* [Visual Studio](https://visualstudio.microsoft.com/)
+* [JetBrains Rider](https://www.jetbrains.com/rider/)

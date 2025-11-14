@@ -74,29 +74,6 @@ The `Command<'msg, 'sharedMsg>` type in Elmish Land is an abstraction built on t
 
 ## Available commands
 
-### Command.none
-This tells Elmish Land not to run any commands.
+The `Command` module provides several functions for common tasks like `Command.none` and `Command.ofMsg`.
 
-### Command.batch
-This allows you to send many commands at once.
-
-### Command.ofCmd
-Convert an Elmish Cmd to an Elmish Land Command.
-
-### Command.ofMsg
-Send a msg as a Command.
-
-### Command.ofShared
-Send a SharedMsg to the shared module from a page or layout.
-
-### Command.ofLayout
-Send a message to the layout of a page [Read more about layouts in the "Layouts" section](/docs/core-concepts/layouts).
-
-### Command.navigate
-Navigates to a specified route. [Read more in the "Linking and Navigating" section](/docs/core-concepts/linking-and-navigating#command-navigate).
-
-### Command.ofPromise
-Run a promise that will send the specified message when completed. Throws an exception if it fails.
-
-### Command.tryOfPromise
-Run a promise that will send the specified messages when succeeds or fails. Does not throw exceptions.
+For complete API documentation including function signatures, parameters, and detailed examples, see the [Command Module API Reference](/docs/api-reference/command-module).

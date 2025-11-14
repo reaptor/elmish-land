@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://elmish.land/elmish-land.schema.json",
+  "title": "Elmish Land Configuration",
+  "description": "Configuration file for Elmish Land applications",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "The JSON schema reference"
+    },
+    "view": {
+      "type": "object",
+      "description": "Configures the view layer and UI library used by your application",
+      "properties": {
+        "module": {
+          "type": "string",
+          "default": "Feliz",
+          "description": "The F# module that contains your view types and elements. By default, Elmish Land uses Feliz for building React UIs.",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "default": "ReactElement",
+          "description": "The type used for view elements in your application. This corresponds to the return type of your view functions.",
+          "minLength": 1
+        },
+        "textElement": {
+          "type": "string",
+          "default": "Html.text",
+          "description": "The function used to create text elements in your views. Used by the CLI when scaffolding new pages.",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "projectReferences": {
+      "type": "array",
+      "description": "An array of relative paths to additional F# project files (.fsproj) that should be referenced by your Elmish Land application. Useful for sharing code across multiple projects or using custom types in routes.",
+      "items": {
+        "type": "string",
+        "description": "Relative path to an F# project file (.fsproj)",
+        "pattern": ".*\\.fsproj$"
+      },
+      "default": [],
+      "uniqueItems": true
+    },
+    "defaultLayoutTemplate": {
+      "type": "string",
+      "description": "Custom F# template code for generating new layouts via the 'add layout' command. Leading whitespace is automatically trimmed. If not specified, uses the default built-in layout template.\n\nAvailable template variables:\n- {{RootModule}}: Root module name\n- {{Layout.ModulePath}}: Layout module path\n- {{ViewModule}}: View module name\n- {{ViewType}}: View type name"
+    },
+    "defaultPageTemplate": {
+      "type": "string",
+      "description": "Custom F# template code for generating new pages via the 'add page' command. Leading whitespace is automatically trimmed. If not specified, uses the default built-in page template.\n\nAvailable template variables:\n- {{RootModule}}: Root module name\n- {{Route.ModuleName}}: Page module name\n- {{ViewModule}}: View module name\n- {{ViewType}}: View type name\n- {{ViewTextElement}}: Text element function"
+    },
+    "serverCommand": {
+      "type": "string",
+      "description": "Custom command to run when executing 'elmish-land server'. The string is split on whitespace - first token is the executable, remaining tokens are arguments.\n\nExample: \"npm run dev\" will execute npm with arguments [\"run\", \"dev\"]",
+      "minLength": 1
+    },
+    "viewType": {
+      "type": "string",
+      "default": "ReactElement",
+      "description": "DEPRECATED: Use 'view.type' instead. This field is maintained for backward compatibility with older configurations.",
+      "deprecated": true,
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "program": {
+        "renderMethod": "synchronous",
+        "renderTargetElementId": "app"
+      },
+      "view": {
+        "module": "Feliz",
+        "type": "ReactElement",
+        "textElement": "Html.text"
+      },
+      "projectReferences": []
+    },
+    {
+      "program": {
+        "renderMethod": "batched",
+        "renderTargetElementId": "root"
+      },
+      "view": {
+        "module": "MyProject.Common.UI",
+        "type": "IElement",
+        "textElement": "text"
+      },
+      "projectReferences": [
+        "src/Common/Common.fsproj"
+      ]
+    }
+  ]
+}

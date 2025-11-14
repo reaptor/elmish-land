@@ -15,7 +15,7 @@ const FeatureList = [
     ),
   },
   {
-    url: '/docs/core-concepts/routing#routing',
+    url: '/docs/core-concepts/routing',
     title: 'File based router',
     // Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (

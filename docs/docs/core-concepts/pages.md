@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1.1
 ---
+import AddedIn from '@site/src/components/AddedIn';
 
 # Pages
 
@@ -20,40 +21,28 @@ No need to write your URL parsers by hand!
 
 ## Creating a New Page
 
-To add a new page to your Elmish Land project, follow these steps:
+To add a new page to your Elmish Land project, use the CLI command:
 
-1. **Generate the Page**: Use the CLI command to create a new page. For example, to add an **`About`** page:
-    ```bash
-    dotnet elmish-land add page "/About"
-    ```
-    This command creates a new file at `src/Pages/About/Page.fs`.
+```bash
+dotnet elmish-land add page "/About"
+```
+
+💡 **Note**: The page path should be in file system format `/MyProfile` and ***not*** URL format `/my-profile`.
+
+### Automatic project management <AddedIn version="1.1.0-beta.1" />
+The `add page` command will automatically add the page to your project file in the correct compilation order.
+
+:::warning
+
+In version 1.0 of Elmish Land you need to manually add the new page to your project file by using an IDE or by adding the following line to an ItemGroup in the project file `./MyProject.fsproj`:
+
+`<Compile Include="src/Pages/MyProfile/Page.fs" />`
+
+F# projects require all sources to be listed **in compilation order** in an `.fsproj` file. This may look quite restrictive at first, but it does have [some advantages](https://fsharpforfunandprofit.com/posts/cyclic-dependencies/).
+
+:::
    
-    💡 **Note**: The page path should be in file system format `/MyProfile` and ***not*** URL format `/my-profile`.
-    
-1. **Include the Page in Your Project**: Manually add the new page to your project file (`MyProject.fsproj`) by inserting the following line within an `<ItemGroup>`:
-    ```xml
-    <Project Sdk="Microsoft.NET.Sdk">
-        <PropertyGroup>
-            <TargetFramework>net9.0</TargetFramework>
-            <LangVersion>latest</LangVersion>
-        </PropertyGroup>    
-        <ItemGroup>
-            <Compile Include="src/Shared.fs"/>
-            <Compile Include="src/Pages/NotFound.fs"/>
-            <Compile Include="src/Pages/Layout.fs"/>
-            <Compile Include="src/Pages/Page.fs"/>
-            // highlight-start
-            <Compile Include="src/Pages/About/Page.fs" />
-            // highlight-end
-        </ItemGroup>    
-        <ItemGroup>
-          <ProjectReference Include=".elmish-land/Base/ElmishLand.MyProject.Base.fsproj" />
-        </ItemGroup>
-    </Project>
-    ```
-    F# projects require all sources to be listed **in compilation order** in an `.fsproj` file. This may look quite restrictive at first, but it does have [some advantages](https://fsharpforfunandprofit.com/posts/cyclic-dependencies/).
-   
-The "add page" command generates `src/Pages/About/Page.fs` with the following content:
+The `add page` command generates `src/Pages/About/Page.fs` with the following content:
 
 ```fsharp
 module MyProject.Pages.About.Page
@@ -197,3 +186,7 @@ let init (route: AboutRoute) =
     (),
     Command.none
 ```
+
+## API Reference
+
+For complete API documentation including `Page.from` function signatures, parameters, and advanced page features like subscriptions, see the [Page Module API Reference](/docs/api-reference/page-module).

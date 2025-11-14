@@ -43,7 +43,7 @@ my-app/
 Elmish Land automatically connects your file structure to URL paths with type safety. Define your pages in the file system, and the framework generates all the routing code for you, including typed parameters for dynamic routes.
 
 ```fsharp
-// src/Pages/Users/Id_.fs becomes /users/:id
+// src/Pages/Users/_Id.fs becomes /users/:id
 let page (shared: SharedModel) (route: UsersIdRoute) =
     // route.id gives you the URL parameter with proper typing
     Page.from init update view () LayoutMsg
@@ -57,6 +57,14 @@ Structure your UI with reusable layouts while maintaining type safety between co
 
 The `elmish-land` CLI makes common tasks simple, from creating new projects to adding pages and running the development server. Everything works out of the box with [hot module reloading](https://vitejs.dev/guide/features.html#hot-module-replacement) for rapid development.
 
-## Ready to Try It?
+## Ready to Get Started?
 
-Getting started takes just minutes with the Elmish Land CLI. Install the tool, create your first project, and start the development server to see your application running in the browser.
+Creating your first Elmish Land application takes just a few minutes. The CLI handles all the setup so you can focus on building your application.
+
+[Create a Project →](/docs/getting-started/creating-a-project)
+
+## Learn More
+
+- [Project Structure](/docs/getting-started/project-structure) - Understand how Elmish Land organizes your code
+- [Core Concepts](/docs/core-concepts/pages) - Dive into pages, layouts, routing, and more
+- [API Reference](/docs/api-reference/app-config) - Detailed documentation for all functions and types

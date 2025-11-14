@@ -61,7 +61,7 @@ dotnet elmish-land add page <page> --project-dir <folder-name> --verbose
 ```
 
 #### Description
-This scaffolding command generates a new Elmish Land page.
+This scaffolding command generates a new Elmish Land page and automatically adds it to your project file.
 
 #### Arguments
 `<page>` – the folder path for the page.
@@ -76,11 +76,7 @@ dotnet elmish-land add page "/SignIn"      # Creates "src/Pages/SignIn/Page.fs"
 dotnet elmish-land add page "/Users/_Id"   # Creates "src/Pages/Users/_Id/Page.fs"
 ```
 
-:::warning
-
-You need to manually add the new page to your project file.
-
-:::
+The page file will be automatically added to your `.fsproj` file in the correct compilation order.
 
 ## Add layout
 
@@ -89,7 +85,7 @@ dotnet elmish-land add layout <layout> --project-dir <folder-name> --verbose
 ```
 
 #### Description
-This scaffolding command generates a new Elmish Land layout.
+This scaffolding command generates a new Elmish Land layout and automatically adds it to your project file. If you're adding a layout to a folder that already has pages, those pages will be automatically updated to reference the new layout.
 
 #### Arguments
 `<layout>` – the folder path for the layout.
@@ -104,8 +100,4 @@ dotnet elmish-land add layout "/SignIn"      # Creates "src/Pages/SignIn/Layout.
 dotnet elmish-land add layout "/Users/_Id"   # Creates "src/Pages/Users/_Id/Layout.fs"
 ```
 
-:::warning
-
-You need to manually add the new layout to your project file.
-
-:::
+The layout file will be automatically added to your `.fsproj` file in the correct compilation order.

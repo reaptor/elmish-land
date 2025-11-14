@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 ---
+import AddedIn from '@site/src/components/AddedIn';
 
 # Layouts
 
@@ -12,18 +13,25 @@ A layout is UI that is shared between multiple routes. On navigation, layouts pr
 
 You can create a layout by running the following command:
 ```bash
-dotnet elmish-land add layout "/User"
+dotnet elmish-land add layout "/MyProfile"
 ```
+
+💡 **Note**: The layout path should be in file system format `/MyProfile` and ***not*** URL format `/my-profile`.
+
+### Automatic project management <AddedIn version="1.1.0-beta.1" />
+The `add layout` command will automatically add the layout to your project file in the correct compilation order. If you're adding a layout to a folder that already contains pages, those pages will be automatically updated to reference the new layout.
 
 :::warning
 
-You need to manually add the new layout to your project file by using an IDE or by adding the following line to an ItemGroup in the project file `./MyProject.fsproj`:
+In version 1.0 of Elmish Land you need to manually add the new layout to your project file by using an IDE or by adding the following line to an ItemGroup in the project file `./MyProject.fsproj`:
 
-`<Compile Include="src/Pages/User/Layout.fs" />`
+`<Compile Include="src/Pages/MyProfile/Layout.fs" />`
+
+F# projects require all sources to be listed **in compilation order** in an `.fsproj` file. This may look quite restrictive at first, but it does have [some advantages](https://fsharpforfunandprofit.com/posts/cyclic-dependencies/).
 
 :::
 
-The "add layout" command generates src/Pages/User/Layout.fs with the following content:
+The `add layout` command generates src/Pages/User/Layout.fs with the following content:
 
 ```fsharp
 module MyProject.Pages.User.Layout
@@ -150,7 +158,11 @@ When you need to send messages from a page to it's layout you will use the `Comm
 let update (msg: Msg) (model: Model) =
     match msg with
     | LayoutMsg _ -> model, Command.none
-    | SignOut -> model, Command.ofLayout Layout.SignOutClicked    
+    | SignOut -> model, Command.ofLayout Layout.SignOutClicked
 ```
 
 In [the Commands section](/docs/core-concepts/commands), you'll learn more about commands.
+
+## API Reference
+
+For complete API documentation including function signatures, parameters, and advanced layout features, see the [Layout Module API Reference](/docs/api-reference/layout-module).

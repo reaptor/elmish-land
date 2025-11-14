@@ -1,4 +1,5 @@
 {
+  "$schema": "https://elmish.land/elmish-land.schema.json",
   "program": {
     "renderMethod": "synchronous",
     "renderTargetElementId": "app"

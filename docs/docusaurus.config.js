@@ -90,6 +90,24 @@ const config = {
         ],
     ],
 
+    plugins: [
+        [
+            '@docusaurus/plugin-client-redirects',
+            {
+                redirects: [
+                    {
+                        from: '/docs/advanced/custom-route-and-query-parameters',
+                        to: '/docs/api-reference/route-config#custom-types',
+                    },
+                    {
+                        from: '/docs/advanced/other-editors',
+                        to: '/docs/getting-started/creating-a-project#editor-configuration',
+                    },                    
+                ],
+            },
+        ],
+    ],
+
     themeConfig:
         /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
         ({

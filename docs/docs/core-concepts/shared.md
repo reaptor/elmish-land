@@ -143,4 +143,4 @@ let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg, MyProject.
     | SignOut -> model, Command.ofShared SharedMsg.SignOutClicked
 ```
 
-In [the Commands section](/docs/core-concepts/commands), you'll learn more about commands.
+For more information on sending messages to shared state, see the [Command.ofShared section](/docs/api-reference/command-module#commandofshared) in the [Command Module API Reference](/docs/api-reference/command-module).

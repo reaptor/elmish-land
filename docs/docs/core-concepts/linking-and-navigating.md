@@ -69,3 +69,10 @@ Will automatically redirect the page to the `#/Foo/bar/baz?name=John` when loade
 These examples uses [route parameters](/docs/core-concepts/routing#route-parameters-dynamic-routing).
 
 :::
+
+## API Reference
+
+For complete API documentation on navigation functions:
+
+- **[Route Module API Reference](/docs/api-reference/route-module)** - Details on `Route.format` and other route utilities
+- **[Command Module API Reference](/docs/api-reference/command-module)** - Details on `Command.navigate` and other commands

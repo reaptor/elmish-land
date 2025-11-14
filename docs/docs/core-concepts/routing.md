@@ -121,7 +121,7 @@ Dynamic routing is a common feature in modern frameworks like:
 
 
 ## Query parameters
-In addition to URL path parameters, Elmish Land supports query parameters through a `route.json` file. This allows pages to define optional or required query string parameters.
+In addition to URL path parameters, Elmish Land supports query parameters through a [`route.json`](/docs/api-reference/route-config) file. This allows pages to define optional or required query string parameters.
 
 #### Example:
 
@@ -148,7 +148,7 @@ In addition to URL path parameters, Elmish Land supports query parameters throug
 
 
 ## Type-Safe Routing
-Elmish Land enforces **type-safe route parameters** using `route.json`. This ensures that path parameters and query strings conform to expected data types.
+Elmish Land enforces **type-safe route parameters** using `route.json` (see the [Route Configuration API Reference](/docs/api-reference/route-config) for more information). This ensures that path parameters and query strings conform to expected data types.
 
 #### Example:
 A `route.json` file inside `/Pages/User/_UserId/`:
@@ -183,68 +183,17 @@ module Routes =
 
 Now, only **valid GUIDs** will be accepted as `UserId`, and `age` is strictly an integer. This prevents runtime errors and ensures safe navigation across your application.
 
-### Included Types for Route and Query Parameters
+### Built-in Types
 
-The following parameter types for `pathParameter` and `queryParameters` in `route.json` can be used out of the box:
+Elmish Land includes built-in support for common route and query parameter types like `Guid` and `int`. For a complete reference of all built-in types and their configuration, see the [Built-in Types](/docs/api-reference/route-config#built-in-types) section in the [Route Configuration API Reference](/docs/api-reference/route-config).
 
-`Guid`
-```javascript
-{
-    "module": "System",
-    "type": "Guid",
-    "parse": "parseGuid",
-    "format": "formatGuid"
-}
-```
+### Custom Types
 
-`Int32`
-```javascript
-{
-    "module": "System",
-    "type": "int",
-    "parse": "parseInt",
-    "format": "formatInt"
-}
-```
+You can also define custom route and query parameter types for route and query parameters. See the [Custom Types](/docs/api-reference/route-config#custom-types) section in the [Route Configuration API Reference](/docs/api-reference/route-config) for details on using custom types.
 
-`Int64`
-```javascript
-{
-    "module": "System",
-    "type": "int64",
-    "parse": "parseInt64",
-    "format": "formatInt64"
-}
-```
+## API References
 
-`Bool`
-```javascript
-{
-    "module": "System",
-    "type": "bool",
-    "parse": "parseBool",
-    "format": "formatBool"
-}
-```
+For more detailed information about routing functionality:
 
-`Float`
-```javascript
-{
-    "module": "System",
-    "type": "float",
-    "parse": "parseFloat",
-    "format": "formatFloat"
-}
-```
-
-`Decimal`
-```javascript
-{
-    "module": "System",
-    "type": "decimal",
-    "parse": "parseDecimal",
-    "format": "formatDecimal"
-}
-```
-
-💡 **Note:** In the [Custom route and query parameters page](/docs/advanced/custom-route-and-query-parameters), you'll learn more about how to use your own types as route and query parameters.
+- **[Route Module API Reference](/docs/api-reference/route-module)** - Functions like `Route.format` and route comparison utilities
+- **[Route Configuration Reference](/docs/api-reference/route-config)** - Complete `route.json` configuration options

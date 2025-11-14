@@ -1,11 +1,10 @@
 ---
 sidebar_position: 6
-draft: true
 ---
 
 # Subscriptions
 
-Sometimes we have a source of events that runs independently of Elmish Land, like a timer. We can use subscriptions control when those sources are running, 
+Sometimes we have a source of events that runs independently of Elmish Land, like a timer. We can use subscriptions to control when those sources are running, 
 and forward its events to our `update` function.
 
 Let's define our `Model` and `Msg` types. `Model` will hold the current state and `Msg` will tell us the nature of the change that 
@@ -29,26 +28,28 @@ type Model =
     }
 
 type Msg =
-    | DateTimeChanged of now: DateTime
+    | DateTimeChanged of DateTime
+    | LayoutMsg of Layout.Msg
 ```
 
 Now let's define init, update and view.
 
 ```fsharp
-let init (): Model * Command<Msg, SharedMsg> =
+let init () =
     {
         Now = DateTime.Now
         Interval = 1000
     }, Command.none
 
-let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
+let update (msg: Msg) (model: Model) =
     match msg with
     | DateTimeChanged now ->
         { model with
             Now = now
         }, Command.none
+    | LayoutMsg _ -> model, Command.none
 
-let view (model: Model) (dispatch: Msg -> unit): ReactElement =
+let view (model: Model) (dispatch: Msg -> unit) =
     Html.text $"The time is: %s{model.Now.ToString()}"
 ```
 
@@ -68,7 +69,7 @@ let subscriptions model =
     ]
 
 let page (shared: SharedModel) (route: HomeRoute) =
-    Page.create init update view
+    Page.from init update view () LayoutMsg
     |> Page.withSubscriptions subscriptions
 ```
 
@@ -80,14 +81,14 @@ A subscription has an ID, `[ "everySecond" ]` here, and a start function. The ID
 We use the `Page.withSubscriptions` to ensure that our subscriptions all called.
 
 :::info
-**ID is a list?**
+**Why is ID a list?**
 
 This allows us to include dependencies. [Later we will use this](/docs/core-concepts/subscriptions#ids-and-dependencies) to change the timer's interval.
 :::
 
 ## Conditional subscriptions
 
-n the above example, the timer subscription is always returned from `subscriptions`, so it will stay running as long as the page is running. 
+In the above example, the timer subscription is always returned from `subscriptions`, so it will stay running as long as the page is running. 
 Let's look at an example where the timer can be turned off.
 
 First we add the field `Enabled` and a msg `Toggle` to change it.
@@ -103,10 +104,10 @@ type Model =
     }
 
 type Msg =
-    | DateTimeChanged of now: DateTime
-    | Toggle of enabled: bool
+    | DateTimeChanged of DateTime
+    | Toggle of bool
     
-let init (): Model * Command<Msg, SharedMsg> =
+let init () =
     {
         Now = DateTime.Now
         Interval = 1000
@@ -117,7 +118,7 @@ let init (): Model * Command<Msg, SharedMsg> =
 Now let's handle the `Toggle` message.
 
 ```fsharp
-let update (msg: Msg) (model: Model): Model * Command<Msg, SharedMsg> =
+let update (msg: Msg) (model: Model) =
     match msg with
     | DateTimeChanged now ->
         { model with
@@ -146,14 +147,12 @@ let view (model: Model) (dispatch: Msg -> unit): ReactElement =
     Html.div [
         Html.p $"The time is: %s{model.Now.ToString()}"
         Html.label [
-            prop.children [
-                Html.input [
-                    prop.type'.checkbox
-                    prop.isChecked model.Enabled
-                    prop.onCheckedChange (fun enabled -> dispatch (Toggle enabled))
-                ]
-                Html.text "Enabled"
+            Html.input [
+                prop.type'.checkbox
+                prop.isChecked model.Enabled
+                prop.onCheckedChange (fun enabled -> dispatch (Toggle enabled))
             ]
+            Html.text "Enabled"
         ]
     ]
 ```
@@ -177,8 +176,7 @@ But nothing happens to the subscription if `model.Interval` changes. Let's fix t
 let subscriptions model =
     [
         if model.Enabled then
-            let subId = [ "everySecond"; string model.Interval ]
-            subId, onEverySecond model
+            [ "everySecond"; string model.Interval ], onEverySecond model
     ]
 ```
 
@@ -189,3 +187,10 @@ Elmish Land starts the subscription. Then `model.Interval` changes to 2000. The 
 active and stops it. Then it starts the "new" subscription [ "everySecond"; "2000" ].
 
 To Elmish Land each interval is a different subscription. But to `subscriptions` this is a single timer that changes intervals.
+
+## API Reference
+
+For complete API documentation on subscription functions:
+
+- **[Page Module API Reference](/docs/api-reference/page-module)** - Details on `Page.withSubscriptions`
+- **[Layout Module API Reference](/docs/api-reference/layout-module)** - Details on `Layout.withSubscriptions`
