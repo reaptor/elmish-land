@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0 beta 7] - 2025-11-16
+
+### Added
+- Configurable routing mode in `elmish-land.json` via `program.routeMode`
+  - `hash` (default): Traditional hash-based URLs (example.com/#about)
+  - `path`: Clean URLs without hash signs (example.com/about)
+- Interactive prompt during `init` command to choose between path and hash routing modes
+
 ## [1.1.0 beta 6] - 2025-11-10
 
 ### Added

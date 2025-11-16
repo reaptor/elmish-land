@@ -45,20 +45,20 @@ dotnet elmish-land server"""
 
 let promptForRouteMode (promptBehaviour: UserPromptBehaviour) : string =
     match promptBehaviour with
-    | AutoAccept -> "path" // Default to path for --auto-accept
-    | AutoDecline -> "hash" // Default to hash for --auto-decline (backwards compatible)
+    | AutoAccept -> "hash" // Default to path for --auto-accept
+    | AutoDecline -> "path" // Default to hash for --auto-decline (backwards compatible)
     | Ask ->
         Console.WriteLine("Which routing mode would you like to use?")
-        Console.WriteLine("(1) Path [default] - Clean URLs without hash (example.com/about)")
-        Console.WriteLine("(2) Hash - URLs with hash sign (example.com/#about)")
+        Console.WriteLine("(1) Hash [default] - URLs with hash sign (example.com/#about)")
+        Console.WriteLine("(2) Path - Clean URLs without hash (example.com/about)")
         Console.Write("Enter choice [1]: ")
         let response = Console.ReadLine()
 
         match response.Trim().ToLower() with
         | ""
-        | "1" -> "path"
-        | "2" -> "hash"
-        | _ -> "path" // default to path for invalid input
+        | "1" -> "hash"
+        | "2" -> "path"
+        | _ -> "hash" // default to hash for invalid input
 
 let initFiles
     workingDirectory

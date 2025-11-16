@@ -13,24 +13,6 @@ Version 1.1 brings significant improvements to the developer experience, making 
 
 The biggest improvement in v1.1 is automatic project file management. You no longer need to manually add pages and layouts to your `.fsproj` file.
 
-### Before (v1.0.x)
-
-```bash
-# Create a new page
-dotnet elmish-land add page "/Users/_Id"
-
-# Manually edit MyProject.fsproj to add:
-# <Compile Include="src/Pages/Users/_Id/Page.fs" />
-```
-
-### Now (v1.1+)
-
-```bash
-# Create a new page - that's it!
-dotnet elmish-land add page "/Users/_Id"
-# The page is automatically added to your project file
-```
-
 The CLI automatically:
 - Adds new pages and layouts to your `.fsproj`
 - Maintains correct compilation order
@@ -99,7 +81,7 @@ This shows all build logs and server output for troubleshooting.
 
 ## Configurable Render Method
 
-New in beta 6, you can now configure how React renders your application via `elmish-land.json`:
+You can now configure how React renders your application via `elmish-land.json`:
 
 ```json
 {
@@ -118,7 +100,7 @@ See the [Configuration Reference](/docs/api-reference/app-config#programrenderme
 
 ## Configurable Render Target
 
-Also new in beta 6, customize which HTML element your app mounts to:
+You can also customize which HTML element your app mounts to:
 
 ```json
 {
@@ -131,6 +113,55 @@ Also new in beta 6, customize which HTML element your app mounts to:
 The default is `"app"`, but you can change it to match your HTML structure.
 
 See the [Configuration Reference](/docs/api-reference/app-config#programrendertargetelementid) for details.
+
+## Configurable Routing Mode
+
+Elmish Land now supports two routing modes, allowing you to choose how URLs are handled in your application.
+
+### Hash Mode (default)
+
+Traditional hash-based routing that works everywhere without server configuration:
+
+```json
+{
+  "program": {
+    "routeMode": "hash"
+  }
+}
+```
+
+URLs look like: `https://example.com/#/about`
+
+This is the default mode and is fully backwards compatible with existing applications.
+
+### Path Mode
+
+Clean URLs without hash signs for a more modern feel:
+
+```json
+{
+  "program": {
+    "routeMode": "path"
+  }
+}
+```
+
+URLs look like: `https://example.com/about`
+
+**Note:** Path mode requires server configuration to handle client-side routing (e.g., redirecting all routes to index.html).
+
+### Interactive Setup
+
+When running `dotnet elmish-land init`, you'll be prompted to choose your preferred routing mode:
+
+```
+Which routing mode would you like to use?
+(1) Hash [default] - URLs with hash sign (example.com/#about)
+(2) Path - Clean URLs without hash (example.com/about)
+Enter choice [1]:
+```
+
+See the [Configuration Reference](/docs/api-reference/app-config#programroutemode) for details.
 
 ## Bug Fixes
 

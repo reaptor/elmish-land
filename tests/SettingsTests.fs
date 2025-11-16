@@ -70,7 +70,7 @@ let ``Changing renderMethod to batched writes it to App.fs`` () =
         })
 
 [<Fact>]
-let ``Default routeMode is "path"`` () =
+let ``Default routeMode is "hash"`` () =
     withNewProject (fun projectDir _ ->
         task {
             let workingDir = AbsoluteProjectDir.asString projectDir
@@ -80,7 +80,7 @@ let ``Default routeMode is "path"`` () =
                 |> runEff
 
             Expects.ok logs result
-            Expects.routeModeIsPath workingDir
+            Expects.routeModeIsHash workingDir
         })
 
 [<Fact>]

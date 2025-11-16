@@ -670,7 +670,7 @@ let ``Init command creates a buildable project`` () =
     withNewProject (fun projectDir _ -> expectProjectTypeChecks projectDir)
 
 [<Fact>]
-let ``Init command with UserPromptBehaviour Accept, initializes project with route mode path`` () =
+let ``Init command with UserPromptBehaviour Accept, initializes project with route mode "hash"`` () =
     withEmptyProjectFolder (fun absoluteProjectDir ->
         task {
             let nodeVersion = Version(20, 0, 0)
@@ -689,11 +689,11 @@ let ``Init command with UserPromptBehaviour Accept, initializes project with rou
                 }
                 |> runEff
 
-            Expects.routeModeIsPath (AbsoluteProjectDir.asString absoluteProjectDir)
+            Expects.routeModeIsHash (AbsoluteProjectDir.asString absoluteProjectDir)
         })
 
 [<Fact>]
-let ``Init command with UserPromptBehaviour Decline, initializes project with route mode hash`` () =
+let ``Init command with UserPromptBehaviour Decline, initializes project with route mode "path"`` () =
     withEmptyProjectFolder (fun absoluteProjectDir ->
         task {
             let nodeVersion = Version(20, 0, 0)
@@ -706,7 +706,7 @@ let ``Init command with UserPromptBehaviour Decline, initializes project with ro
                             absoluteProjectDir
                             dotnetSdkVersion
                             nodeVersion
-                            AutoAccept
+                            AutoDecline
 
                     return routeData
                 }
