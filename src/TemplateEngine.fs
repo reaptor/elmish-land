@@ -149,6 +149,7 @@ type TemplateData = {
     Routes: Route array
     Layouts: Layout array
     RouteParamModules: string list
+    UseRouterPathMode: bool
 } with
 
     member this.ViewTypeIsReact = this.ViewType = "ReactElement"
@@ -590,5 +591,6 @@ let getTemplateData projectName absoluteProjectDir =
             Routes = routes
             Layouts = layoutFiles |> Array.map (fileToLayout projectName absoluteProjectDir)
             RouteParamModules = routeParamModules
+            UseRouterPathMode = settings.Program.RouteMode.IsPath
         }
     }

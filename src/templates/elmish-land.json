@@ -1,8 +1,9 @@
 {
-  "$schema": "https://elmish.land/elmish-land.schema.json",
+  "$schema": "https://elmish.land/schemas/v1.1/elmish-land.schema.json",
   "program": {
     "renderMethod": "synchronous",
-    "renderTargetElementId": "app"
+    "renderTargetElementId": "app",
+    "routeMode": "hash"
   },
   "view": {
     "module": "Feliz",

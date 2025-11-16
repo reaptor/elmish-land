@@ -70,7 +70,7 @@ module Routes =
         let format =
             function
             {{#each Routes}}
-            | Route.{{Name}} {{#if RecordPattern}}{{RecordPattern}}{{/if}} -> Router.format({{#if UrlUsage}}{{UrlUsage}}{{else}}""{{/if}})
+            | Route.{{Name}} {{#if RecordPattern}}{{RecordPattern}}{{/if}} -> {{#if @root.UseRouterPathMode}}Router.formatPath{{else}}Router.format{{/if}}({{#if UrlUsage}}{{UrlUsage}}{{else}}""{{/if}})
             {{/each}}
             | Route.NotFound -> "notFound"
 
@@ -124,3 +124,10 @@ module Routes =
             | Route.{{Name}} _, Route.{{Name}} _ -> true
             {{/each}}
             | _ -> false
+
+        let current () =
+            {{#if UseRouterPathMode}}
+            Router.currentPath ()
+            {{else}}
+            Router.currentUrl ()
+            {{/if}}

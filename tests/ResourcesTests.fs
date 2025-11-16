@@ -38,6 +38,7 @@ let templateData: TemplateData = {
         }
     |]
     RouteParamModules = [ "RouteParamModules" ]
+    UseRouterPathMode = false
 }
 
 [<Fact>]
@@ -312,6 +313,7 @@ let App_fsproj_template () =
     getResource<App_fsproj_template> {
         DotNetVersion = "DotNetVersion"
         ProjectReferences = [ "ProjectReferences" ]
+        UseRouterPathMode = false
     }
     |> Expects.equals
         """<Project Sdk="Microsoft.NET.Sdk">
@@ -456,6 +458,9 @@ module Routes =
             match route1, route2 with
             | Route.RoutesName _, Route.RoutesName _ -> true
             | _ -> false
+
+        let current () =
+            Router.currentUrl ()
 """
 
 [<Fact>]
@@ -867,6 +872,7 @@ let view (model: Model) (dispatch: Msg -> unit) =
         | Renderable x -> x.Render()
 
     React.router [
+        router.hashMode
         router.onUrlChanged (Route.parse >> RouteChanged >> dispatch)
         router.children [ currentReactElement ]
     ]
@@ -910,9 +916,11 @@ let ``elmish-land_json`` () =
     getResource<``elmish-land_json``> Elmish_land_json
     |> Expects.equals
         """{
+  "$schema": "https://elmish.land/schemas/v1.1/elmish-land.schema.json",
   "program": {
     "renderMethod": "synchronous",
-    "renderTargetElementId": "app"
+    "renderTargetElementId": "app",
+    "routeMode": "hash"
   },
   "view": {
     "module": "Feliz",
@@ -988,6 +996,7 @@ let ``Routes_template with F# keyword route parameters`` () =
             }
         |]
         RouteParamModules = []
+        UseRouterPathMode = false
     }
 
     getResource<Routes_template> (Routes_template templateDataWithKeyword)
@@ -1110,4 +1119,7 @@ module Routes =
             | Route.Home _, Route.Home _ -> true
             | Route.ArbitraryPage_New _, Route.ArbitraryPage_New _ -> true
             | _ -> false
+
+        let current () =
+            Router.currentUrl ()
 """

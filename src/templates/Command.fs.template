@@ -40,7 +40,7 @@ module Command =
 
     let ofLayout msg = Command.LayoutMsg (msg)
 
-    let navigate route = route |> format |> Router.Cmd.navigate |> ofCmd
+    let navigate route = route |> format |> Router.{{#if UseRouterPathMode}}Cmd.navigatePath{{else}}Cmd.navigate{{/if}} |> ofCmd
 
     let rec map f mapLayout command =
         match command with

@@ -86,6 +86,7 @@ let generate workingDirectory absoluteProjectDir dotnetSdkVersion =
                 ProjectReferences =
                     [ $"../../%s{ProjectName.asString projectName}.fsproj" ]
                     |> List.append settings.ProjectReferences
+                UseRouterPathMode = settings.Program.RouteMode.IsPath
             }
 
 

@@ -157,7 +157,7 @@ let init{{Name}}Page model route sharedCmd =
 
 {{/each}}
 let init () =
-    let initialUrl = Route.parse (Router.currentUrl ())
+    let initialUrl = Route.parse ({{#if UseRouterPathMode}}Router.currentPath (){{else}}Router.currentUrl (){{/if}})
     let sharedModel, sharedCmd = Shared.init ()
 
     let defaultModel = {
@@ -290,6 +290,11 @@ let view (model: Model) (dispatch: Msg -> unit) =
         {{/if}}
 
     React.router [
+        {{#if UseRouterPathMode}}
+        router.pathMode
+        {{else}}
+        router.hashMode
+        {{/if}}
         router.onUrlChanged (Route.parse >> RouteChanged >> dispatch)
         router.children [ currentReactElement ]
     ]

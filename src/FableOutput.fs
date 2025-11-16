@@ -408,10 +408,7 @@ let promptForAutoFix (layoutMismatches: LayoutMismatch list) =
                 else
                     // Handle specific page path as before
                     let cleanPath =
-                        mismatch.PagePath
-                            .Replace("./", "")
-                            .Replace(".elmish-land/App/App.fs", "")
-                            .Trim('/')
+                        mismatch.PagePath.Replace("./", "").Replace(".elmish-land/App/App.fs", "").Trim('/')
 
                     let absolutePath =
                         if Path.IsPathRooted(cleanPath) then

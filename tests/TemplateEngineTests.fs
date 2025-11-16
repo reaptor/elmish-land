@@ -270,8 +270,7 @@ let ``Ensure required query params is generated correctly`` () =
         UrlUsage = """"test", [ "order", InternalRevocationListOrder.asQueryString order ]"""
         UrlPattern = "[ test; Query q ]"
         UrlPatternWhen =
-            """eq test "test" && containsQuery "order" InternalRevocationListOrder.fromQueryString q """
-                .Trim()
+            """eq test "test" && containsQuery "order" InternalRevocationListOrder.fromQueryString q """.Trim()
         IsMainLayout = false
     }
 
@@ -348,6 +347,7 @@ let ``Ensure module names is wrapped in double ticks if project dir contains spe
                     }
                 |]
                 RouteParamModules = []
+                UseRouterPathMode = false
             }
         finally
             if Directory.Exists(tempDir) then

@@ -50,15 +50,6 @@ module RenderMethod =
             err
                 $"program:renderMethod '%s{other}' is not supported. Allowed values are: batched, synchronous and hydrate"
 
-    let decode: Decoder<RenderMethod> =
-        Decode.string
-        |> Decode.andThen (function
-            | "batched" -> Decode.succeed Batched
-            | "synchronous" -> Decode.succeed Synchronous
-            | other ->
-                Decode.fail
-                    $"program:renderMethod '%s{other}' is not supported. Allowed values are: batched, synchronous and hydrate")
-
     let asElmishReactFunction =
         function
         | Batched -> "withReactBatched"
@@ -70,9 +61,21 @@ type ViewSettings = {
     TextElement: string
 }
 
+type RouteMode =
+    | Path
+    | Hash
+
+module RouteMode =
+    let tryParse ok err =
+        function
+        | "path" -> ok Path
+        | "hash" -> ok Hash
+        | other -> err $"program:pathMode '%s{other}' is not supported. Allowed values are: path and hash"
+
 type ProgramSettings = {
     RenderMethod: RenderMethod
     RenderTargetElementId: string
+    RouteMode: RouteMode
 }
 
 type Settings = {
@@ -150,6 +153,9 @@ let elmishLandSettingsDecoder pageSettings =
                         Decode.string
                         |> Decode.andThen (RenderMethod.tryParse Decode.succeed Decode.fail)
 
+                    let decodePathMode =
+                        Decode.string |> Decode.andThen (RouteMode.tryParse Decode.succeed Decode.fail)
+
                     {
                         RenderMethod =
                             get.Optional.Field "renderMethod" decodeRenderMethod
@@ -157,10 +163,14 @@ let elmishLandSettingsDecoder pageSettings =
                         RenderTargetElementId =
                             get.Optional.Field "renderTargetElementId" Decode.string
                             |> Option.defaultValue "app"
+                        RouteMode =
+                            get.Optional.Field "routeMode" decodePathMode
+                            |> Option.defaultValue RouteMode.Hash
                     }))
             |> Option.defaultWith (fun () -> {
                 RenderMethod = Synchronous
                 RenderTargetElementId = "app"
+                RouteMode = Hash
             })
     })
 

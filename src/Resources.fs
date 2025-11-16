@@ -55,6 +55,7 @@ type Base_fsproj_template = {
 type App_fsproj_template = {
     DotNetVersion: string
     ProjectReferences: string list
+    UseRouterPathMode: bool
 }
 
 type Routes_template = | Routes_template of TemplateData

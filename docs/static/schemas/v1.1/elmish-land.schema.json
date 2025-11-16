@@ -24,6 +24,12 @@
           "default": "app",
           "description": "Specifies the HTML element ID where your application will be mounted. The element must exist in your index.html file.",
           "minLength": 1
+        },
+        "routeMode": {
+          "type": "string",
+          "enum": ["hash", "path"],
+          "default": "hash",
+          "description": "Configures the routing mode.\n- hash: Uses URL with hash signs (#). Eg https://mydomain.com/#page1,\n- path: Uses URL without hash signs (#). Eg https://mydomain.com/page1"
         }
       },
       "additionalProperties": false

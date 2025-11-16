@@ -192,6 +192,7 @@ let initFiles
                     Routes = [| homeRoute |]
                     Layouts = [| mainLayout |]
                     RouteParamModules = []
+                    UseRouterPathMode = settings.Program.RouteMode.IsPath
                 }
 
                 writeResource<NotFound_template>
