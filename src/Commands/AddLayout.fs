@@ -85,17 +85,17 @@ let findAffectedPages absoluteProjectDir layoutFilePath (routeData: TemplateData
         else
             None)
 
-let promptUserForUpdates (log: ILog) (pageUpdates: PageUpdate[]) (promptAccept: AutoUpdateCode) =
+let promptUserForUpdates (log: ILog) (pageUpdates: PageUpdate[]) (promptBehaviour: UserPromptBehaviour) =
     if pageUpdates.Length > 0 then
-        match promptAccept with
-        | Accept ->
+        match promptBehaviour with
+        | AutoAccept ->
             log.Info $"🤖 Auto-accepting: Updating %i{pageUpdates.Length} page(s) to use the new layout:"
 
             for pageUpdate in pageUpdates do
                 log.Info $"  📄 %s{pageUpdate.RelativePath}"
 
             true
-        | Decline ->
+        | AutoDecline ->
             log.Info $"🤖 Auto-declining: Updating %i{pageUpdates.Length} page(s) to use the new layout:"
 
             for pageUpdate in pageUpdates do
@@ -134,14 +134,14 @@ let promptUserForProjectFileUpdate
     (log: ILog)
     (projectPath: FsProjPath)
     (filePath: string)
-    (promptAccept: AutoUpdateCode)
+    (promptBehaviour: UserPromptBehaviour)
     =
-    match promptAccept with
-    | Accept ->
+    match promptBehaviour with
+    | AutoAccept ->
         showProjectDiffPreview log projectPath filePath
         log.Info $"🤖 Auto-accepting: Adding '%s{filePath}' to project file"
         true
-    | Decline ->
+    | AutoDecline ->
         showProjectDiffPreview log projectPath filePath
         log.Info $"🤖 Auto-declining: Adding '%s{filePath}' to project file"
         false
@@ -273,7 +273,7 @@ let addCompileIncludeToProject (log: ILog) (projectPath: FsProjPath) (filePath: 
         log.Info $"⚠️  Failed to update project file: %s{ex.Message}. Please add manually."
         false
 
-let addLayout workingDirectory absoluteProjectDir (url: string) (promptAccept: AutoUpdateCode) =
+let addLayout workingDirectory absoluteProjectDir (url: string) (promptBehaviour: UserPromptBehaviour) =
     eff {
         let! log = Log().Get()
 
@@ -319,7 +319,7 @@ let addLayout workingDirectory absoluteProjectDir (url: string) (promptAccept: A
         let affectedPages = findAffectedPages absoluteProjectDir layoutFilePath routeData
 
         // Ask user if they want to update the affected pages
-        let shouldUpdate = promptUserForUpdates log affectedPages promptAccept
+        let shouldUpdate = promptUserForUpdates log affectedPages promptBehaviour
 
         if shouldUpdate then
             applyPageUpdates log affectedPages
@@ -333,7 +333,7 @@ let addLayout workingDirectory absoluteProjectDir (url: string) (promptAccept: A
                 // Don't ask about project file if we already prompted about page updates and user declined
                 false
             else
-                promptUserForProjectFileUpdate log projectPath relativefilePathString promptAccept
+                promptUserForProjectFileUpdate log projectPath relativefilePathString promptBehaviour
 
         let projectUpdateResult =
             if shouldUpdateProject then
@@ -342,7 +342,7 @@ let addLayout workingDirectory absoluteProjectDir (url: string) (promptAccept: A
                 false
 
         // Ensure Page.fs entries are last in their directories
-        do! ElmishLand.FsProj.writePageFilesLast absoluteProjectDir promptAccept
+        do! ElmishLand.FsProj.writePageFilesLast absoluteProjectDir promptBehaviour
 
         // Generate files (this will include any updated pages if user chose to update them)
         generateFiles log (AbsoluteProjectDir.asFilePath absoluteProjectDir) routeData

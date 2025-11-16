@@ -72,6 +72,11 @@ module RouteMode =
         | "hash" -> ok Hash
         | other -> err $"program:pathMode '%s{other}' is not supported. Allowed values are: path and hash"
 
+    let asAppConfigString =
+        function
+        | Path -> "path"
+        | Hash -> "hash"
+
 type ProgramSettings = {
     RenderMethod: RenderMethod
     RenderTargetElementId: string
@@ -81,31 +86,12 @@ type ProgramSettings = {
 type Settings = {
     View: ViewSettings
     ProjectReferences: string list
-    DefaultLayoutTemplate: string option
-    DefaultPageTemplate: string option
     RouteSettings: RouteParameters
     ServerCommand: (string * string array) option
     Program: ProgramSettings
 }
 
 let elmishLandSettingsDecoder pageSettings =
-    let trimLeadingSpaces (s: string) =
-        s.Split('\n')
-        |> Array.fold
-            (fun (state: string list, trimCount) s ->
-                if state.Length = 0 && s.Trim().Length = 0 then
-                    state, trimCount
-                else
-                    let trimCount =
-                        match trimCount with
-                        | Some trimCount' -> trimCount'
-                        | None -> s.Length - s.TrimStart().Length
-
-                    $"    %s{s[trimCount..]}" :: state, Some trimCount)
-            ([], None)
-        |> fun (xs, _) -> List.rev xs
-        |> String.concat "\n"
-
     Decode.object (fun get -> {
         View =
             get.Optional.Field
@@ -128,12 +114,6 @@ let elmishLandSettingsDecoder pageSettings =
             get.Optional.Field "projectReferences" (Decode.list Decode.string)
             |> Option.defaultValue []
             |> List.map (fun x -> $"../../%s{x}")
-        DefaultLayoutTemplate =
-            get.Optional.Field "defaultLayoutTemplate" Decode.string
-            |> Option.map trimLeadingSpaces
-        DefaultPageTemplate =
-            get.Optional.Field "defaultPageTemplate" Decode.string
-            |> Option.map trimLeadingSpaces
         RouteSettings = RouteParameters(pageSettings)
         ServerCommand =
             let decodeServerCommand =

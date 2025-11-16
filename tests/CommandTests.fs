@@ -1,11 +1,13 @@
 module CommandTests
 
+open System
 open System.IO
 open ElmishLand.Base
 open ElmishLand.AppError
 open ElmishLand.FsProj
 open ElmishLand.AddPage
 open ElmishLand.AddLayout
+open ElmishLand.Init
 open ElmishLand.TemplateEngine
 open Runner
 open Xunit
@@ -17,7 +19,8 @@ let ``addPage creates page with correct indentation in preview and fsproj`` () =
     withNewProject (fun projectDir _ ->
         task {
             // Run addPage with auto-accept = true to avoid user interaction
-            let! result, logs = runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/Page1" Accept)
+            let! result, logs =
+                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/Page1" AutoAccept)
 
             // Verify the operation succeeded
             let _successResult = Expects.ok logs result
@@ -111,7 +114,7 @@ let ``addLayout after addPage updates project file order and page layout referen
         task {
             // Step 1: Add a page first
             let! addPageResult, addPageLogs =
-                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/AnotherPage" Accept)
+                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/AnotherPage" AutoAccept)
 
             let _addPageSuccess = Expects.ok addPageLogs addPageResult
 
@@ -135,7 +138,7 @@ let ``addLayout after addPage updates project file order and page layout referen
 
             // Step 2: Add a layout for the same path
             let! addLayoutResult, addLayoutLogs =
-                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/AnotherPage" Accept)
+                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/AnotherPage" AutoAccept)
 
             let _addLayoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
@@ -178,7 +181,9 @@ let ``nested layout with page uses correct layout message reference`` () =
         task {
             // Step 1: Add nested layout first
             let! addLayoutResult, addLayoutLogs =
-                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/PageWithNestedLayout" Accept)
+                runEff (
+                    addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/PageWithNestedLayout" AutoAccept
+                )
 
             let _addLayoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
@@ -208,7 +213,9 @@ let ``nested layout with page uses correct layout message reference`` () =
 
             // Step 2: Add page for the nested layout path
             let! addPageResult, addPageLogs =
-                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/PageWithNestedLayout" Accept)
+                runEff (
+                    addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/PageWithNestedLayout" AutoAccept
+                )
 
             let _addPageSuccess = Expects.ok addPageLogs addPageResult
 
@@ -313,7 +320,7 @@ let update msg model =
             // 1. Pages/layouts missing from project file ARE reported as errors
             // 2. Layout references are NOT validated for pages not in the project file
             //    (i.e., the error should be about missing file, not incorrect layout reference)
-            let! result, _logs = runEff (ElmishLand.FsProj.validate projectDir Accept)
+            let! result, _logs = runEff (ElmishLand.FsProj.validate projectDir AutoAccept)
 
             // The validation should fail with errors about missing files
             match result with
@@ -396,12 +403,12 @@ let ``Wrong layout reference in page should generate helpful error message`` () 
         task {
             // Step 1: Add an About page with its own layout
             let! addLayoutResult, addLayoutLogs =
-                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" Accept)
+                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" AutoAccept)
 
             let _layoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
             let! addPageResult, addPageLogs =
-                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" Accept)
+                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" AutoAccept)
 
             let _pageSuccess = Expects.ok addPageLogs addPageResult
 
@@ -456,8 +463,8 @@ Compilation failed"""
 let ``Add layout and then page, page uses correct layout`` () =
     withNewProject (fun projectDir _ ->
         eff {
-            do! addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" Accept
-            do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" Accept
+            do! addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" AutoAccept
+            do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" AutoAccept
 
             do! expectProjectIsValid projectDir
             do! expectProjectTypeChecks projectDir
@@ -468,11 +475,11 @@ let ``Add layout and then page, page uses correct layout`` () =
 let ``Add nested layouts and then pages, page uses correct layout`` () =
     withNewProject (fun projectDir _ ->
         eff {
-            do! addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" Accept
-            do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" Accept
+            do! addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" AutoAccept
+            do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" AutoAccept
 
-            do! addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About/Me" Accept
-            do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About/Me" Accept
+            do! addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About/Me" AutoAccept
+            do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About/Me" AutoAccept
 
             do! expectProjectIsValid projectDir
             do! expectProjectTypeChecks projectDir
@@ -485,19 +492,19 @@ let ``Nested page with wrong layout reference should generate correct error mess
         task {
             // Step 1: Add About layout
             let! addLayoutResult, addLayoutLogs =
-                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" Accept)
+                runEff (addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" AutoAccept)
 
             let _layoutSuccess = Expects.ok addLayoutLogs addLayoutResult
 
             // Step 2: Add About page
             let! aboutResult, aboutLogs =
-                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" Accept)
+                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" AutoAccept)
 
             let _aboutSuccess = Expects.ok aboutLogs aboutResult
 
             // Step 3: Add nested About/Me page
             let! nestedResult, nestedLogs =
-                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About/Me" Accept)
+                runEff (addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About/Me" AutoAccept)
 
             let _nestedSuccess = Expects.ok nestedLogs nestedResult
 
@@ -625,8 +632,8 @@ let ``Add page command with multiple URL parts, own layout and auto updating lay
 
             do!
                 eff {
-                    do! addLayout (FilePath.fromString folder) absoluteProjectDir "/About/Me" Accept
-                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/About/Me" Accept
+                    do! addLayout (FilePath.fromString folder) absoluteProjectDir "/About/Me" AutoAccept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/About/Me" AutoAccept
                 }
                 |> Expects.effectOk runEff
 
@@ -642,10 +649,10 @@ let ``Ensure auto accept layout change write correct namespace`` () =
 
             do!
                 eff {
-                    do! addLayout (FilePath.fromString folder) absoluteProjectDir "/Hello/Me" Accept
-                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/Hello/Me" Accept
-                    do! addLayout (FilePath.fromString folder) absoluteProjectDir "/Hello" Accept
-                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/Hello" Accept
+                    do! addLayout (FilePath.fromString folder) absoluteProjectDir "/Hello/Me" AutoAccept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/Hello/Me" AutoAccept
+                    do! addLayout (FilePath.fromString folder) absoluteProjectDir "/Hello" AutoAccept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/Hello" AutoAccept
                 }
                 |> Expects.effectOk runEff
 
@@ -663,6 +670,52 @@ let ``Init command creates a buildable project`` () =
     withNewProject (fun projectDir _ -> expectProjectTypeChecks projectDir)
 
 [<Fact>]
+let ``Init command with UserPromptBehaviour Accept, initializes project with route mode path`` () =
+    withEmptyProjectFolder (fun absoluteProjectDir ->
+        task {
+            let nodeVersion = Version(20, 0, 0)
+
+            let! _ =
+                eff {
+                    let! routeData =
+                        initFiles
+                            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                            absoluteProjectDir
+                            dotnetSdkVersion
+                            nodeVersion
+                            AutoAccept
+
+                    return routeData
+                }
+                |> runEff
+
+            Expects.routeModeIsPath (AbsoluteProjectDir.asString absoluteProjectDir)
+        })
+
+[<Fact>]
+let ``Init command with UserPromptBehaviour Decline, initializes project with route mode hash`` () =
+    withEmptyProjectFolder (fun absoluteProjectDir ->
+        task {
+            let nodeVersion = Version(20, 0, 0)
+
+            let! _ =
+                eff {
+                    let! routeData =
+                        initFiles
+                            (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                            absoluteProjectDir
+                            dotnetSdkVersion
+                            nodeVersion
+                            AutoAccept
+
+                    return routeData
+                }
+                |> runEff
+
+            Expects.routeModeIsPath (AbsoluteProjectDir.asString absoluteProjectDir)
+        })
+
+[<Fact>]
 let ``Ensure orphan page files are reported as validation errors`` () =
     withNewProject (fun absoluteProjectDir _ ->
         task {
@@ -670,8 +723,8 @@ let ``Ensure orphan page files are reported as validation errors`` () =
 
             let! result, logs =
                 eff {
-                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/Hello/Me" Decline
-                    do! validate absoluteProjectDir Accept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/Hello/Me" AutoDecline
+                    do! validate absoluteProjectDir AutoAccept
                 }
                 |> runEff
 

@@ -362,11 +362,11 @@ let ``Ensure static routes takes precedence over dynamic routes`` () =
 
             let! routes =
                 eff {
-                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/_HomeParam" Accept
-                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/A" Accept
-                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/A/_AParam" Accept
-                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/B/C/_BCParam" Accept
-                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/B/C" Accept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/_HomeParam" AutoAccept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/A" AutoAccept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/A/_AParam" AutoAccept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/B/C/_BCParam" AutoAccept
+                    do! addPage (FilePath.fromString folder) absoluteProjectDir "/B/C" AutoAccept
 
                     let! templateData =
                         getTemplateData (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir

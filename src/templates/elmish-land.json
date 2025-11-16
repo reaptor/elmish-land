@@ -3,7 +3,7 @@
   "program": {
     "renderMethod": "synchronous",
     "renderTargetElementId": "app",
-    "routeMode": "hash"
+    "routeMode": "{{RouteMode}}"
   },
   "view": {
     "module": "Feliz",

@@ -1,5 +1,6 @@
 module Expects
 
+open System.IO
 open System.Text
 open ElmishLand.Base
 open Xunit
@@ -68,3 +69,39 @@ let containsSubstring (expected: string) (actual: string) =
         ()
     else
         failwithf $"Expected substring %A{expected}.\n\nActual %A{actual}"
+
+let routeModeIsPath workingDir =
+    let appFsContent =
+        File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "App", "App.fs"))
+
+    containsSubstring "let initialUrl = Route.parse (Router.currentPath ())" appFsContent
+    containsSubstring "router.pathMode" appFsContent
+
+    let routeFsContent =
+        File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "Base", "Routes.fs"))
+
+    containsSubstring "Router.currentPath ()" routeFsContent
+    containsSubstring "Router.formatPath(" routeFsContent
+
+    let commandFsContent =
+        File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "Base", "Command.fs"))
+
+    containsSubstring "Router.Cmd.navigatePath |>" commandFsContent
+
+let routeModeIsHash workingDir =
+    let appFsContent =
+        File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "App", "App.fs"))
+
+    containsSubstring "let initialUrl = Route.parse (Router.currentUrl ())" appFsContent
+    containsSubstring "router.hashMode" appFsContent
+
+    let routeFsContent =
+        File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "Base", "Routes.fs"))
+
+    containsSubstring "Router.currentUrl ()" routeFsContent
+    containsSubstring "Router.format(" routeFsContent
+
+    let commandFsContent =
+        File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "Base", "Command.fs"))
+
+    containsSubstring "Router.Cmd.navigate |>" commandFsContent

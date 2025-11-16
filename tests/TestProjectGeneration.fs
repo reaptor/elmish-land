@@ -27,12 +27,21 @@ let leadingWhitespace (s: string) =
 
 let dotnetSdkVersion = DotnetSdkVersion(Version(9, 0, 100))
 
-let withNewProject (f: AbsoluteProjectDir -> TemplateData -> Task<_>) : Task<unit> =
+let withEmptyProjectFolder (f: AbsoluteProjectDir -> Task<_>) : Task<unit> =
     task {
         let folder = getFolder ()
 
         try
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
+            do! f absoluteProjectDir
+        finally
+            if Directory.Exists(folder) then
+                Directory.Delete(folder, true)
+    }
+
+let withNewProject (f: AbsoluteProjectDir -> TemplateData -> Task<_>) : Task<unit> =
+    withEmptyProjectFolder (fun absoluteProjectDir ->
+        task {
             let nodeVersion = Version(20, 0, 0)
 
             let! result, logOutput =
@@ -43,7 +52,7 @@ let withNewProject (f: AbsoluteProjectDir -> TemplateData -> Task<_>) : Task<uni
                             absoluteProjectDir
                             dotnetSdkVersion
                             nodeVersion
-                            Accept
+                            AutoAccept
 
                     return routeData
                 }
@@ -52,15 +61,12 @@ let withNewProject (f: AbsoluteProjectDir -> TemplateData -> Task<_>) : Task<uni
             let routeData = Expects.ok logOutput result
 
             do! f absoluteProjectDir routeData
-        finally
-            if Directory.Exists(folder) then
-                Directory.Delete(folder, true)
-    }
+        })
 
 let expectProjectIsValid projectDir =
     eff {
         do! generate (AbsoluteProjectDir.asFilePath projectDir) projectDir dotnetSdkVersion
-        do! validate projectDir Accept
+        do! validate projectDir AutoAccept
     }
 
 let expectProjectTypeChecks (absoluteProjectDir: AbsoluteProjectDir) =

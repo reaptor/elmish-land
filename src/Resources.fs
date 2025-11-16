@@ -70,7 +70,7 @@ type App_template = | App_template of TemplateData
 
 type settings_json = Settings_json
 
-type ``elmish-land_json`` = Elmish_land_json
+type ``elmish-land_json`` = { RouteMode: string }
 
 type vite_config_js = Vite_config_js
 

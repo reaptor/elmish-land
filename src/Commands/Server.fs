@@ -125,7 +125,7 @@ let fableWatch absoluteProjectDir stopSpinner =
                 outputHandler
     }
 
-let server workingDirectory absoluteProjectDir (promptAccept: AutoUpdateCode) =
+let server workingDirectory absoluteProjectDir (promptBehaviour: UserPromptBehaviour) =
     eff {
         let! log = Log().Get()
 
@@ -139,7 +139,7 @@ let server workingDirectory absoluteProjectDir (promptAccept: AutoUpdateCode) =
 
                     do! generate workingDirectory absoluteProjectDir dotnetSdkVersion
 
-                    do! validate absoluteProjectDir promptAccept
+                    do! validate absoluteProjectDir promptBehaviour
                     do! ensureViteInstalled workingDirectory
 
                     let! result =

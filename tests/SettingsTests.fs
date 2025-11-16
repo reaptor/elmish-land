@@ -69,44 +69,8 @@ let ``Changing renderMethod to batched writes it to App.fs`` () =
             Expects.containsSubstring ("""|> Program.withReactBatched "myElement" """.TrimEnd()) appFsContent
         })
 
-let assertRouteModeIsPath workingDir =
-    let appFsContent =
-        File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "App", "App.fs"))
-
-    Expects.containsSubstring "let initialUrl = Route.parse (Router.currentPath ())" appFsContent
-    Expects.containsSubstring "router.pathMode" appFsContent
-
-    let routeFsContent =
-        File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "Base", "Routes.fs"))
-
-    Expects.containsSubstring "Router.currentPath ()" routeFsContent
-    Expects.containsSubstring "Router.formatPath(" routeFsContent
-
-    let commandFsContent =
-        File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "Base", "Command.fs"))
-
-    Expects.containsSubstring "Router.Cmd.navigatePath |>" commandFsContent
-
-let assertRouteModeIsHash workingDir =
-    let appFsContent =
-        File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "App", "App.fs"))
-
-    Expects.containsSubstring "let initialUrl = Route.parse (Router.currentUrl ())" appFsContent
-    Expects.containsSubstring "router.hashMode" appFsContent
-
-    let routeFsContent =
-        File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "Base", "Routes.fs"))
-
-    Expects.containsSubstring "Router.currentUrl ()" routeFsContent
-    Expects.containsSubstring "Router.format(" routeFsContent
-
-    let commandFsContent =
-        File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "Base", "Command.fs"))
-
-    Expects.containsSubstring "Router.Cmd.navigate |>" commandFsContent
-
 [<Fact>]
-let ``Default routeMode is "hash"`` () =
+let ``Default routeMode is "path"`` () =
     withNewProject (fun projectDir _ ->
         task {
             let workingDir = AbsoluteProjectDir.asString projectDir
@@ -116,8 +80,7 @@ let ``Default routeMode is "hash"`` () =
                 |> runEff
 
             Expects.ok logs result
-
-            assertRouteModeIsHash workingDir
+            Expects.routeModeIsPath workingDir
         })
 
 [<Fact>]
@@ -134,8 +97,7 @@ let ``Missing routeMode uses "hash"`` () =
                 |> runEff
 
             Expects.ok logs result
-
-            assertRouteModeIsHash workingDir
+            Expects.routeModeIsHash workingDir
         })
 
 [<Fact>]
@@ -152,6 +114,5 @@ let ``Changing routeMode to "path" generates correct App.fs, Routes.fs and Comma
                 |> runEff
 
             Expects.ok logs result
-
-            assertRouteModeIsPath workingDir
+            Expects.routeModeIsPath workingDir
         })

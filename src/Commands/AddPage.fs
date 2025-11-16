@@ -21,15 +21,15 @@ let promptUserForProjectFileUpdate
     (log: ILog)
     (projectPath: FsProjPath)
     (filePath: string)
-    (promptAccept: AutoUpdateCode)
+    (promptBehaviour: UserPromptBehaviour)
     =
     showProjectDiffPreview log projectPath filePath
 
-    match promptAccept with
-    | Accept ->
+    match promptBehaviour with
+    | AutoAccept ->
         log.Info $"🤖 Auto-accepting: Adding '%s{filePath}' to project file"
         true
-    | Decline ->
+    | AutoDecline ->
         log.Info $"🤖 Auto-declining: Adding '%s{filePath}' to project file"
         false
     | Ask ->
@@ -184,7 +184,7 @@ let addCompileIncludeToProject (log: ILog) (projectPath: FsProjPath) (filePath: 
         log.Info $"⚠️  Failed to update project file: %s{ex.Message}. Please add manually."
         false
 
-let addPage workingDirectory absoluteProjectDir (url: string) (promptAccept: AutoUpdateCode) =
+let addPage workingDirectory absoluteProjectDir (url: string) (promptBehaviour: UserPromptBehaviour) =
     eff {
         let! log = Log().Get()
 
@@ -229,7 +229,7 @@ let addPage workingDirectory absoluteProjectDir (url: string) (promptAccept: Aut
 
         // Ask user if they want to automatically add the file to the project
         let shouldUpdateProject =
-            promptUserForProjectFileUpdate log projectPath relativefilePathString promptAccept
+            promptUserForProjectFileUpdate log projectPath relativefilePathString promptBehaviour
 
         let projectUpdateResult =
             if shouldUpdateProject then
@@ -238,7 +238,7 @@ let addPage workingDirectory absoluteProjectDir (url: string) (promptAccept: Aut
                 false
 
         // Ensure Page.fs entries are last in their directories
-        do! ElmishLand.FsProj.writePageFilesLast absoluteProjectDir promptAccept
+        do! ElmishLand.FsProj.writePageFilesLast absoluteProjectDir promptBehaviour
 
         let! routeData = getTemplateData projectName absoluteProjectDir
         log.Debug("routeData: {}", routeData)

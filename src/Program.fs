@@ -22,9 +22,9 @@ let (|NotFlag|_|) (x: string) =
 
 let getPromptAcceptFlag (argv: string[]) =
     if argv |> Array.exists (fun arg -> arg = "--auto-accept" || arg = "-y") then
-        Accept
+        AutoAccept
     else if argv |> Array.exists (fun arg -> arg = "--auto-decline" || arg = "-n") then
-        Decline
+        AutoDecline
     else
         Ask
 

@@ -146,7 +146,7 @@ let previewPageFilesReordering (projectFileContent: string) : string =
     with _ ->
         ""
 
-let writePageFilesLast absoluteProjectDir (autoUpdate: AutoUpdateCode) =
+let writePageFilesLast absoluteProjectDir (autoUpdate: UserPromptBehaviour) =
     eff {
         let! log = Log().Get()
         let! projectPath = FsProjPath.findExactlyOneFromProjectDir absoluteProjectDir
@@ -162,12 +162,12 @@ let writePageFilesLast absoluteProjectDir (autoUpdate: AutoUpdateCode) =
 
             let shouldUpdate =
                 match autoUpdate with
-                | Accept ->
+                | AutoAccept ->
                     log.Info
                         $"🤖 Auto-accepting: Reordering Page.fs files in project file to be last within their directories"
 
                     true
-                | Decline ->
+                | AutoDecline ->
                     log.Info $"🤖 Auto-declining: Reordering Page.fs files in project file"
                     false
                 | Ask ->
@@ -184,7 +184,7 @@ let writePageFilesLast absoluteProjectDir (autoUpdate: AutoUpdateCode) =
                 File.WriteAllText(path, newContent)
     }
 
-let validate absoluteProjectDir (autoUpdate: AutoUpdateCode) =
+let validate absoluteProjectDir (autoUpdate: UserPromptBehaviour) =
     eff {
         let! log = Log().Get()
         let! projectPath = FsProjPath.findExactlyOneFromProjectDir absoluteProjectDir

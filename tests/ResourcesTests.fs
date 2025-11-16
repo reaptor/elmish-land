@@ -912,8 +912,8 @@ let settings_json () =
 """
 
 [<Fact>]
-let ``elmish-land_json`` () =
-    getResource<``elmish-land_json``> Elmish_land_json
+let ``elmish-land_json with hash mode`` () =
+    getResource<``elmish-land_json``> { RouteMode = "hash" }
     |> Expects.equals
         """{
   "$schema": "https://elmish.land/schemas/v1.1/elmish-land.schema.json",
@@ -921,6 +921,26 @@ let ``elmish-land_json`` () =
     "renderMethod": "synchronous",
     "renderTargetElementId": "app",
     "routeMode": "hash"
+  },
+  "view": {
+    "module": "Feliz",
+    "type": "ReactElement",
+    "textElement": "Html.text"
+  },
+  "projectReferences": []
+}
+"""
+
+[<Fact>]
+let ``elmish-land_json with path mode`` () =
+    getResource<``elmish-land_json``> { RouteMode = "path" }
+    |> Expects.equals
+        """{
+  "$schema": "https://elmish.land/schemas/v1.1/elmish-land.schema.json",
+  "program": {
+    "renderMethod": "synchronous",
+    "renderTargetElementId": "app",
+    "routeMode": "path"
   },
   "view": {
     "module": "Feliz",

@@ -43,12 +43,29 @@ dotnet elmish-land server"""
 
     getFormattedCommandOutput header content
 
+let promptForRouteMode (promptBehaviour: UserPromptBehaviour) : string =
+    match promptBehaviour with
+    | AutoAccept -> "path" // Default to path for --auto-accept
+    | AutoDecline -> "hash" // Default to hash for --auto-decline (backwards compatible)
+    | Ask ->
+        Console.WriteLine("Which routing mode would you like to use?")
+        Console.WriteLine("(1) Path [default] - Clean URLs without hash (example.com/about)")
+        Console.WriteLine("(2) Hash - URLs with hash sign (example.com/#about)")
+        Console.Write("Enter choice [1]: ")
+        let response = Console.ReadLine()
+
+        match response.Trim().ToLower() with
+        | ""
+        | "1" -> "path"
+        | "2" -> "hash"
+        | _ -> "path" // default to path for invalid input
+
 let initFiles
     workingDirectory
     (absoluteProjectDir: AbsoluteProjectDir)
     (dotnetSdkVersion: DotnetSdkVersion)
     (nodeVersion: Version)
-    (promptAccept: AutoUpdateCode)
+    (promptBehaviour: UserPromptBehaviour)
     =
     eff {
         let! log = Log().Get()
@@ -98,12 +115,14 @@ let initFiles
             [ ".vscode"; "settings.json" ]
             Settings_json
 
+        let selectedRouteMode = promptForRouteMode promptBehaviour
+
         writeResource<``elmish-land_json``>
             log
             (AbsoluteProjectDir.asFilePath absoluteProjectDir)
             false
             [ "elmish-land.json" ]
-            Elmish_land_json
+            { RouteMode = selectedRouteMode }
 
         writeResource<Directory_Packages_props_template> log workingDirectory false [ "Directory.Packages.props" ] {
             PackageVersions = getNugetPackageVersions ()
@@ -244,7 +263,7 @@ let initFiles
 
         do! generate workingDirectory absoluteProjectDir dotnetSdkVersion
 
-        do! validate absoluteProjectDir promptAccept
+        do! validate absoluteProjectDir promptBehaviour
 
         return routeData
     }
@@ -335,24 +354,20 @@ let initCliCommands workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (_
             |> Effect.map ignore<string * string>
     }
 
-let init workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (promptAccept: AutoUpdateCode) =
+let init workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (promptBehaviour: UserPromptBehaviour) =
     eff {
         let! log = Log().Get()
 
+        // Get versions first using CLI
+        let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
+        let! nodeVersion = getNodeVersion workingDirectory
+
+        // Create files without CLI commands
+        let! routeData = initFiles workingDirectory absoluteProjectDir dotnetSdkVersion nodeVersion promptBehaviour
+
         do!
             withSpinner "Creating your project..." (fun _ ->
-                eff {
-                    // Get versions first using CLI
-                    let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
-                    let! nodeVersion = getNodeVersion workingDirectory
-
-                    // Create files without CLI commands
-                    let! routeData =
-                        initFiles workingDirectory absoluteProjectDir dotnetSdkVersion nodeVersion promptAccept
-
-                    // Run CLI commands
-                    do! initCliCommands workingDirectory absoluteProjectDir routeData
-                })
+                initCliCommands workingDirectory absoluteProjectDir routeData)
 
         log.Info(successMessage ())
     }
