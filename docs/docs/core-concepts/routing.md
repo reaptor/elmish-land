@@ -125,7 +125,7 @@ In addition to URL path parameters, Elmish Land supports query parameters throug
 
 #### Example:
 
-```json
+```js
 {
   "queryParameters": [
     {
@@ -153,7 +153,7 @@ Elmish Land enforces **type-safe route parameters** using `route.json` (see the 
 #### Example:
 A `route.json` file inside `/Pages/User/_UserId/`:
 
-```json
+```js
 {
     "pathParameter": {
         "module": "System",

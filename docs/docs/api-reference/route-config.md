@@ -65,7 +65,7 @@ Array of typed query parameters that can be read from the URL query string.
 
 #### Example
 
-```json
+```js
 {
   "$schema": "https://elmish.land/schemas/v1/route.schema.json",
   "queryParameters": [
@@ -111,7 +111,7 @@ Define custom types for route and query parameters using shared project referenc
 
 Configure a project reference in `elmish-land.json`:
 
-```json
+```js
 {
   "projectReferences": [
     "src/Common/Common.fsproj"

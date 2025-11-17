@@ -83,7 +83,7 @@ This shows all build logs and server output for troubleshooting.
 
 You can now configure how React renders your application via `elmish-land.json`:
 
-```json
+```js
 {
   "program": {
     "renderMethod": "synchronous"
@@ -102,7 +102,7 @@ See the [Configuration Reference](/docs/api-reference/app-config#programrenderme
 
 You can also customize which HTML element your app mounts to:
 
-```json
+```js
 {
   "program": {
     "renderTargetElementId": "root"
@@ -122,7 +122,7 @@ Elmish Land now supports two routing modes, allowing you to choose how URLs are 
 
 Traditional hash-based routing that works everywhere without server configuration:
 
-```json
+```js
 {
   "program": {
     "routeMode": "hash"
@@ -138,7 +138,7 @@ This is the default mode and is fully backwards compatible with existing applica
 
 Clean URLs without hash signs for a more modern feel:
 
-```json
+```js
 {
   "program": {
     "routeMode": "path"

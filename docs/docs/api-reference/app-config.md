@@ -27,11 +27,11 @@ The `elmish-land.json` file in your project root configures various aspects of y
 
 ## Configuration Options
 
-### program <AddedIn version="1.1.0-beta.6" />
+### program
 
 Controls how your Elmish Land application renders and behaves at runtime.
 
-#### program.renderMethod
+#### program.renderMethod<AddedIn version="1.1.0-beta.6" />
 
 **Type:** `"synchronous"` | `"batched"`
 **Default:** `"synchronous"`
@@ -49,7 +49,7 @@ Configures the React render method used by your application:
 }
 ```
 
-#### program.renderTargetElementId
+#### program.renderTargetElementId<AddedIn version="1.1.0-beta.6" />
 
 **Type:** `string`
 **Default:** `"app"`
@@ -70,6 +70,24 @@ When using a custom element ID, ensure your HTML contains the matching element:
 <body>
   <div id="app"></div>
 </body>
+```
+
+#### program.routeMode<AddedIn version="1.1.0-beta.7" />
+
+**Type:** `"hash"` | `"path"`
+**Default:** `"hash"`
+
+Configures how URLs are handled in your application
+
+- **`hash`** - Traditional hash-based routing that works everywhere without server configuration. URLs look like: `https://example.com/#/about`. This is the default mode and is fully backwards compatible with existing applications.
+- **`path`** - Clean URLs without hash signs for a more modern feel. URLs look like: `https://example.com/about`. **Note:** Path mode requires server configuration to handle client-side routing (e.g., redirecting all routes to index.html).
+
+```js
+{
+  "program": {
+    "routeMode": "hash"
+  }
+}
 ```
 
 ### view
@@ -101,7 +119,7 @@ This function is used by the `add page` command when scaffolding new pages.
 
 If you want to use a custom UI library instead of Feliz, you can configure the view settings:
 
-```json
+```js
 {
   "view": {
     "module": "MyCustomUI",
@@ -129,7 +147,7 @@ type IElement =
 
 and then add a project reference to the library containing the UI element definition:
 
-```json
+```js
 {
   "projectReferences": [
     "src/UI/UI.fsproj"
@@ -144,7 +162,7 @@ and then add a project reference to the library containing the UI element defini
 
 An array of relative paths to additional F# project files (.fsproj) that should be referenced by your Elmish Land application. This is useful for sharing code across multiple projects or using custom types in your routes.
 
-```json
+```js
 {
   "projectReferences": [
     "src/Common/Common.fsproj",
