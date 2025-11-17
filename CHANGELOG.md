@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `hash` (default): Traditional hash-based URLs (example.com/#about)
   - `path`: Clean URLs without hash signs (example.com/about)
 - Interactive prompt during `init` command to choose between path and hash routing modes
+- `Command.ofAsync` and `Command.tryOfAsync` functions for executing F# async workflows
 
 ## [1.1.0 beta 6] - 2025-11-10
 

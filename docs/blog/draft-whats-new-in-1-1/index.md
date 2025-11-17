@@ -163,6 +163,28 @@ Enter choice [1]:
 
 See the [Configuration Reference](/docs/api-reference/app-config#programroutemode) for details.
 
+## Command.ofAsync and Command.tryOfAsync
+
+v1.1 adds support for F# async workflows in the Command module, providing native F# alternatives to the promise-based commands.
+
+These new functions work seamlessly with Fable.Remoting for type-safe server communication and any F# libraries that return `Async<'T>` types.
+
+**Example:**
+
+```fsharp
+let update msg model =
+    match msg with
+    | LoadWeather ->
+        { model with Loading = true },
+        Command.tryOfAsync
+            weatherApi.getWeatherForecast
+            ()
+            WeatherLoaded
+            LoadError
+```
+
+For detailed examples and guidance on when to use async vs promise commands, see the [Command Module Reference](/docs/api-reference/command-module#commandofasync).
+
 ## Bug Fixes
 
 ### Commands from Shared Module

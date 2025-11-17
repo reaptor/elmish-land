@@ -187,6 +187,126 @@ let update msg model =
         Command.none
 ```
 
+## Command.ofAsync
+
+Executes an F# async workflow and dispatches a message with the result. Throws an exception if the async operation fails.
+
+This function work seamlessly with Fable.Remoting for type-safe server communication and any F# libraries that return `Async<'T>` types.
+
+### Signature
+
+```fsharp
+Command.ofAsync :
+    task: ('arg -> Async<'result>)
+    -> arg: 'arg
+    -> ofSuccess: ('result -> 'msg)
+    -> Command<'msg, 'sharedMsg, 'layoutMsg>
+```
+
+### Parameters
+
+- **`task`** - Function that returns an async workflow
+- **`arg`** - Argument to pass to the task function
+- **`ofSuccess`** - Function that converts the result into a message
+
+### Example, Fable.Remoting
+
+```fsharp
+// Shared API definition
+type IUserApi = {
+    getUsers: unit -> Async<User list>
+}
+
+// Client code
+type Msg =
+    | LoadUsers
+    | UsersLoaded of User list
+
+let userApi =
+    Remoting.createApi()
+    |> Remoting.buildProxy<IUserApi>
+
+let update msg model =
+    match msg with
+    | LoadUsers ->
+        { model with Loading = true },
+        Command.ofAsync userApi.getUsers () UsersLoaded
+
+    | UsersLoaded users ->
+        { model with Users = users; Loading = false },
+        Command.none
+```
+
+## Command.tryOfAsync
+
+Executes an F# async workflow and dispatches different messages based on success or failure. Does not throw exceptions.
+
+This function work seamlessly with Fable.Remoting for type-safe server communication and any F# libraries that return `Async<'T>` types.
+
+### Signature
+
+```fsharp
+Command.tryOfAsync :
+    task: ('arg -> Async<'result>)
+    -> arg: 'arg
+    -> ofSuccess: ('result -> 'msg)
+    -> ofError: (exn -> 'msg)
+    -> Command<'msg, 'sharedMsg, 'layoutMsg>
+```
+
+### Parameters
+
+- **`task`** - Function that returns an async workflow
+- **`arg`** - Argument to pass to the task function
+- **`ofSuccess`** - Function that converts successful results into a message
+- **`ofError`** - Function that converts errors into a message
+
+### When to Use
+
+Use `Command.tryOfAsync` when you need to handle errors explicitly in your application. This is especially useful with:
+- **Fable.Remoting** for type-safe server communication
+- F# libraries that return `Async<'T>` types
+- .NET async APIs
+
+Use `Command.tryOfPromise` when working with JavaScript libraries and browser APIs.
+
+### Example, Fable.Remoting with Error Handling
+
+```fsharp
+// Shared API definition
+type IWeatherApi = {
+    getWeatherForecast: unit -> Async<WeatherForecast list>
+}
+
+// Client code
+type Msg =
+    | LoadWeather
+    | WeatherLoaded of WeatherForecast list
+    | LoadError of exn
+
+let weatherApi =
+    Remoting.createApi()
+    |> Remoting.buildProxy<IWeatherApi>
+
+let update msg model =
+    match msg with
+    | LoadWeather ->
+        { model with Loading = true; Error = None },
+        Command.tryOfAsync
+            weatherApi.getWeatherForecast
+            ()
+            WeatherLoaded
+            LoadError
+
+    | WeatherLoaded forecasts ->
+        { model with Forecasts = forecasts; Loading = false },
+        Command.none
+
+    | LoadError error ->
+        { model with Loading = false; Error = Some error },
+        Command.none
+```
+
 ## Command.ofShared
 
 Sends a message to the Shared module, allowing pages and layouts to update shared state.
@@ -334,16 +454,20 @@ let update msg model =
 
 ## Best Practices
 
-### Prefer tryOfPromise over ofPromise
+### Prefer tryOfPromise/tryOfAsync over ofPromise/ofAsync
 
-Always use `Command.tryOfPromise` instead of `Command.ofPromise` in production code to handle errors gracefully:
+Always use `Command.tryOfPromise` or `Command.tryOfAsync` instead of their non-try counterparts in production code to handle errors gracefully:
 
 ```fsharp
-// Good - Handles errors
+// Good - Handles errors (Promise-based)
 Command.tryOfPromise fetchData () DataLoaded LoadError
+
+// Good - Handles errors (Async-based)
+Command.tryOfAsync fetchData () DataLoaded LoadError
 
 // Avoid - Errors will crash the application
 Command.ofPromise fetchData () DataLoaded
+Command.ofAsync fetchData () DataLoaded
 ```
 
 ### Batch Related Commands
@@ -354,8 +478,8 @@ When you need to perform multiple side effects, use `Command.batch` to keep your
 let init () =
     model,
     Command.batch [
-        Command.tryOfPromise loadUser () UserLoaded LoadError
-        Command.tryOfPromise loadSettings () SettingsLoaded LoadError
+        Command.tryOfAsync loadUser () UserLoaded LoadError
+        Command.tryOfAsync loadSettings () SettingsLoaded LoadError
         Command.ofShared CheckAuthStatus
     ]
 ```
