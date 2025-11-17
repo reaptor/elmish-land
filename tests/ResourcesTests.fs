@@ -498,6 +498,10 @@ module Command =
 
     let tryOfPromise p arg ofSuccess ofError = Cmd.OfPromise.either p arg ofSuccess ofError |> Command.Cmd
 
+    let ofAsync p arg ofSuccess = Cmd.OfAsync.perform p arg ofSuccess |> Command.Cmd
+
+    let tryOfAsync p arg ofSuccess ofError = Cmd.OfAsync.either p arg ofSuccess ofError |> Command.Cmd
+
     let ofCmd (cmd: Cmd<'msg>) = Command.Cmd(cmd)
 
     let ofMsg (msg: 'msg) =

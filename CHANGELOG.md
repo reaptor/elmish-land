@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0 beta 8] - 2025-11-17
+### Added
+- Upgraded nuget dependencies for scaffolded projects (by `init` command) to:
+  - `FSharp.Core` version 10.0.100
+  - `Fable.Elmish.HMR` version 8.0.0
+  - `Fable.Elmish.React` version 5.0.0
+- Replaced nuget dependency `Elmish` with `Fable.Elmish` version 5.0.2
+- Upgraded npmjs dependencies for scaffolded projects (by `init` command) to:
+  - `vite` version 7
+
 ## [1.1.0 beta 7] - 2025-11-16
 
 ### Added

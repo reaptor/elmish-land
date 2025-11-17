@@ -394,18 +394,18 @@ let getDotnetToolDependencies () = [ "fable", "--version 4.*" ]
 
 let nugetDependencies =
     Set [
-        "FSharp.Core", "9.0.303"
-        "Elmish", "4.2.0"
+        "FSharp.Core", "10.0.100"
         "Fable.Promise", "3.2.0"
-        "Fable.Elmish.HMR", "7.0.0"
-        "Fable.Elmish.React", "4.0.0"
+        "Fable.Elmish", "5.0.2"
+        "Fable.Elmish.HMR", "8.0.0"
+        "Fable.Elmish.React", "5.0.0"
         "Feliz", "2.9.0"
         "Feliz.Router", "4.0.0"
     ]
 
 let npmDependencies = Set [ "react", "19"; "react-dom", "19" ]
 
-let npmDevDependencies = Set [ "vite", "6" ]
+let npmDevDependencies = Set [ "vite", "7" ]
 
 type UserPromptBehaviour =
     | AutoAccept
