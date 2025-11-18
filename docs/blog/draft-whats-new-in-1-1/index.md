@@ -211,6 +211,17 @@ Previously this would cause compilation errors.
 - Content entries in project files are preserved during updates
 - File ordering maintains dependencies correctly
 
+### Route Precedence
+
+Fixed an issue where dynamic routes (with parameters like `_id`) incorrectly took precedence over static routes. Now static routes are matched first:
+
+```
+src/Pages/Salads/Page.fs    # /salads - matches correctly
+src/Pages/_Soups/Page.fs    # /:soups - only matches if no static route exists
+```
+
+Previously, navigating to `/salads` would incorrectly match the `_soups` dynamic route instead of the `salads` static route. This is now fixed to follow the expected precedence rules.
+
 ## Migration from v1.0.x
 
 Upgrading to v1.1 is straightforward:

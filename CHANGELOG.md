@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `batched`: Smoother frame rates. (NOTE: This may have unexpected effects in React controlled inputs, see https://github.com/elmish/react/issues/12)
 - Configurable render target element ID in `elmish-land.json` via `program.renderTargetElementId` (defaults to `"app"`)
 
+### Fixed
+- Static routes now correctly take precedence over dynamic routes ([#35](https://github.com/reaptor/elmish-land/issues/35))
+
 ## [1.1.0 beta 5] - 2025-10-26
 
 ### Fixed
