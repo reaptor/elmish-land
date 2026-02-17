@@ -72,7 +72,7 @@ type PageModel =
 [<RequireQualifiedAccess>]
 type Page =
     {{#each Routes}}
-    | {{Name}} of MappedPage<{{ModuleName}}.Msg, {{ModuleName}}.Model, {{LayoutModuleName}}.Msg, {{LayoutModuleName}}.Props>
+    | {{Name}} of (SharedModel -> MappedPage<{{ModuleName}}.Msg, {{ModuleName}}.Model, {{LayoutModuleName}}.Msg, {{LayoutModuleName}}.Props>)
     {{/each}}
     | NotFound
 
@@ -135,18 +135,19 @@ let layoutMsgToPageMsg page f layoutMsg = page.LayoutMsgToPageMsg layoutMsg |> f
 
 {{#each Routes}}
 let init{{Name}}Page model route sharedCmd =
-    let mappedPage = ({{ModuleName}}.page model.Shared route |> mapPage (PageMsg.{{Name}}Msg >> PageMsg) (LayoutMsg.{{LayoutName}}Msg >> LayoutMsg))
+    let mapPage sharedModel = {{ModuleName}}.page sharedModel route |> mapPage (PageMsg.{{Name}}Msg >> PageMsg) (LayoutMsg.{{LayoutName}}Msg >> LayoutMsg)
+    let mappedPage = mapPage model.Shared
     let pageModel, pageCmd = mappedPage.Init ()
     let layoutModel, layoutCmd = (get{{LayoutName}}Layout model.CurrentLayout (Route.{{Name}} route)) model.Shared mappedPage.LayoutProps
     let layout = Layout.{{LayoutName}} (mappedPage.LayoutProps, layoutModel)
     {
         model with
             CurrentRoute = Route.{{Name}} route
-            CurrentPage = Page.{{Name}} mappedPage
+            CurrentPage = Page.{{Name}} mapPage
             CurrentPageModel = PageModel.{{Name}} pageModel
             CurrentLayout = layout
             CurrentLayoutName = LayoutName.{{LayoutName}}
-            PageModelByLayout = Map.change LayoutName.{{LayoutName}} (fun _ -> Some (Page.{{Name}} mappedPage)) model.PageModelByLayout
+            PageModelByLayout = Map.change LayoutName.{{LayoutName}} (fun _ -> Some (Page.{{Name}} mapPage)) model.PageModelByLayout
     },
     Command.batch [
         sharedCmd
@@ -221,8 +222,8 @@ let update (msg: Msg) (model: Model) =
     | PageMsg pageMsg ->
         match model.CurrentPage, pageMsg, model.CurrentPageModel with
         {{#each Routes}}
-        | Page.{{Name}} mappedPage, PageMsg.{{Name}}Msg pageMsg', PageModel.{{Name}} pageModel ->
-            let pageModel, pageCmd = mappedPage.Update pageMsg' pageModel
+        | Page.{{Name}} mapPage, PageMsg.{{Name}}Msg pageMsg', PageModel.{{Name}} pageModel ->
+            let pageModel, pageCmd = (mapPage model.Shared).Update pageMsg' pageModel
             {
                 model with
                     CurrentPageModel = PageModel.{{Name}} pageModel
@@ -240,7 +241,8 @@ let update (msg: Msg) (model: Model) =
                 | Some p ->
                     match p, model.CurrentPageModel, layoutMsg with
                     {{#each Routes}}
-                    | Page.{{Name}} mappedPage, PageModel.{{Name}} m, LayoutMsg.{{LayoutName}}Msg layoutMsg' ->
+                    | Page.{{Name}} mapPage, PageModel.{{Name}} m, LayoutMsg.{{LayoutName}}Msg layoutMsg' ->
+                        let mappedPage = mapPage model.Shared
                         let pageMsg = mappedPage.LayoutMsgToPageMsg layoutMsg'
                         let m, cmd = mappedPage.Update pageMsg m
                         { model with

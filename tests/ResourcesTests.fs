@@ -681,7 +681,7 @@ type PageModel =
 
 [<RequireQualifiedAccess>]
 type Page =
-    | RoutesName of MappedPage<RoutesModuleName.Msg, RoutesModuleName.Model, RoutesLayoutModuleName.Msg, RoutesLayoutModuleName.Props>
+    | RoutesName of (SharedModel -> MappedPage<RoutesModuleName.Msg, RoutesModuleName.Model, RoutesLayoutModuleName.Msg, RoutesLayoutModuleName.Props>)
     | NotFound
 
 type Model = {
@@ -740,18 +740,19 @@ let mapPage (f: 'pageMsg -> Msg) (mapLayout: 'layoutMsg -> Msg) (p: Page<SharedM
 let layoutMsgToPageMsg page f layoutMsg = page.LayoutMsgToPageMsg layoutMsg |> f
 
 let initRoutesNamePage model route sharedCmd =
-    let mappedPage = (RoutesModuleName.page model.Shared route |> mapPage (PageMsg.RoutesNameMsg >> PageMsg) (LayoutMsg.RoutesLayoutNameMsg >> LayoutMsg))
+    let mapPage sharedModel = RoutesModuleName.page sharedModel route |> mapPage (PageMsg.RoutesNameMsg >> PageMsg) (LayoutMsg.RoutesLayoutNameMsg >> LayoutMsg)
+    let mappedPage = mapPage model.Shared
     let pageModel, pageCmd = mappedPage.Init ()
     let layoutModel, layoutCmd = (getRoutesLayoutNameLayout model.CurrentLayout (Route.RoutesName route)) model.Shared mappedPage.LayoutProps
     let layout = Layout.RoutesLayoutName (mappedPage.LayoutProps, layoutModel)
     {
         model with
             CurrentRoute = Route.RoutesName route
-            CurrentPage = Page.RoutesName mappedPage
+            CurrentPage = Page.RoutesName mapPage
             CurrentPageModel = PageModel.RoutesName pageModel
             CurrentLayout = layout
             CurrentLayoutName = LayoutName.RoutesLayoutName
-            PageModelByLayout = Map.change LayoutName.RoutesLayoutName (fun _ -> Some (Page.RoutesName mappedPage)) model.PageModelByLayout
+            PageModelByLayout = Map.change LayoutName.RoutesLayoutName (fun _ -> Some (Page.RoutesName mapPage)) model.PageModelByLayout
     },
     Command.batch [
         sharedCmd
@@ -820,8 +821,8 @@ let update (msg: Msg) (model: Model) =
                 Cmd.none
     | PageMsg pageMsg ->
         match model.CurrentPage, pageMsg, model.CurrentPageModel with
-        | Page.RoutesName mappedPage, PageMsg.RoutesNameMsg pageMsg', PageModel.RoutesName pageModel ->
-            let pageModel, pageCmd = mappedPage.Update pageMsg' pageModel
+        | Page.RoutesName mapPage, PageMsg.RoutesNameMsg pageMsg', PageModel.RoutesName pageModel ->
+            let pageModel, pageCmd = (mapPage model.Shared).Update pageMsg' pageModel
             {
                 model with
                     CurrentPageModel = PageModel.RoutesName pageModel
@@ -837,7 +838,8 @@ let update (msg: Msg) (model: Model) =
             |> function
                 | Some p ->
                     match p, model.CurrentPageModel, layoutMsg with
-                    | Page.RoutesName mappedPage, PageModel.RoutesName m, LayoutMsg.RoutesLayoutNameMsg layoutMsg' ->
+                    | Page.RoutesName mapPage, PageModel.RoutesName m, LayoutMsg.RoutesLayoutNameMsg layoutMsg' ->
+                        let mappedPage = mapPage model.Shared
                         let pageMsg = mappedPage.LayoutMsgToPageMsg layoutMsg'
                         let m, cmd = mappedPage.Update pageMsg m
                         { model with

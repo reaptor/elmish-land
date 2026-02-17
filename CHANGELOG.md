@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0 beta 9] - 2026-02-18
+### Fixed
+- Update function in page is not receiving the latest shared model value, see https://github.com/reaptor/elmish-land/issues/37
+
 ## [1.1.0 beta 8] - 2025-11-17
 ### Added
 - Upgraded nuget dependencies for scaffolded projects (by `init` command) to:
