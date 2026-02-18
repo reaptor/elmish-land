@@ -4,8 +4,10 @@ module TestUtils
 
 open System
 open System.IO
+open System.Text
 open System.Diagnostics
 open System.Text.Json
+open System.Runtime.InteropServices
 
 let runCommand (command: string) (args: string) =
     let psi = ProcessStartInfo()
@@ -15,22 +17,29 @@ let runCommand (command: string) (args: string) =
     psi.RedirectStandardOutput <- true
     psi.RedirectStandardError <- true
 
-    use proc = Process.Start(psi)
+
+    let output = StringBuilder()
+    let error = StringBuilder()
+
+    use proc = new Process()
+    proc.StartInfo <- psi
+    proc.OutputDataReceived.Add(fun e -> output.AppendLine e.Data |> ignore)
+    proc.ErrorDataReceived.Add(fun e -> error.AppendLine e.Data |> ignore)
+    proc.Start() |> ignore
+    proc.BeginOutputReadLine()
+    proc.BeginErrorReadLine()
 
     // Add timeout to prevent hanging
     let timeoutMs = 120000 // 2 minutes
 
     if not (proc.WaitForExit(timeoutMs)) then
         proc.Kill()
-        failwith $"Command timed out after {timeoutMs}ms: {command} {args}"
-
-    let output = proc.StandardOutput.ReadToEnd()
-    let error = proc.StandardError.ReadToEnd()
+        failwith $"Command timed out after {timeoutMs}ms: {command} {args}\nOutput: {output}\nError: {error}"
 
     if proc.ExitCode <> 0 then
         failwith $"Command failed with exit code {proc.ExitCode}:\nOutput: {output}\nError: {error}"
 
-    output
+    output.ToString()
 
 let runElmishLandCommand (args: string) =
     runCommand "dotnet" $"../../../src/bin/Release/net8.0/elmish-land.dll {args}"
@@ -119,14 +128,13 @@ let checkDotnetVersionInstalled (dirPath: string) =
                 let isVersionInstalled = installedVersionsOutput.Contains(requiredVersion)
 
                 if isVersionInstalled then
-                    printStep $"✅ Required dotnet SDK version {requiredVersion} is installed"
                     Ok()
                 else
                     Error $"Required dotnet SDK version '{requiredVersion}' is not installed."
         with ex ->
             Error $"Failed to process global.json: {ex.Message}"
 
-let buildWithDotnetBuild (dirName: string) =
+let buildWithElmishLand (dirName: string) =
     let originalDir = Directory.GetCurrentDirectory()
 
     try
@@ -135,9 +143,19 @@ let buildWithDotnetBuild (dirName: string) =
         // Check if required dotnet version is installed
         match checkDotnetVersionInstalled "." with
         | Ok() ->
-            let result = runCommand "dotnet" "build"
+            let npmCommand =
+                if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+                    @"C:\Program Files\nodejs\npm.cmd"
+                else
+                    "/usr/local/bin/npm"
+
+            let npmResult = runCommand npmCommand "install"
+
+            let result =
+                runCommand "dotnet" "run --project ../../src/elmish-land.fsproj -- build --verbose"
+
             Directory.SetCurrentDirectory(originalDir)
-            Ok result
+            Ok $"npm install:\n{npmResult}\n\nelmish-land:\n{result}"
         | Error err ->
             Directory.SetCurrentDirectory(originalDir)
             Error err

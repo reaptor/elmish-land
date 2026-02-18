@@ -277,7 +277,6 @@ let initCliCommands workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (_
 
         // Generate solution file
         log.Debug("Generating solution file")
-        let solutionName = $"%s{ProjectName.asString projectName}.sln"
 
         do!
             runProcess
@@ -288,6 +287,17 @@ let initCliCommands workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (_
                 CancellationToken.None
                 ignore
             |> Effect.map ignore<string * string>
+
+        let projectDir =
+            AbsoluteProjectDir.asFilePath absoluteProjectDir |> FilePath.asString
+
+        let solutionName =
+            if File.Exists(Path.Combine(projectDir, $"%s{ProjectName.asString projectName}.slnx")) then
+                $"%s{ProjectName.asString projectName}.slnx"
+            else
+                $"%s{ProjectName.asString projectName}.sln"
+
+        log.Debug("Detected solution file: {}", solutionName)
 
         // Add projects to solution in the specified order
         let projectsToAdd = [

@@ -11,17 +11,26 @@ printStep "Testing solution file generation during init..."
 cleanupAndCreateTestDir "TestProject"
 
 printStep "Running elmish-land init..."
-runElmishLandCommand "init" |> ignore
+runElmishLandCommand "init --auto-accept" |> ignore
 
 printStep "Verifying solution file was created..."
-verifyFileExists "TestProject.sln" "Solution file"
+
+let solutionFile =
+    if File.Exists("TestProject.slnx") then
+        "TestProject.slnx"
+    elif File.Exists("TestProject.sln") then
+        "TestProject.sln"
+    else
+        failwith "No solution file (TestProject.sln or TestProject.slnx) was created"
+
+printSuccess $"Solution file {solutionFile} exists"
 
 printStep "Verifying projects are added to solution..."
 
 // Check if all expected projects are in the solution file
 let expectedProjectNames = [ "ElmishLand.TestProject.Base"; "TestProject"; "ElmishLand.TestProject.App" ]
 
-let solutionContent = File.ReadAllText("TestProject.sln")
+let solutionContent = File.ReadAllText(solutionFile)
 
 for projectName in expectedProjectNames do
     if solutionContent.Contains(projectName) then

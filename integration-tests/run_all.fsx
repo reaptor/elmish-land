@@ -33,7 +33,7 @@ for dirName in testDirectories do
         elif hasFsProjFile dirName then
             printStep $"Building F# project: {dirName}"
 
-            match buildWithDotnetBuild dirName with
+            match buildWithElmishLand dirName with
             | Ok output ->
                 succeeded <- dirName :: succeeded
                 printfn ""
