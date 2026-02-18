@@ -4,12 +4,10 @@
     <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="FSharp.Compiler.Service" Version="43.9.303" />
+    <PackageVersion Include="FSharp.Compiler.Service" Version="43.10.103" />
     <PackageVersion Include="Handlebars.Net" Version="2.1.4" />
-    <PackageVersion Include="Ionide.ProjInfo" Version="0.71.2" />
-    <PackageVersion Include="Ionide.ProjInfo.FCS" Version="0.71.2" />
-    <PackageVersion Include="Microsoft.Build.Framework" Version="17.14.8" />
-    <PackageVersion Include="NuGet.Frameworks" Version="6.14.0" />
+    <PackageVersion Include="Ionide.ProjInfo" Version="0.74.1" />
+    <PackageVersion Include="Ionide.ProjInfo.FCS" Version="0.74.1" />
     <PackageVersion Include="Orsak" Version="0.4.2" />
     <PackageVersion Include="Thoth.Json.Net" Version="12.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />

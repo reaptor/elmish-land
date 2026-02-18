@@ -45,4 +45,4 @@ Reordered Compile entries:
 [0m[32m  + src\Pages\Page.fs (moved to end of directory)
 [0m..."""
 
-    Assert.Equal(expectedPreview, preview)
+    Assert.Equal(expectedPreview.Replace("\r\n", "\n"), preview.Replace("\r\n", "\n"))

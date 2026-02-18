@@ -25,7 +25,7 @@ let leadingWhitespace (s: string) =
 
     s.Substring(0, i)
 
-let dotnetSdkVersion = DotnetSdkVersion(Version(9, 0, 100))
+let dotnetSdkVersion = DotnetSdkVersion(Version(10, 0, 103))
 
 let withEmptyProjectFolder (f: AbsoluteProjectDir -> Task<_>) : Task<unit> =
     task {

@@ -21,15 +21,15 @@ dotnet restore
 Run elmish-land locally in development with the following commands:
 
 ```bash
-dotnet run --framework net9.0 -- init <project_dir>
+dotnet run --framework net8.0 -- init <project_dir>
 ```
 
 ```bash
-dotnet run --framework net9.0 -- server <project_dir>
+dotnet run --framework net8.0 -- server <project_dir>
 ```
 
 ```bash
-dotnet run --framework net9.0 -- build <project_dir>
+dotnet run --framework net8.0 -- build <project_dir>
 ```
 
 `<project_dir>` can be a relative path eg. `../TestProject`
