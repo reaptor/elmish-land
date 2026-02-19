@@ -8,7 +8,6 @@
         <RollForward>Major</RollForward>
         <RootNamespace>ElmishLand</RootNamespace>
         <PackAsTool>true</PackAsTool>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <PackageId>elmish-land</PackageId>
         <AssemblyName>elmish-land</AssemblyName>
         <ToolCommandName>elmish-land</ToolCommandName>
