@@ -49,6 +49,7 @@ let fableWatch absoluteProjectDir stopSpinner =
         let cancellationSource = new CancellationTokenSource()
         let mutable isViteReady = false
         let mutable hasReadyMessageBeenPrinted = false
+        let mutable showAllOutput = false
         let viteReadyOutputBuilder = StringBuilder()
 
         let outputHandler (output: string) =
@@ -69,51 +70,35 @@ let fableWatch absoluteProjectDir stopSpinner =
             if isViteReady && urlStart >= 0 && not hasReadyMessageBeenPrinted then
                 stopSpinner ()
                 hasReadyMessageBeenPrinted <- true
+                showAllOutput <- true
                 let localUrl = viteReadyOutput.Substring(urlStart).Trim()
                 Console.WriteLine(getCommandHeader $"development server is running at %s{localUrl}.")
                 Console.WriteLine "Ctrl-C to stop."
+            elif showAllOutput && not isVerbose then
+                Console.WriteLine(output)
+            elif not isVerbose then
+                let result = FableOutput.processOutput output "" false
 
-            if not isVerbose then
-                // Check for Vite HMR update messages and rewrite them
-                if output.Contains("[vite]") && output.Contains("hmr update") then
-                    // Extract timestamp (supports various formats)
-                    // Matches patterns like: "9:07:02 PM", "21:07:02", "9:07 PM", "21:07", "21:07:02.123"
-                    let timestampPattern = @"^\s*(\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:\s*[AP]M)?)"
+                if result.Errors.Length > 0 then
+                    stopSpinner ()
+                    showAllOutput <- true
 
-                    let timestampMatch =
-                        System.Text.RegularExpressions.Regex.Match(output, timestampPattern)
+                for error in result.Errors do
+                    Console.ForegroundColor <- ConsoleColor.Red
+                    Console.WriteLine(error)
+                    Console.ResetColor()
 
-                    // Extract the file path after "hmr update"
-                    let hmrIndex = output.IndexOf("hmr update")
+                for warning in result.Warnings do
+                    Console.ForegroundColor <- ConsoleColor.Yellow
+                    Console.WriteLine(warning)
+                    Console.ResetColor()
 
-                    if timestampMatch.Success && hmrIndex >= 0 then
-                        let timestamp = timestampMatch.Groups.[1].Value.Trim()
-                        let filePath = output.Substring(hmrIndex + "hmr update".Length).Trim()
-                        Console.WriteLine($"%s{timestamp} Updated %s{filePath}")
-                    else
-                        // Fallback: just show the cleaned message if parsing fails
-                        Console.WriteLine(output)
-                else
-                    // In non-verbose mode, display errors and warnings with colors
-                    let result = FableOutput.processOutput output "" false
+                if result.Warnings.Length > 0 then
+                    stopSpinner ()
+                    showAllOutput <- true
 
-                    if result.Errors.Length > 0 then
-                        stopSpinner ()
-                        cancellationSource.Cancel()
-
-                    for error in result.Errors do
-                        Console.ForegroundColor <- ConsoleColor.Red
-                        Console.WriteLine(error)
-                        Console.ResetColor()
-
-                    for warning in result.Warnings do
-                        Console.ForegroundColor <- ConsoleColor.Yellow
-                        Console.WriteLine(warning)
-                        Console.ResetColor()
-
-                    // Prompt for auto-fix if there are layout mismatches
-                    if result.LayoutMismatches.Length > 0 then
-                        FableOutput.promptForAutoFix result.LayoutMismatches |> ignore
+                if result.LayoutMismatches.Length > 0 then
+                    FableOutput.promptForAutoFix result.LayoutMismatches |> ignore
 
         return!
             runProcess
