@@ -322,11 +322,19 @@ let initCliCommands workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (_
         let dotnetToolsJsonPath =
             workingDirectory |> FilePath.appendParts [ ".config"; "dotnet-tools.json" ]
 
-        let hasDotnetTool name =
-            let filepath = FilePath.asString dotnetToolsJsonPath
+        let rootDotnetToolsJsonPath =
+            workingDirectory |> FilePath.appendParts [ "dotnet-tools.json" ]
+
+        let fileContainsTool name (path: FilePath) =
+            let filepath = FilePath.asString path
             File.Exists filepath && (File.ReadAllText filepath).Contains($"\"%s{name}\"")
 
-        let dotnetToolJsonExists = FilePath.exists dotnetToolsJsonPath
+        let hasDotnetTool name =
+            fileContainsTool name dotnetToolsJsonPath
+            || fileContainsTool name rootDotnetToolsJsonPath
+
+        let dotnetToolJsonExists =
+            FilePath.exists dotnetToolsJsonPath || FilePath.exists rootDotnetToolsJsonPath
 
         do!
             [
