@@ -4,6 +4,7 @@ open System.IO
 open System.Text
 open ElmishLand.Base
 open ElmishLand.Generate
+open ElmishLand.Settings
 open Runner
 open TestProjectGeneration
 open Xunit
@@ -115,4 +116,39 @@ let ``Changing routeMode to "path" generates correct App.fs, Routes.fs and Comma
 
             Expects.ok logs result
             Expects.routeModeIsPath workingDir
+        })
+
+[<Fact>]
+let ``Default fable settings have server noCache false and build noCache true`` () =
+    withNewProject (fun projectDir _ ->
+        task {
+            let! result, logs = getSettings projectDir |> runEff
+
+            let settings = Expects.ok logs result
+            Expects.equals false settings.Fable.Server.NoCache
+            Expects.equals true settings.Fable.Build.NoCache
+        })
+
+[<Fact>]
+let ``Custom fable settings are parsed from elmish-land.json`` () =
+    withNewProject (fun projectDir _ ->
+        task {
+            let workingDir = AbsoluteProjectDir.asString projectDir
+            let filepath = Path.Combine(workingDir, "elmish-land.json")
+
+            File.WriteAllText(
+                filepath,
+                """{
+                  "fable": {
+                    "server": { "noCache": true },
+                    "build": { "noCache": false }
+                  }
+                }"""
+            )
+
+            let! result, logs = getSettings projectDir |> runEff
+
+            let settings = Expects.ok logs result
+            Expects.equals true settings.Fable.Server.NoCache
+            Expects.equals false settings.Fable.Build.NoCache
         })

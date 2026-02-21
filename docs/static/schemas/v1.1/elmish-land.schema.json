@@ -75,6 +75,37 @@
       "description": "Experimental, may change or be removed in the future! Custom command to run when executing 'elmish-land server'. The string is split on whitespace - first token is the executable, remaining tokens are arguments.\n\nExample: \"npm run dev\" will execute npm with arguments [\"run\", \"dev\"]",
       "minLength": 1
     },
+    "fable": {
+      "type": "object",
+      "description": "Configures Fable compiler options per command",
+      "properties": {
+        "server": {
+          "type": "object",
+          "description": "Fable options for the 'elmish-land server' command",
+          "properties": {
+            "noCache": {
+              "type": "boolean",
+              "default": false,
+              "description": "When true, passes --noCache to Fable to disable compilation cache during development"
+            }
+          },
+          "additionalProperties": false
+        },
+        "build": {
+          "type": "object",
+          "description": "Fable options for the 'elmish-land build' command",
+          "properties": {
+            "noCache": {
+              "type": "boolean",
+              "default": true,
+              "description": "When true, passes --noCache to Fable to disable compilation cache during production builds"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "viewType": {
       "type": "string",
       "default": "ReactElement",

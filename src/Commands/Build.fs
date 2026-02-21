@@ -12,6 +12,7 @@ open ElmishLand.FsProj
 open ElmishLand.Process
 open ElmishLand.Generate
 open ElmishLand.FableOutput
+open ElmishLand.Settings
 open Orsak
 
 let successMessage =
@@ -19,7 +20,7 @@ let successMessage =
 Your app was saved in the 'dist' directory.
 """
 
-let fableBuild absoluteProjectDir isVerbose =
+let fableBuild absoluteProjectDir isVerbose noCache =
     let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir
 
     let appFsproj =
@@ -39,7 +40,8 @@ let fableBuild absoluteProjectDir isVerbose =
         [|
             "fable"
             appFsproj
-            "--noCache"
+            if noCache then
+                "--noCache"
             "--run"
             "vite"
             "build"
@@ -66,8 +68,10 @@ let build workingDirectory absoluteProjectDir (promptBehaviour: UserPromptBehavi
                     do! validate absoluteProjectDir promptBehaviour
                     do! ensureViteInstalled workingDirectory
 
+                    let! settings = getSettings absoluteProjectDir
+
                     let! result =
-                        fableBuild absoluteProjectDir isVerbose
+                        fableBuild absoluteProjectDir isVerbose settings.Fable.Build.NoCache
                         |> Effect.map Ok
                         |> Effect.onError (fun e -> eff { return Error e })
 
@@ -97,7 +101,7 @@ let build workingDirectory absoluteProjectDir (promptBehaviour: UserPromptBehavi
                                 |> Effect.map ignore
 
                             do!
-                                fableBuild absoluteProjectDir isVerbose
+                                fableBuild absoluteProjectDir isVerbose settings.Fable.Build.NoCache
                                 |> Effect.map (fun (stdout2, stderr2) ->
                                     if not isVerbose then
                                         let result = FableOutput.processOutput stdout2 stderr2 isVerbose

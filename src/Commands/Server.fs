@@ -39,7 +39,8 @@ let fableWatch absoluteProjectDir stopSpinner =
                     "fable"
                     "watch"
                     appFsproj
-                    "--noCache"
+                    if settings.Fable.Server.NoCache then
+                        "--noCache"
                     "--run"
                     "vite"
                     "--config"

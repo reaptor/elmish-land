@@ -83,12 +83,20 @@ type ProgramSettings = {
     RouteMode: RouteMode
 }
 
+type FableCommandSettings = { NoCache: bool }
+
+type FableSettings = {
+    Server: FableCommandSettings
+    Build: FableCommandSettings
+}
+
 type Settings = {
     View: ViewSettings
     ProjectReferences: string list
     RouteSettings: RouteParameters
     ServerCommand: (string * string array) option
     Program: ProgramSettings
+    Fable: FableSettings
 }
 
 let elmishLandSettingsDecoder pageSettings =
@@ -152,6 +160,26 @@ let elmishLandSettingsDecoder pageSettings =
                 RenderTargetElementId = "app"
                 RouteMode = Hash
             })
+        Fable =
+            let decodeFableCommand defaultNoCache =
+                Decode.object (fun get -> {
+                    NoCache = get.Optional.Field "noCache" Decode.bool |> Option.defaultValue defaultNoCache
+                })
+
+            get.Optional.Field
+                "fable"
+                (Decode.object (fun get -> {
+                    Server =
+                        get.Optional.Field "server" (decodeFableCommand false)
+                        |> Option.defaultValue { NoCache = false }
+                    Build =
+                        get.Optional.Field "build" (decodeFableCommand true)
+                        |> Option.defaultValue { NoCache = true }
+                }))
+            |> Option.defaultValue {
+                Server = { NoCache = false }
+                Build = { NoCache = true }
+            }
     })
 
 let getSettings absoluteProjectDir =
