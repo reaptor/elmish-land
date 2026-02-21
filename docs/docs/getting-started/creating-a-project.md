@@ -7,10 +7,8 @@ sidebar_position: 2
 ## Prerequisites
 Before initiating a project, ensure that your development environment includes:
 
-* **[.NET SDK](https://dotnet.microsoft.com/)**: Version 6.0 or higher is required, with version 9.0 recommended.​
+* **[.NET SDK](https://dotnet.microsoft.com/)**: Version 8.0 or higher is required, with version 10.0 recommended.​
 * **[Node.js](https://nodejs.org/)**: Version 18.0 or above is necessary. Utilizing a version manager like nvm can assist in handling multiple Node.js versions on a single machine.​
-
-When installing Node.js, it's advisable to select all checkboxes related to dependencies to ensure a comprehensive setup.
 
 
 ## Setting Up a New Project
@@ -32,12 +30,16 @@ dotnet tool install elmish-land --create-manifest-if-needed
 dotnet elmish-land init
 ```
 
+The init command will prompt you to choose between **hash routing** (default) and **path routing** for your project.
+
 ### 4. Launch the Development Server:
 ```bash
 dotnet elmish-land server
 ```
 
-Executing `dotnet elmish-land init` scaffolds a new project within the `MyProject` directory. Subsequently, running `dotnetn elmish-land server` initiates the development server, accessible at `http://localhost:5173`.​
+Executing `dotnet elmish-land init` scaffolds a new project within the `MyProject` directory. Subsequently, running `dotnet elmish-land server` initiates the development server, accessible at `http://localhost:5173`.​
+
+You can also use `npm start` as a shortcut for `dotnet elmish-land server`, and `npm run build` for `dotnet elmish-land build`, since the scaffolded `package.json` includes these scripts.
 
 For community support, collaboration, or to seek assistance, consider joining the [Elmish Land Discord](https://discord.gg/jQ26cZH3fU). We are eager to see the innovative applications you'll develop with Elmish Land!​
 

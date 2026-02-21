@@ -29,7 +29,7 @@ dotnet elmish-land add page "/About"
 
 💡 **Note**: The page path should be in file system format `/MyProfile` and ***not*** URL format `/my-profile`.
 
-### Automatic project management <AddedIn version="1.1.0-beta.1" />
+### Automatic project management <AddedIn version="1.1.0" />
 The `add page` command will automatically add the page to your project file in the correct compilation order.
 
 :::warning

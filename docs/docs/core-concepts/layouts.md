@@ -18,7 +18,7 @@ dotnet elmish-land add layout "/MyProfile"
 
 💡 **Note**: The layout path should be in file system format `/MyProfile` and ***not*** URL format `/my-profile`.
 
-### Automatic project management <AddedIn version="1.1.0-beta.1" />
+### Automatic project management <AddedIn version="1.1.0" />
 The `add layout` command will automatically add the layout to your project file in the correct compilation order. If you're adding a layout to a folder that already contains pages, those pages will be automatically updated to reference the new layout.
 
 :::warning

@@ -21,7 +21,15 @@ The `elmish-land.json` file in your project root configures various aspects of y
     "type": "ReactElement",
     "textElement": "Html.text"
   },
-  "projectReferences": []
+  "projectReferences": [],
+  "fable": {
+    "server": {
+      "noCache": false
+    },
+    "build": {
+      "noCache": true
+    }
+  }
 }
 ```
 
@@ -31,7 +39,7 @@ The `elmish-land.json` file in your project root configures various aspects of y
 
 Controls how your Elmish Land application renders and behaves at runtime.
 
-#### program.renderMethod<AddedIn version="1.1.0-beta.6" />
+#### program.renderMethod<AddedIn version="1.1.0" />
 
 **Type:** `"synchronous"` | `"batched"`
 **Default:** `"synchronous"`
@@ -49,7 +57,7 @@ Configures the React render method used by your application:
 }
 ```
 
-#### program.renderTargetElementId<AddedIn version="1.1.0-beta.6" />
+#### program.renderTargetElementId<AddedIn version="1.1.0" />
 
 **Type:** `string`
 **Default:** `"app"`
@@ -72,7 +80,7 @@ When using a custom element ID, ensure your HTML contains the matching element:
 </body>
 ```
 
-#### program.routeMode<AddedIn version="1.1.0-beta.7" />
+#### program.routeMode<AddedIn version="1.1.0" />
 
 **Type:** `"hash"` | `"path"`
 **Default:** `"hash"`
@@ -175,3 +183,34 @@ Common use cases include:
 - Creating shared libraries for business logic
 - Defining custom types for [route and query parameters](/docs/api-reference/route-config#custom-types)
 - Using a custom view type
+
+### fable<AddedIn version="1.1.0" />
+
+Configures [Fable](https://fable.io/) compiler options for the `server` and `build` commands. This allows you to control whether Fable uses its compilation cache.
+
+#### fable.server.noCache
+
+**Type:** `boolean`
+**Default:** `false`
+
+When `true`, passes `--noCache` to Fable to disable the compilation cache during development. By default, caching is enabled for the `server` command to provide faster recompilation during development.
+
+#### fable.build.noCache
+
+**Type:** `boolean`
+**Default:** `true`
+
+When `true`, passes `--noCache` to Fable to disable the compilation cache during production builds. By default, caching is disabled for the `build` command to ensure clean, reproducible output.
+
+```js
+{
+  "fable": {
+    "server": {
+      "noCache": false
+    },
+    "build": {
+      "noCache": true
+    }
+  }
+}
+```

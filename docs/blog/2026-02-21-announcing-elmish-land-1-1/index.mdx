@@ -1,0 +1,164 @@
+---
+slug: announcing-elmish-land-1-1
+title: Announcing Elmish Land 1.1
+authors: [klofberg]
+---
+
+# Elmish Land 1.1
+
+Version 1.1 of Elmish Land is here! After 11 beta releases since September 2025, this version brings smarter CLI tooling, new configuration options, and async workflow support. Here's everything that changed since 1.0.
+
+<!-- truncate -->
+
+## Automatic Project File Management
+
+F# requires explicit file ordering in `.fsproj` files. Version 1.0 made you handle this manually whenever you added pages or layouts. Version 1.1 automates it entirely ([#29](https://github.com/reaptor/elmish-land/issues/29)).
+
+When you add pages or layouts, the CLI now:
+- Adds files to your project in the correct order
+- Maintains compilation dependencies
+- Preserves existing Content entries
+- Handles mixed path separators correctly
+
+## Interactive Prompts
+
+The CLI now offers to fix common problems instead of just reporting them.
+
+### Layout Reference Fixes
+
+When you run `build` or `server`, the CLI validates layout references. If a page uses `Layout.Msg` when it should use `About.Layout.Msg`, you get a clear error message identifying the page and the issue. The CLI then offers to fix it automatically with an interactive prompt.
+
+### Page Reordering
+
+When files need reordering in your project for correct compilation order, the CLI shows a preview of the changes and asks for confirmation before making updates.
+
+## Configurable Routing Mode
+
+Elmish Land now supports two routing modes via `elmish-land.json` ([#36](https://github.com/reaptor/elmish-land/issues/36)):
+
+```js
+{
+  "program": {
+    "routeMode": "hash"
+  }
+}
+```
+
+- **`hash`** (default) — Hash-based URLs like `example.com/#/about`. Works everywhere without server configuration.
+- **`path`** — Clean URLs like `example.com/about`. Requires server configuration to redirect all routes to `index.html`.
+
+When running `dotnet elmish-land init`, you'll be prompted to choose your preferred routing mode.
+
+## Configurable React Render Method
+
+You can now configure how React renders your application:
+
+```js
+{
+  "program": {
+    "renderMethod": "synchronous"
+  }
+}
+```
+
+- **`synchronous`** (default) — Renders are triggered immediately after each update. Recommended for most apps, especially with controlled inputs.
+- **`batched`** — Batches renders using `requestAnimationFrame` for smoother frame rates. Note: this may have unexpected effects with React controlled inputs ([elmish/react#12](https://github.com/elmish/react/issues/12)).
+
+## Configurable Render Target
+
+Customize which HTML element your app mounts to:
+
+```js
+{
+  "program": {
+    "renderTargetElementId": "root"
+  }
+}
+```
+
+The default is `"app"`, matching the `<div id="app"></div>` in your `index.html`.
+
+## Configurable Fable noCache
+
+Control the Fable compiler's caching behavior separately for development and production:
+
+```js
+{
+  "fable": {
+    "server": { "noCache": false },
+    "build": { "noCache": true }
+  }
+}
+```
+
+By default, caching is enabled during development (`server`) and disabled for production builds (`build`). Useful when caching causes stale compilation issues.
+
+## Command.ofAsync and Command.tryOfAsync
+
+Version 1.1 adds support for F# async workflows in the Command module, providing native F# alternatives to the promise-based commands. These work seamlessly with [Fable.Remoting](https://github.com/Zaid-Ajaj/Fable.Remoting) and any F# library that returns `Async<'T>`.
+
+```fsharp
+let update msg model =
+    match msg with
+    | LoadWeather ->
+        { model with Loading = true },
+        Command.tryOfAsync
+            weatherApi.getWeatherForecast
+            ()
+            WeatherLoaded
+            LoadError
+```
+
+`Command.ofAsync` dispatches a success message or throws on failure. `Command.tryOfAsync` dispatches separate messages for success and error, making it the safer choice for production code.
+
+## Solution File Generation
+
+Running `init` now generates a solution file automatically ([#22](https://github.com/reaptor/elmish-land/issues/22)), improving the experience in Visual Studio, Rider, and VS Code with Ionide.
+
+## Better Feedback
+
+Commands like `init`, `build`, `restore`, and `server` now show loading indicators. Use `--verbose` for detailed output.
+
+## Upgraded Dependencies
+
+Scaffolded projects (created by `init`) now use updated dependencies:
+- `FSharp.Core` 10.0.100
+- `Fable.Elmish` 5.0.2 (replaces the `Elmish` package)
+- `Fable.Elmish.HMR` 8.0.0
+- `Fable.Elmish.React` 5.0.0
+- `Vite` 7
+
+## Bug Fixes
+
+- Commands from `Shared.init` now work properly ([#34](https://github.com/reaptor/elmish-land/issues/34))
+- Fixed nested layout assignment issues ([#21](https://github.com/reaptor/elmish-land/issues/21))
+- Route parameters can use F# keywords like "new" ([#25](https://github.com/reaptor/elmish-land/issues/25))
+- Validation only checks pages included in the project file ([#28](https://github.com/reaptor/elmish-land/issues/28))
+- Fixed Shared module command handling ([#27](https://github.com/reaptor/elmish-land/issues/27))
+- `dotnet elmish-land server` no longer hangs in certain situations
+- Static routes now correctly take precedence over dynamic routes ([#35](https://github.com/reaptor/elmish-land/issues/35))
+- Page update function now receives the latest shared model value ([#37](https://github.com/reaptor/elmish-land/issues/37))
+- Support for `.slnx` solution file format ([#38](https://github.com/reaptor/elmish-land/issues/38))
+- `init` command detects `dotnet-tools.json` in project root directory
+
+## Getting Started
+
+Update your installation:
+
+```bash
+dotnet tool update elmish-land
+```
+
+Or install fresh:
+
+```bash
+dotnet new tool-manifest
+dotnet tool install elmish-land
+dotnet elmish-land init
+```
+
+No breaking changes — all 1.0.x projects are fully compatible with 1.1.
+
+---
+
+*Elmish Land is a framework for building F# browser apps with Fable, React, and Elmish. [GitHub repository](https://github.com/reaptor/elmish-land)*
