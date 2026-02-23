@@ -130,6 +130,7 @@ Here's how data flows between the layers:
      └───────────┘
 ```
 
+- **Shared** model is passed to page and layout functions
 - **Shared** state flows down to layouts and pages
 - [**Pages**](/docs/core-concepts/pages) can send messages up to [Shared](/docs/core-concepts/shared) via [`Command.ofShared`](/docs/api-reference/command-module)
 - [**Pages**](/docs/core-concepts/pages) can send messages to their [Layout](/docs/core-concepts/layouts) via [`Command.ofLayout`](/docs/api-reference/command-module)
