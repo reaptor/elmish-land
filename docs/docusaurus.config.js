@@ -9,7 +9,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
     title: 'Elmish Land',
-    tagline: 'Easy and scalable web apps for F# developers',
+    tagline: 'Build reliable, type-safe web applications with the power of F# and the Elm Architecture.',
     favicon: 'img/favicon.ico',
 
     // Set the production url of your site here
@@ -129,9 +129,15 @@ const config = {
                 items: [
                     {
                         type: 'docSidebar',
-                        sidebarId: 'tutorialSidebar',
+                        sidebarId: 'learnSidebar',
                         position: 'left',
-                        label: 'Docs',
+                        label: 'Learn',
+                    },
+                    {
+                        type: 'docSidebar',
+                        sidebarId: 'referenceSidebar',
+                        position: 'left',
+                        label: 'Reference',
                     },
                     { to: '/blog', label: 'Blog', position: 'left' },
                     {

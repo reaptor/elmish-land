@@ -1,0 +1,252 @@
+.browserFrame {
+  background: var(--ifm-background-surface-color);
+  border-radius: 10px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.titleBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--ifm-color-emphasis-100);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dotRed {
+  background: #ff5f57;
+}
+
+.dotYellow {
+  background: #ffbd2e;
+}
+
+.dotGreen {
+  background: #28c840;
+}
+
+.titleBarText {
+  flex: 1;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--ifm-color-emphasis-600);
+  font-weight: 500;
+}
+
+.previewBody {
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+/* Counter Preview */
+.counterUI {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.counterBtn {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 2px solid var(--ifm-color-primary);
+  background: transparent;
+  color: var(--ifm-color-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.counterBtn:hover {
+  background: var(--ifm-color-primary);
+  color: white;
+}
+
+.counterValue {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--ifm-font-color-base);
+  min-width: 60px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* File Tree Preview */
+.fileTreeLayout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0.5rem;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  overflow-x: auto;
+}
+
+.fileTreeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fileTreeItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ifm-font-color-base);
+  white-space: nowrap;
+}
+
+.fileTreeIndent {
+  display: inline-block;
+  width: 1.2rem;
+}
+
+.fileTreeIcon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.routeArrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  color: var(--ifm-color-emphasis-600);
+}
+
+.routeArrowIcon {
+  color: var(--ifm-color-primary);
+  font-weight: bold;
+}
+
+.routePath {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  color: var(--ifm-color-primary);
+  font-weight: 500;
+}
+
+/* Type-Safe Preview */
+.typeSafeLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  padding: 0.5rem;
+  overflow-x: auto;
+}
+
+.urlBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--ifm-color-emphasis-100);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.85rem;
+}
+
+.urlLock {
+  color: var(--ifm-color-primary);
+  font-size: 0.8rem;
+}
+
+.urlText {
+  color: var(--ifm-color-emphasis-700);
+}
+
+.urlParam {
+  color: var(--ifm-color-primary);
+  font-weight: 600;
+}
+
+.typedRouteBox {
+  background: var(--ifm-color-emphasis-100);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.typedRouteTitle {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ifm-color-emphasis-600);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.typedField {
+  color: var(--ifm-font-color-base);
+}
+
+.typedFieldName {
+  color: var(--ifm-color-primary);
+}
+
+.typedFieldType {
+  color: var(--ifm-color-emphasis-600);
+}
+
+.typedFieldValue {
+  color: var(--ifm-color-primary-dark);
+  font-weight: 600;
+}
+
+@media screen and (max-width: 500px) {
+  .previewBody {
+    padding: 1.25rem;
+    min-height: 160px;
+  }
+
+  .counterValue {
+    font-size: 2rem;
+  }
+
+  .counterBtn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+
+  .fileTreeLayout {
+    font-size: 0.78rem;
+  }
+
+  .typeSafeLayout {
+    font-size: 0.78rem;
+  }
+
+  .urlBar {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .typedRouteBox {
+    font-size: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+}

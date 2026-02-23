@@ -1,11 +1,95 @@
-.features {
-  display: flex;
-  align-items: center;
-  padding: 2rem 0;
-  width: 100%;
+.featureSection {
+  padding: 4rem 0;
 }
 
-.featureSvg {
-  height: 200px;
-  width: 200px;
+.featureSectionAlt {
+  background: var(--section-bg-alt, var(--ifm-color-emphasis-100));
+}
+
+.sectionHeader {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 2.5rem;
+}
+
+.sectionHeading {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.sectionDescription {
+  font-size: 1.1rem;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.6;
+}
+
+.sectionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.sectionGridCentered {
+  grid-template-columns: 1fr;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.codeColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.codeColumn :global(.theme-code-block),
+.codeColumn :global(.prism-code) {
+  background: white !important;
+}
+
+:global([data-theme='dark']) .codeColumn :global(.theme-code-block),
+:global([data-theme='dark']) .codeColumn :global(.prism-code) {
+  background: #1e1e1e !important;
+}
+
+.previewColumn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.sectionCta {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+@media screen and (max-width: 996px) {
+  .featureSection {
+    padding: 3rem 0;
+  }
+
+  .sectionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeading {
+    font-size: 1.6rem;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .featureSection {
+    padding: 2rem 0;
+  }
+
+  .sectionHeading {
+    font-size: 1.3rem;
+  }
+
+  .sectionDescription {
+    font-size: 1rem;
+  }
 }

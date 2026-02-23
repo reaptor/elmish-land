@@ -1,68 +1,54 @@
+import React from 'react';
 import clsx from 'clsx';
 import Heading from '@theme/Heading';
+import Link from '@docusaurus/Link';
+import CodeBlock from '@theme/CodeBlock';
 import styles from './styles.module.css';
 
-const FeatureList = [
-  {
-    url: '/docs/getting-started/creating-a-project',
-    title: 'Easy to Use',
-    // Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
-    description: (
-      <>
-        Elmish Land was designed from the ground up to be easily installed and
-        used to get your web app up and running quickly.
-      </>
-    ),
-  },
-  {
-    url: '/docs/core-concepts/routing',
-    title: 'File based router',
-    // Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
-    description: (
-      <>
-        The router removes the hurde of manually hooking up all your pages and URLs.
-        Elmish Land does this automatically for you based on file based conventions.
-      </>
-    ),
-  },
-  {
-    url: '/docs/core-concepts/routing#type-safe-routing',
-    title: 'Type-Safe Routing',
-    // Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
-    description: (
-      <>
-        Use type-safe route and query parameters. This ensures that route parameters
-        are correctly typed and parsed, reducing runtime errors and improving code reliability.
-      </>
-    ),
-  },
-];
-
-function Feature({url, title, description}) {
+export default function FeatureSection({
+  heading,
+  description,
+  codeBlocks,
+  PreviewComponent,
+  backgroundVariant = 'default',
+  ctaLink,
+  ctaText,
+}) {
   return (
-    <div className={clsx('col col--4')}>
-      {/* <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
-      </div> */}
-      <div className="text--center padding-horiz--md">
-        <a href={url} className='featureLink'>
-            <Heading as="h3">{title}</Heading>
-            <p>{description}</p>
-        </a>
-      </div>
-    </div>
-  );
-}
-
-export default function HomepageFeatures() {
-  return (
-    <section className={styles.features}>
+    <section
+      className={clsx(
+        styles.featureSection,
+        backgroundVariant === 'alt' && styles.featureSectionAlt
+      )}
+    >
       <div className="container">
-        <div className="row">
-          {FeatureList.map((props, idx) => (
-            <Feature key={idx} {...props} />
-          ))}
+        <div className={styles.sectionHeader}>
+          <Heading as="h2" className={styles.sectionHeading}>
+            {heading}
+          </Heading>
+          <p className={styles.sectionDescription}>{description}</p>
         </div>
+        <div className={clsx(styles.sectionGrid, !codeBlocks && styles.sectionGridCentered)}>
+          {codeBlocks && (
+            <div className={styles.codeColumn}>
+              {codeBlocks.map((block, i) => (
+                <CodeBlock key={i} language={block.language} title={block.title}>
+                  {block.content}
+                </CodeBlock>
+              ))}
+            </div>
+          )}
+          <div className={styles.previewColumn}>
+            <PreviewComponent />
+          </div>
+        </div>
+        {ctaLink && ctaText && (
+          <div className={styles.sectionCta}>
+            <Link className="button button--primary button--md" to={ctaLink}>
+              {ctaText}
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

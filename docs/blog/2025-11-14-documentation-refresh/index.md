@@ -9,6 +9,8 @@ draft: false
 
 The Elmish Land documentation has been refreshed with a new API Reference section, improved organization, and enhanced content.
 
+<!-- truncate -->
+
 ## API Reference
 
 The [API Reference](/docs/api-reference/app-config) section documents all modules, functions, and configuration options with:

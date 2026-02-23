@@ -32,6 +32,16 @@ dotnet elmish-land init
 
 The init command will prompt you to choose between **hash routing** (default) and **path routing** for your project.
 
+:::info
+
+**Hash routing** uses URLs like `http://localhost:5173/#/about`. It works everywhere without any server configuration, making it ideal for static hosting (GitHub Pages, Netlify, etc.).
+
+**Path routing** uses cleaner URLs like `http://localhost:5173/about`, but requires server-side configuration to redirect all requests to `index.html`.
+
+If you're unsure, choose **hash routing** (the default). You can change this later in your `elmish-land.json` configuration file.
+
+:::
+
 ### 4. Launch the Development Server:
 ```bash
 dotnet elmish-land server

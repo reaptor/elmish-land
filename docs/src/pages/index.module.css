@@ -4,50 +4,165 @@
  */
 
 .heroBanner {
-  padding: 4rem 0;
+  padding: 6rem 0;
   text-align: center;
   position: relative;
   overflow: hidden;
 }
 
-.hero__title {
-    color: white;
-    margin-inline: 20%;
-    font-size: 3rem;
-}
-
 .logo {
-    width: 200px;
-    height: 200px;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 1.5rem;
 }
 
-@media screen and (max-width: 1500px) {
-    .hero__title {
-      font-size: 2rem;
-    }
-  }
-
-@media screen and (max-width: 950px) {
- .hero__title {
-    font-size: 1.8rem;
- }
+.heroTitle {
+  color: #444;
+  margin-inline: 20%;
+  font-size: 4.5rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
 }
 
-@media screen and (max-width: 800px) {
-    .hero__title {
-       font-size: 1.5rem;
-       margin-inline: 0;
-    }
-   }
-
-@media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 2rem;
-  }
+.heroSubtitle {
+  font-size: 1.5rem;
+  font-weight: 400;
+  opacity: 0.8;
+  margin-inline: 20%;
+  margin-bottom: 2rem;
 }
 
 .buttons {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 1rem;
+}
+
+.buttonOutline {
+  background: transparent;
+  border: 2px solid var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+}
+
+.buttonOutline:hover {
+  background: var(--ifm-color-primary);
+  color: white;
+}
+
+@media screen and (max-width: 1500px) {
+  .heroTitle {
+    font-size: 3.5rem;
+  }
+
+  .heroSubtitle {
+    font-size: 1.3rem;
+  }
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 3rem 2rem;
+  }
+}
+
+@media screen and (max-width: 950px) {
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+
+  .heroSubtitle {
+    font-size: 1.2rem;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .heroTitle {
+    font-size: 2rem;
+    margin-inline: 0;
+  }
+
+  .heroSubtitle {
+    font-size: 1.1rem;
+    margin-inline: 0;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .buttons {
+    flex-direction: column;
+  }
+
+  .copyCommand {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.75rem;
+  }
+}
+
+.copyCommand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 1rem;
+  color: #666;
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.copyCommand:hover {
+  color: #333;
+  border-color: #999;
+}
+
+.copyCommand:focus-visible {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 2px;
+}
+
+:global([data-theme='dark']) .copyCommand {
+  color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+:global([data-theme='dark']) .copyCommand:hover {
+  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.copyCommandPrefix {
+  user-select: none;
+  opacity: 0.5;
+}
+
+.copyCommandText {
+  user-select: all;
+}
+
+.copyCommandIcon {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.25rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.copyCommand:hover .copyCommandIcon {
+  opacity: 1;
+}
+
+.closingCta {
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.closingLogo {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 1rem;
 }
