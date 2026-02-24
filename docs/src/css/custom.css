@@ -108,3 +108,163 @@ html,
 body {
     overflow-x: hidden;
 }
+
+/* ---------------------------------------- */
+/* Local search theme overrides             */
+/* ---------------------------------------- */
+
+/* Light mode — match Infima green primary (#2e8555 = 46, 133, 85) */
+:root {
+    --aa-primary-color-rgb: 46, 133, 85 !important;
+    --aa-primary-color-alpha: 0.15 !important;
+    --aa-selected-color-rgb: 46, 133, 85 !important;
+    --aa-selected-color-alpha: 0.1 !important;
+    --aa-muted-color-rgb: 150, 155, 160 !important;
+    --aa-input-border-color-rgb: 200, 204, 209 !important;
+    --aa-input-border-color-alpha: 1 !important;
+    --aa-panel-border-color-rgb: 218, 221, 225 !important;
+    --aa-icon-color-rgb: 150, 155, 160 !important;
+    --aa-background-color-rgb: 255, 255, 255 !important;
+    --aa-input-background-color-rgb: 255, 255, 255 !important;
+    --aa-text-color-rgb: 28, 30, 33 !important;
+    --aa-panel-shadow: 0 4px 24px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Dark mode — match Infima teal primary (#25c2a0 = 37, 194, 160) */
+body[data-theme='dark'] {
+    --aa-primary-color-rgb: 37, 194, 160 !important;
+    --aa-primary-color-alpha: 0.15 !important;
+    --aa-selected-color-rgb: 37, 194, 160 !important;
+    --aa-selected-color-alpha: 0.12 !important;
+    --aa-muted-color-rgb: 150, 155, 165 !important;
+    --aa-muted-color-alpha: 0.8 !important;
+    --aa-input-border-color-rgb: 68, 73, 80 !important;
+    --aa-input-border-color-alpha: 1 !important;
+    --aa-panel-border-color-rgb: 68, 73, 80 !important;
+    --aa-background-color-rgb: 34, 39, 46 !important;
+    --aa-input-background-color-rgb: 27, 31, 36 !important;
+    --aa-text-color-rgb: 227, 227, 227 !important;
+    --aa-icon-color-rgb: 140, 145, 155 !important;
+    --aa-overlay-color-rgb: 0, 0, 0 !important;
+    --aa-overlay-color-alpha: 0.5 !important;
+    --aa-scrollbar-track-background-color-rgb: 45, 50, 58 !important;
+    --aa-panel-shadow: 0 4px 24px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Search wrapper in navbar */
+.navbar .dsla-search-wrapper {
+    width: 260px;
+}
+
+@media (max-width: 996px) {
+    .navbar .dsla-search-wrapper {
+        width: auto;
+    }
+
+    .dsla-search-wrapper .aa-DetachedSearchButton {
+        width: 36px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    .dsla-search-wrapper .aa-DetachedSearchButtonIcon {
+        width: auto;
+        padding: 0;
+    }
+
+    .dsla-search-wrapper .aa-DetachedSearchButtonPlaceholder,
+    .dsla-search-wrapper .aa-DetachedSearchButtonQuery {
+        display: none;
+    }
+}
+
+.dsla-search-wrapper .aa-DetachedSearchButton {
+    border-radius: 40px;
+    height: 36px;
+    font-size: 0.875rem;
+    padding: 0 16px;
+    width: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+[data-theme='dark'] .dsla-search-wrapper .aa-DetachedSearchButton {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dsla-search-wrapper .aa-DetachedSearchButton:hover {
+    border-color: var(--ifm-color-primary);
+}
+
+[data-theme='dark'] .dsla-search-wrapper .aa-DetachedSearchButton:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Detached modal — rounded corners, better sizing */
+.aa-DetachedContainer--modal {
+    border-radius: 12px !important;
+    top: 15% !important;
+    max-width: 620px !important;
+}
+
+/* Search input inside modal */
+.aa-DetachedFormContainer {
+    padding: 12px !important;
+    border-bottom: 1px solid rgba(var(--aa-panel-border-color-rgb), 0.4) !important;
+}
+
+.aa-DetachedFormContainer .aa-Form {
+    border-radius: 8px;
+}
+
+/* Cancel button */
+.aa-DetachedCancelButton {
+    font-size: 0.875rem;
+    border-radius: 6px;
+    padding: 0 12px;
+}
+
+/* Results panel */
+.aa-DetachedContainer .aa-Panel {
+    padding: 4px 0;
+}
+
+/* Individual result items */
+.aa-Item {
+    border-radius: 6px !important;
+    margin: 2px 8px !important;
+    padding: 8px 12px !important;
+}
+
+.aa-ItemLink {
+    gap: 12px !important;
+}
+
+/* Result title */
+.aa-ItemContentTitle {
+    font-size: 0.925rem;
+    font-weight: 500;
+}
+
+/* Result description / breadcrumb */
+.aa-ItemContentDescription {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+/* "No results" message */
+.aa-SourceNoResults {
+    padding: 24px 16px !important;
+    text-align: center;
+    color: rgba(var(--aa-muted-color-rgb), var(--aa-muted-color-alpha));
+    font-size: 0.9rem;
+}
+
+/* Overlay */
+.aa-DetachedOverlay {
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+}

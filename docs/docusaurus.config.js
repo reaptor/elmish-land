@@ -108,6 +108,18 @@ const config = {
         ],
     ],
 
+    themes: [
+        [
+            require.resolve("@cmfcmf/docusaurus-search-local"),
+            {
+                indexBlog: true,
+                indexDocs: true,
+                indexPages: false,
+                language: "en",
+            },
+        ],
+    ],
+
     themeConfig:
         /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
         ({
@@ -141,8 +153,17 @@ const config = {
                     },
                     { to: '/blog', label: 'Blog', position: 'left' },
                     {
+                        type: 'search',
+                        position: 'right',
+                    },
+                    {
                         href: 'https://github.com/reaptor/elmish-land',
                         label: 'GitHub',
+                        position: 'right',
+                    },
+                    {
+                        href: 'https://discord.gg/jQ26cZH3fU',
+                        label: 'Discord',
                         position: 'right',
                     },
                 ],
