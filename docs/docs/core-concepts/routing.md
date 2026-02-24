@@ -38,7 +38,7 @@ src/
 
 ## Types of Routes in Elmish Land
 
-Elmish Land supports multiple routing types, ordered below from most to least specific:
+Elmish Land supports multiple routing types, ordered below from least to most specific:
 
 | Route Type       | Example URL      | Description                                     |
 |------------------|------------------|-------------------------------------------------|
@@ -47,11 +47,6 @@ Elmish Land supports multiple routing types, ordered below from most to least sp
 | Route parameters | `/#people/:id`    | Dynamically maps multiple URLs to a page.       |
 | Query parameters | `/#people?id=:id` | Passes arguments to a page via query strings.   |
 
-:::info
-
-At the moment Elmish Land only support routes with a hash sign (#) eg `/#about`.
-
-:::
 
 ## Root page
 
