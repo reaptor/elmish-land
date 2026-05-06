@@ -1,5 +1,6 @@
 module ElmishLand.Upgrade
 
+open System
 open System.IO
 open System.Text.RegularExpressions
 open System.Threading
@@ -22,6 +23,112 @@ let successMessage () =
 dotnet elmish-land server"""
 
     getFormattedCommandOutput header content
+
+// === Source-level transformations from Feliz 2 to Feliz 3 ===
+
+/// Whole-identifier renames. The matcher uses identifier boundaries on both sides,
+/// so it won't touch a longer name that starts with the old one (e.g. React.fragmentExtra)
+/// and re-running the upgrade on already-upgraded code is a no-op.
+let felizCodeReplacements = [
+    // Components moved to PascalCase
+    "React.fragment", "React.Fragment"
+    "React.keyedFragment", "React.KeyedFragment"
+    "React.imported", "React.Imported"
+    "React.dynamicImported", "React.DynamicImported"
+    "React.strictMode", "React.StrictMode"
+    "React.suspense", "React.Suspense"
+    // Helpers relocated to the FsReact namespace
+    "React.createDisposable", "FsReact.createDisposable"
+    "React.useDisposable", "FsReact.useDisposable"
+    "React.useCancellationToken", "FsReact.useCancellationToken"
+]
+
+let private wholeIdentRegex (oldName: string) =
+    Regex("(?<![A-Za-z0-9_])" + Regex.Escape(oldName) + "(?![A-Za-z0-9_'])")
+
+/// Apply the Feliz 2 → 3 source replacements to a file's contents.
+/// Returns the new contents and the number of replacements made.
+let upgradeFelizSource (content: string) : string * int =
+    let mutable text = content
+    let mutable changes = 0
+
+    for oldName, newName in felizCodeReplacements do
+        let rx = wholeIdentRegex oldName
+        let matches = rx.Matches(text)
+
+        if matches.Count > 0 then
+            changes <- changes + matches.Count
+            text <- rx.Replace(text, newName)
+
+    text, changes
+
+type ManualMigration = {
+    Line: int
+    Pattern: string
+    Message: string
+    DocsUrl: string
+}
+
+let private memoNeedsReview = Regex(@"\bReact\.memo\b(?!Renderer)")
+let private lazyNeedsReview = Regex(@"\bReact\.lazy'")
+
+let private contextNeedsReview =
+    Regex(@"\bReact\.(contextProvider|contextConsumer)\b")
+
+let felizUpgradeDocsBase = "https://fable-hub.github.io/Feliz/api-docs/Upgrade"
+
+/// Find code patterns that require manual migration after Feliz 2 → 3.
+let detectManualMigrations (content: string) : ManualMigration list = [
+    let lines = content.Replace("\r\n", "\n").Split('\n')
+
+    for i, line in Array.indexed lines do
+        if memoNeedsReview.IsMatch(line) then
+            yield {
+                Line = i + 1
+                Pattern = "React.memo"
+                Message = "React.memo now requires explicit React.memoRenderer call sites at usage points"
+                DocsUrl = $"%s{felizUpgradeDocsBase}#reactmemo"
+            }
+
+        if lazyNeedsReview.IsMatch(line) then
+            yield {
+                Line = i + 1
+                Pattern = "React.lazy'"
+                Message = "React.lazy' now requires explicit React.lazyRender call sites at usage points"
+                DocsUrl = $"%s{felizUpgradeDocsBase}#reactlazy"
+            }
+
+        if contextNeedsReview.IsMatch(line) then
+            yield {
+                Line = i + 1
+                Pattern = "React.context*"
+                Message = "React.context API redesigned - use ContextName.Provider(...) / ContextName.Consumer(...)"
+                DocsUrl = $"%s{felizUpgradeDocsBase}#reactcontext"
+            }
+]
+
+let private isUserSourceFile (relPath: string) =
+    let p = relPath.Replace("\\", "/")
+
+    p.EndsWith(".fs", StringComparison.OrdinalIgnoreCase)
+    && not (p.Contains("/.elmish-land/"))
+    && not (p.StartsWith(".elmish-land/"))
+    && not (p.Contains("/bin/"))
+    && not (p.Contains("/obj/"))
+    && not (p.Contains("/node_modules/"))
+    && not (p.Contains("/fable_modules/"))
+
+let private enumerateUserSourceFiles (projectRoot: string) =
+    if not (Directory.Exists projectRoot) then
+        Seq.empty
+    else
+        Directory.EnumerateFiles(projectRoot, "*.fs", SearchOption.AllDirectories)
+        |> Seq.filter (fun full ->
+            let rel = Path.GetRelativePath(projectRoot, full).Replace("\\", "/")
+
+            isUserSourceFile rel)
+
+// === File-version updaters (kept from v2's runtime version resolution flow) ===
 
 let private updateNpmDependencyVersion (name: string) (version: string) (json: string) =
     let escapedName = Regex.Escape name
@@ -173,6 +280,44 @@ let upgradeFiles workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (dotn
                     File.WriteAllText(FilePath.asString path, json)
     }
 
+/// Apply the Feliz 2 → 3 source-level renames across the project's user .fs files,
+/// and collect any patterns that require manual migration. Skips generated and
+/// tooling directories.
+let upgradeUserSourceFiles (absoluteProjectDir: AbsoluteProjectDir) =
+    eff {
+        let! log = Log().Get()
+
+        let projectRoot = AbsoluteProjectDir.asString absoluteProjectDir
+        let mutable totalCodeChanges = 0
+        let manualNeeded = ResizeArray<string * ManualMigration>()
+
+        for path in enumerateUserSourceFiles projectRoot do
+            let original = File.ReadAllText(path)
+            let updated, changes = upgradeFelizSource original
+
+            if changes > 0 then
+                File.WriteAllText(path, updated)
+                totalCodeChanges <- totalCodeChanges + changes
+
+                let rel = Path.GetRelativePath(projectRoot, path)
+                log.Debug("Updated {} ({} replacement(s))", rel, changes)
+
+            for issue in detectManualMigrations updated do
+                let rel = Path.GetRelativePath(projectRoot, path)
+                manualNeeded.Add(rel, issue)
+
+        log.Info $"  • %d{totalCodeChanges} automatic code replacement(s) applied"
+        log.Info $"  • %d{manualNeeded.Count} location(s) need manual review"
+
+        if manualNeeded.Count > 0 then
+            log.Info ""
+            log.Info "Manual migration required:"
+
+            for rel, issue in manualNeeded do
+                log.Info $"  • %s{rel}:%d{issue.Line} — %s{issue.Message}"
+                log.Info $"      see %s{issue.DocsUrl}"
+    }
+
 let upgradeCliCommands _workingDirectory (absoluteProjectDir: AbsoluteProjectDir) =
     let isVerbose = System.Environment.CommandLine.Contains("--verbose")
 
@@ -213,6 +358,7 @@ let upgrade workingDirectory (absoluteProjectDir: AbsoluteProjectDir) =
             withSpinner "Upgrading your project..." (fun _ ->
                 eff {
                     do! upgradeFiles workingDirectory absoluteProjectDir dotnetSdkVersion
+                    do! upgradeUserSourceFiles absoluteProjectDir
                     do! generate workingDirectory absoluteProjectDir dotnetSdkVersion
                     do! upgradeCliCommands workingDirectory absoluteProjectDir
                 })

@@ -21,6 +21,7 @@
     <Compile Include="FsProjReorderPagesTests.fs" />
     <Compile Include="SharedModuleTests.fs" />
     <Compile Include="SettingsTests.fs" />
+    <Compile Include="UpgradeTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
