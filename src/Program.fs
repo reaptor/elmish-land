@@ -2,6 +2,7 @@
 
 open System
 open System.IO
+open System.Net.Http
 open ElmishLand.Effect
 open Orsak
 open ElmishLand.Log
@@ -13,6 +14,7 @@ open ElmishLand.Server
 open ElmishLand.Build
 open ElmishLand.AddPage
 open ElmishLand.AddLayout
+open ElmishLand.Upgrade
 
 let (|NotFlag|_|) (x: string) =
     if x.StartsWith("--") || x.StartsWith("-") then
@@ -41,6 +43,7 @@ let run argv =
             | "server" :: _ -> server workingDir absoluteProjectDir (getPromptAcceptFlag argv)
             | "build" :: _ -> build workingDir absoluteProjectDir (getPromptAcceptFlag argv)
             | "restore" :: _ -> restore workingDir absoluteProjectDir (getPromptAcceptFlag argv)
+            | "upgrade" :: _ -> upgrade workingDir absoluteProjectDir
             | "add" :: "page" :: NotFlag url :: _ ->
                 addPage workingDir absoluteProjectDir url (getPromptAcceptFlag argv)
             | "add" :: "layout" :: NotFlag url :: _ ->
@@ -123,6 +126,7 @@ https://nodejs.org/
             log.Error
                 """The main layout file is missing. Create it with "dotnet elmish-land add layout /"'.
 """
+        | PackageVersionResolutionFailed e -> log.Error e
 
         -1
 
@@ -135,6 +139,17 @@ let main argv =
             |> Effect.run
                 { new IEffectEnv with
                     member _.GetLogger(memberName, path, line) = ConsoleLogger(memberName, path, line)
+
+                    member _.GetAsync(url) =
+                        task {
+                            try
+                                let c = new HttpClient()
+                                c.DefaultRequestHeaders.UserAgent.ParseAdd("elmish-land")
+                                let! response = c.GetStringAsync(url)
+                                return Ok response
+                            with ex ->
+                                return Error(PackageVersionResolutionFailed $"Failed to fetch %s{url}: %s{ex.Message}")
+                        }
                 }
 
         return handleAppResult (ConsoleLogger("", "", 0)) ignore result

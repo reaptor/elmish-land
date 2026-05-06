@@ -16,8 +16,8 @@ let dotElmishLandDirectory absoluteProjectDir =
     |> AbsoluteProjectDir.asFilePath
     |> FilePath.appendParts [ ".elmish-land" ]
 
-let getNugetPackageVersions () =
-    nugetDependencies
+let getNugetPackageVersions (resolvedDependencies: (string * string) seq) =
+    resolvedDependencies
     |> Seq.map (fun (name, ver) -> $"        <PackageVersion Include=\"%s{name}\" Version=\"%s{ver}\" />")
     |> String.concat "\n"
     |> fun deps -> $"<ItemGroup>\n%s{deps}\n    </ItemGroup>"

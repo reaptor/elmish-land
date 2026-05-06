@@ -8,6 +8,7 @@ open ElmishLand.FsProj
 open ElmishLand.AddPage
 open ElmishLand.AddLayout
 open ElmishLand.Init
+open ElmishLand.Upgrade
 open ElmishLand.TemplateEngine
 open Runner
 open Xunit
@@ -683,6 +684,7 @@ let ``Init command with UserPromptBehaviour Accept, initializes project with rou
                             absoluteProjectDir
                             dotnetSdkVersion
                             nodeVersion
+                            (promptForRouteMode AutoAccept)
                             AutoAccept
 
                     return routeData
@@ -706,6 +708,7 @@ let ``Init command with UserPromptBehaviour Decline, initializes project with ro
                             absoluteProjectDir
                             dotnetSdkVersion
                             nodeVersion
+                            (promptForRouteMode AutoDecline)
                             AutoDecline
 
                     return routeData
@@ -734,4 +737,226 @@ let ``Ensure orphan page files are reported as validation errors`` () =
                     "The page 'src/Pages/Hello/Me/Page.fs' is missing from the project file"
                     (String.concat " " errors)
             | other -> failwith $"Expected validation error 'missing from the project file'. Got %A{other}"
+        })
+
+[<Fact>]
+let ``upgradeFiles updates Directory.Packages.props versions and preserves user-added entries`` () =
+    withNewProject (fun absoluteProjectDir _ ->
+        task {
+            let folder = AbsoluteProjectDir.asString absoluteProjectDir
+            let propsPath = Path.Combine(folder, "Directory.Packages.props")
+
+            // Pin FSharp.Core to a stale version, add a user-added package and a comment.
+            // None of these should be lost by upgrade.
+            let original = File.ReadAllText(propsPath)
+
+            let staleFSharpCore =
+                System.Text.RegularExpressions.Regex.Replace(
+                    original,
+                    """<PackageVersion Include="FSharp\.Core" Version="[^"]*"\s*/>""",
+                    "<!-- pinned by upgrade test -->\n        <PackageVersion Include=\"FSharp.Core\" Version=\"0.0.0\" />\n        <PackageVersion Include=\"Newtonsoft.Json\" Version=\"13.0.3\" />"
+                )
+
+            File.WriteAllText(propsPath, staleFSharpCore)
+
+            let! result, logs =
+                runEff (
+                    upgradeFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir dotnetSdkVersion
+                )
+
+            Expects.ok logs result |> ignore
+
+            let updated = File.ReadAllText(propsPath)
+
+            // Managed package version was bumped (away from "0.0.0")
+            Assert.False(updated.Contains("Version=\"0.0.0\""), $"FSharp.Core 0.0.0 should be replaced.\n%s{updated}")
+
+            Assert.Contains("<PackageVersion Include=\"FSharp.Core\"", updated)
+
+            // All managed deps present after upgrade
+            for name, _major in nugetDependencies do
+                Assert.True(
+                    updated.Contains($"<PackageVersion Include=\"%s{name}\""),
+                    $"Directory.Packages.props should contain PackageVersion for %s{name}\n%s{updated}"
+                )
+
+            // User-added package preserved
+            Assert.Contains("<PackageVersion Include=\"Newtonsoft.Json\" Version=\"13.0.3\"", updated)
+
+            // User-added comment preserved
+            Assert.Contains("<!-- pinned by upgrade test -->", updated)
+
+            // User-defined property group still intact
+            Assert.Contains("ManagePackageVersionsCentrally", updated)
+        })
+
+[<Fact>]
+let ``upgradeFiles adds a managed package to Directory.Packages.props when missing`` () =
+    withNewProject (fun absoluteProjectDir _ ->
+        task {
+            let folder = AbsoluteProjectDir.asString absoluteProjectDir
+            let propsPath = Path.Combine(folder, "Directory.Packages.props")
+
+            // Drop FSharp.Core entirely to simulate an older project without it
+            let original = File.ReadAllText(propsPath)
+
+            let withoutFSharpCore =
+                System.Text.RegularExpressions.Regex.Replace(
+                    original,
+                    """<PackageVersion Include="FSharp\.Core" Version="[^"]*"\s*/>\s*""",
+                    ""
+                )
+
+            File.WriteAllText(propsPath, withoutFSharpCore)
+            Assert.DoesNotContain("FSharp.Core", File.ReadAllText(propsPath))
+
+            let! result, logs =
+                runEff (
+                    upgradeFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir dotnetSdkVersion
+                )
+
+            Expects.ok logs result |> ignore
+
+            let updated = File.ReadAllText(propsPath)
+            Assert.Contains("<PackageVersion Include=\"FSharp.Core\"", updated)
+        })
+
+[<Fact>]
+let ``upgradeFiles updates package.json versions and preserves user-added dependencies`` () =
+    withNewProject (fun absoluteProjectDir _ ->
+        task {
+            let folder = AbsoluteProjectDir.asString absoluteProjectDir
+            let packageJsonPath = Path.Combine(folder, "package.json")
+
+            // Pin react to an older version and add a custom user dep
+            let original = File.ReadAllText(packageJsonPath)
+
+            let modified =
+                original
+                    .Replace("\"react\": \"^19", "\"react\": \"^1")
+                    .Replace("\"dependencies\": {", "\"dependencies\": {\n    \"lodash\": \"^4.17.21\",")
+
+            File.WriteAllText(packageJsonPath, modified)
+
+            let! result, logs =
+                runEff (
+                    upgradeFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir dotnetSdkVersion
+                )
+
+            Expects.ok logs result |> ignore
+
+            let updated = File.ReadAllText(packageJsonPath)
+
+            // react bumped back to ^19.x (mock returns 19.99.0)
+            Assert.Contains("\"react\": \"^19.99.0\"", updated)
+            Assert.Contains("\"react-dom\": \"^19.99.0\"", updated)
+            // vite (devDependency) bumped to ^8.x
+            Assert.Contains("\"vite\": \"^8.99.0\"", updated)
+            // user dep is preserved
+            Assert.Contains("\"lodash\": \"^4.17.21\"", updated)
+        })
+
+[<Fact>]
+let ``upgradeFiles updates dotnet-tools.json version while preserving user-added tools`` () =
+    withNewProject (fun absoluteProjectDir _ ->
+        task {
+            let folder = AbsoluteProjectDir.asString absoluteProjectDir
+            let configDir = Path.Combine(folder, ".config")
+            Directory.CreateDirectory(configDir) |> ignore
+            let toolsPath = Path.Combine(configDir, "dotnet-tools.json")
+
+            File.WriteAllText(
+                toolsPath,
+                """{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "fable": {
+      "version": "0.0.1",
+      "commands": ["fable"],
+      "rollForward": false
+    },
+    "fantomas": {
+      "version": "7.0.3",
+      "commands": ["fantomas"],
+      "rollForward": false
+    }
+  }
+}
+"""
+            )
+
+            let! result, logs =
+                runEff (
+                    upgradeFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir dotnetSdkVersion
+                )
+
+            Expects.ok logs result |> ignore
+
+            let updated = File.ReadAllText(toolsPath)
+
+            // Stale fable version should be gone
+            Assert.False(updated.Contains("\"version\": \"0.0.1\""), "fable should be upgraded from 0.0.1")
+            // fable entry still present
+            Assert.Contains("\"fable\":", updated)
+            // unmanaged tool fantomas preserved
+            Assert.Contains("\"fantomas\":", updated)
+            Assert.Contains("\"version\": \"7.0.3\"", updated)
+        })
+
+[<Fact>]
+let ``upgradeFiles updates global.json sdk version while preserving other fields`` () =
+    withNewProject (fun absoluteProjectDir _ ->
+        task {
+            let folder = AbsoluteProjectDir.asString absoluteProjectDir
+            let globalJsonPath = Path.Combine(folder, "global.json")
+
+            File.WriteAllText(
+                globalJsonPath,
+                """{
+  "sdk": {
+    "version": "1.0.0",
+    "rollForward": "latestFeature",
+    "allowPrerelease": false
+  },
+  "msbuild-sdks": {
+    "Some.Custom.Sdk": "2.3.4"
+  }
+}
+"""
+            )
+
+            let! result, logs =
+                runEff (
+                    upgradeFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir dotnetSdkVersion
+                )
+
+            Expects.ok logs result |> ignore
+
+            let updated = File.ReadAllText(globalJsonPath)
+            Assert.Contains(DotnetSdkVersion.asString dotnetSdkVersion, updated)
+            Assert.False(updated.Contains("\"1.0.0\""), "Old SDK pin should be replaced")
+            // Other sdk fields preserved
+            Assert.Contains("\"rollForward\": \"latestFeature\"", updated)
+            Assert.Contains("\"allowPrerelease\": false", updated)
+            // User's msbuild-sdks block preserved
+            Assert.Contains("\"msbuild-sdks\"", updated)
+            Assert.Contains("\"Some.Custom.Sdk\": \"2.3.4\"", updated)
+        })
+
+[<Fact>]
+let ``upgradeFiles fails with ElmishLandProjectMissing when elmish-land.json is absent`` () =
+    withEmptyProjectFolder (fun absoluteProjectDir ->
+        task {
+            Directory.CreateDirectory(AbsoluteProjectDir.asString absoluteProjectDir)
+            |> ignore
+
+            let! result, _logs =
+                runEff (
+                    upgradeFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir dotnetSdkVersion
+                )
+
+            match result with
+            | Error ElmishLandProjectMissing -> ()
+            | other -> Assert.Fail($"Expected ElmishLandProjectMissing. Got %A{other}")
         })

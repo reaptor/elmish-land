@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0 beta 1] - 2026-05-05
+
+> **Breaking change release.** The dependency upgrades below — in particular Feliz 3, Fable 5, and vite 8 — contain breaking changes that may require updates to your application code. See the [2.0 preview blog post](https://elmish.land/blog/announcing-elmish-land-2-0-preview) for the list of upstream breaking changes and migration tips.
+
+### Changed
+- **Breaking**: Scaffolded projects (created by `init`) now target Fable 5 and the matching ecosystem majors. Each of these is a major release with breaking changes — review your application code after upgrading:
+  - Fable dotnet tool: major version `5` (upgraded from `4`) — requires .NET 10 SDK; `FABLE_COMPILER_4` directive renamed to `FABLE_COMPILER_5`; legacy Buildalyzer cracker removed
+  - `Feliz`: major version `3` (upgraded from `2`) — `React.memo` now requires a paired `React.memoRender`; implicit single-record-argument transform for `[<ReactComponent>]` removed; React hook signatures realigned with React's API
+  - `Fable.Elmish.HMR`: major version `9` (upgraded from `8`) — no API changes, but pulls in Fable 5 / Elmish 5
+  - `vite`: major version `8` (upgraded from `7`) — Rollup replaced by Rolldown (`rollupOptions` → `rolldownOptions`); default browser targets raised; CJS default-import semantics changed; JS/CSS minifiers swapped
+- **Breaking**: URL change handling in scaffolded apps moved from a `React.router` element to a subscription (`Router.subscribeToUrlChanges`), so the router no longer wraps the view tree. Application code that assumed the view was rendered inside a `React.router` element will need adjustment.
+- Scaffolded projects now include a vendored `Router.fs` (copy of Feliz Router) under `.elmish-land/Base/`, used by the new subscription-based URL change handling. The `Feliz.Router` NuGet dependency has been removed.
+
+### Added
+- Dynamic resolution of NuGet and npm package versions during `init` — the CLI now queries the NuGet and npm registries for the latest version matching each pinned major instead of hardcoding exact versions, so newly created projects always pick up the latest patch and minor releases without waiting for a new Elmish Land release.
+- New `upgrade` command (`dotnet elmish-land upgrade`) that brings an existing project up to the dependency versions used by the current Elmish Land release:
+  - Updates `Directory.Packages.props` (NuGet `PackageVersion` entries), preserving any user-added entries
+  - Updates `package.json` dependencies and devDependencies, preserving user-added packages
+  - Updates `.config/dotnet-tools.json` (or root `dotnet-tools.json`) tool versions, preserving user-added tools
+  - Updates the `sdk.version` in `global.json` to the latest installed .NET SDK
+  - Regenerates files under `.elmish-land/` and runs `dotnet restore` and `npm install` to apply the changes
+
+### Fixed
+- The interactive route-mode prompt during `init` is no longer interrupted by spinner output — the prompt now runs before the spinner starts
+- Removed F# compiler warning about unused query parameter binding for routes that don't define query parameters
+- Removed F# compiler warning about unused `msg` binding in the generated `sharedCommandToCmd` function
+
 ## [1.1.0] - 2026-02-21
 - Includes everything from 1.1.0 beta
 

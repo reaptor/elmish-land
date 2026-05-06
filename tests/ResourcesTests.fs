@@ -293,6 +293,7 @@ let Base_fsproj_template () =
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Router.fs"/>
         <Compile Include="Routes.fs"/>
         <Compile Include="Command.fs"/>
         <Compile Include="Layout.fs"/>
@@ -877,15 +878,21 @@ let view (model: Model) (dispatch: Msg -> unit) =
         match currentView with
         | Renderable x -> x.Render()
 
-    React.router [
-        router.hashMode
-        router.onUrlChanged (Route.parse >> RouteChanged >> dispatch)
-        router.children [ currentReactElement ]
-    ]
+    currentReactElement
+
+let private urlChangeSubscription _model : (string list * ((Msg -> unit) -> System.IDisposable)) list =
+    let routeMode =
+        Feliz.Router.RouteMode.Hash
+    [ [ "ElmishLand"; "UrlChanges" ],
+      fun dispatch ->
+          Feliz.Router.Router.subscribeToUrlChanges
+              routeMode
+              (Route.parse >> RouteChanged >> dispatch) ]
 
 let subscribe model =
     Sub.batch [
         Sub.map "Shared" SharedMsg (Shared.subscriptions model.Shared)
+        urlChangeSubscription model
         match model.CurrentLayout with
         | Layout.LayoutsName (props, m) -> Sub.map "LayoutLayoutsName" (LayoutMsg.LayoutsMsgName >> LayoutMsg) ((LayoutsModuleName.layout props model.CurrentRoute model.Shared).Subscriptions m)
         | _ -> Sub.none

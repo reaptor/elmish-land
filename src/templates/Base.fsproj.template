@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Router.fs"/>
         <Compile Include="Routes.fs"/>
         <Compile Include="Command.fs"/>
         <Compile Include="Layout.fs"/>

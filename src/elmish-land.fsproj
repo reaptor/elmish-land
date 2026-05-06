@@ -13,7 +13,7 @@
         <ToolCommandName>elmish-land</ToolCommandName>
         <PackageOutputPath>./nupkg</PackageOutputPath>
         <LangVersion>latest</LangVersion>
-        <Version>1.1.0</Version>
+        <Version>1.2.0-beta.1</Version>
     </PropertyGroup>
     <ItemGroup>
         <EmbeddedResource Include="templates\vite.config.js">
@@ -45,6 +45,9 @@
         </EmbeddedResource>
         <EmbeddedResource Include="templates\index.html.template">
             <LogicalName>index.html.template</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="templates\Router.template">
+            <LogicalName>Router.template</LogicalName>
         </EmbeddedResource>
         <EmbeddedResource Include="templates\Routes.template">
             <LogicalName>Routes.template</LogicalName>
@@ -80,6 +83,7 @@
         <Compile Include="Base.fs" />
         <Compile Include="Log.fs" />
         <Compile Include="Effect.fs" />
+        <Compile Include="PackageVersions.fs" />
         <Compile Include="Settings.fs" />
         <Compile Include="Process.fs" />
         <Compile Include="DotNetCli.fs" />
@@ -94,6 +98,7 @@
         <Compile Include="Commands\Server.fs" />
         <Compile Include="Commands\AddPage.fs" />
         <Compile Include="Commands\AddLayout.fs" />
+        <Compile Include="Commands\Upgrade.fs" />
         <Compile Include="Program.fs" />
 
         <Content Include="../README.md" Pack="true" PackagePath="\" />

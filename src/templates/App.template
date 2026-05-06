@@ -100,7 +100,7 @@ let rec sharedCommandToCmd (command: Command<SharedMsg, SharedMsg, _>): Cmd<Msg>
     | Command.Batch cmds -> Cmd.batch (List.map sharedCommandToCmd cmds)
     | Command.Cmd cmd -> Cmd.map SharedMsg cmd
     | Command.SharedMsg msg -> Cmd.ofMsg (SharedMsg msg)
-    | Command.LayoutMsg msg -> failwith "Layout messages should not occur in shared commands"
+    | Command.LayoutMsg _ -> failwith "Layout messages should not occur in shared commands"
 
 {{#each Layouts}}
 let get{{Name}}Layout currentLayout currentRoute sharedModel layoutProps =
@@ -283,27 +283,30 @@ let view (model: Model) (dispatch: Msg -> unit) =
         {{/each}}
         | Layout.None -> currentPageView
 
-    let currentReactElement =
-        {{#if ViewTypeIsReact}}
-        currentView
-        {{else}}
-        match currentView with
-        | Renderable x -> x.Render()
-        {{/if}}
+    {{#if ViewTypeIsReact}}
+    currentView
+    {{else}}
+    match currentView with
+    | Renderable x -> x.Render()
+    {{/if}}
 
-    React.router [
+let private urlChangeSubscription _model : (string list * ((Msg -> unit) -> System.IDisposable)) list =
+    let routeMode =
         {{#if UseRouterPathMode}}
-        router.pathMode
+        Feliz.Router.RouteMode.Path
         {{else}}
-        router.hashMode
+        Feliz.Router.RouteMode.Hash
         {{/if}}
-        router.onUrlChanged (Route.parse >> RouteChanged >> dispatch)
-        router.children [ currentReactElement ]
-    ]
+    [ [ "ElmishLand"; "UrlChanges" ],
+      fun dispatch ->
+          Feliz.Router.Router.subscribeToUrlChanges
+              routeMode
+              (Route.parse >> RouteChanged >> dispatch) ]
 
 let subscribe model =
     Sub.batch [
         Sub.map "Shared" SharedMsg (Shared.subscriptions model.Shared)
+        urlChangeSubscription model
         match model.CurrentLayout with
         {{#each Layouts}}
         | Layout.{{Name}} (props, m) -> Sub.map "Layout{{Name}}" (LayoutMsg.{{MsgName}} >> LayoutMsg) (({{ModuleName}}.layout props model.CurrentRoute model.Shared).Subscriptions m)

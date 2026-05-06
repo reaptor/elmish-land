@@ -15,6 +15,7 @@ open ElmishLand.Process
 open ElmishLand.AppError
 open ElmishLand.FsProj
 open ElmishLand.Generate
+open ElmishLand.PackageVersions
 
 let getNodeVersion workingDirectory =
     runProcess false workingDirectory "node" [| "-v" |] CancellationToken.None ignore
@@ -65,6 +66,7 @@ let initFiles
     (absoluteProjectDir: AbsoluteProjectDir)
     (dotnetSdkVersion: DotnetSdkVersion)
     (nodeVersion: Version)
+    (selectedRouteMode: string)
     (promptBehaviour: UserPromptBehaviour)
     =
     eff {
@@ -115,8 +117,6 @@ let initFiles
             [ ".vscode"; "settings.json" ]
             Settings_json
 
-        let selectedRouteMode = promptForRouteMode promptBehaviour
-
         writeResource<``elmish-land_json``>
             log
             (AbsoluteProjectDir.asFilePath absoluteProjectDir)
@@ -124,8 +124,10 @@ let initFiles
             [ "elmish-land.json" ]
             { RouteMode = selectedRouteMode }
 
+        let! resolvedNugetDependencies = resolveNugetDependencies nugetDependencies
+
         writeResource<Directory_Packages_props_template> log workingDirectory false [ "Directory.Packages.props" ] {
-            PackageVersions = getNugetPackageVersions ()
+            PackageVersions = getNugetPackageVersions resolvedNugetDependencies
         }
 
         writeResource<Project_fsproj_template>
@@ -138,13 +140,16 @@ let initFiles
                 ProjectName = ProjectName.asString projectName
             }
 
+        let! resolvedNpmDependencies = resolveNpmDependencies npmDependencies
+        let! resolvedNpmDevDependencies = resolveNpmDependencies npmDevDependencies
+
         let npmDependencies =
-            npmDependencies
+            resolvedNpmDependencies
             |> Seq.map (fun (name, ver) -> $"\"%s{name}\": \"^%s{ver}\"")
             |> String.concat ",\n    "
 
         let npmDevDependencies =
-            npmDevDependencies
+            resolvedNpmDevDependencies
             |> Seq.map (fun (name, ver) -> $"\"%s{name}\": \"^%s{ver}\"")
             |> String.concat ",\n    "
 
@@ -336,13 +341,15 @@ let initCliCommands workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (_
         let dotnetToolJsonExists =
             FilePath.exists dotnetToolsJsonPath || FilePath.exists rootDotnetToolsJsonPath
 
+        let! resolvedDotnetTools = resolveNugetDependencies (getDotnetToolDependencies ())
+
         do!
             [
                 if not dotnetToolJsonExists then
                     "dotnet", [| "new"; "tool-manifest" |]
-                for name, version in getDotnetToolDependencies () do
+                for name, version in resolvedDotnetTools do
                     if not <| hasDotnetTool name then
-                        "dotnet", [| "tool"; "install"; name; version |]
+                        "dotnet", [| "tool"; "install"; name; "--version"; version |]
             ]
             |> List.map (fun (cmd, args) ->
                 isVerbose, AbsoluteProjectDir.asFilePath absoluteProjectDir, cmd, args, CancellationToken.None, ignore)
@@ -380,12 +387,24 @@ let init workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (promptBehavi
         let! dotnetSdkVersion = getDotnetSdkVersion workingDirectory
         let! nodeVersion = getNodeVersion workingDirectory
 
-        // Create files without CLI commands
-        let! routeData = initFiles workingDirectory absoluteProjectDir dotnetSdkVersion nodeVersion promptBehaviour
+        // Prompt for route mode before starting the spinner so the prompt
+        // is not interrupted by spinner output.
+        let selectedRouteMode = promptForRouteMode promptBehaviour
 
         do!
             withSpinner "Creating your project..." (fun _ ->
-                initCliCommands workingDirectory absoluteProjectDir routeData)
+                eff {
+                    let! routeData =
+                        initFiles
+                            workingDirectory
+                            absoluteProjectDir
+                            dotnetSdkVersion
+                            nodeVersion
+                            selectedRouteMode
+                            promptBehaviour
+
+                    do! initCliCommands workingDirectory absoluteProjectDir routeData
+                })
 
         log.Info(successMessage ())
     }

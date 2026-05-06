@@ -75,7 +75,7 @@ let routeModeIsPath workingDir =
         File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "App", "App.fs"))
 
     containsSubstring "let initialUrl = Route.parse (Router.currentPath ())" appFsContent
-    containsSubstring "router.pathMode" appFsContent
+    containsSubstring "Feliz.Router.RouteMode.Path" appFsContent
 
     let routeFsContent =
         File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "Base", "Routes.fs"))
@@ -93,7 +93,7 @@ let routeModeIsHash workingDir =
         File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "App", "App.fs"))
 
     containsSubstring "let initialUrl = Route.parse (Router.currentUrl ())" appFsContent
-    containsSubstring "router.hashMode" appFsContent
+    containsSubstring "Feliz.Router.RouteMode.Hash" appFsContent
 
     let routeFsContent =
         File.ReadAllText(Path.Combine(workingDir, ".elmish-land", "Base", "Routes.fs"))

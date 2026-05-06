@@ -58,6 +58,8 @@ type App_fsproj_template = {
     UseRouterPathMode: bool
 }
 
+type Router_template = Router_template
+
 type Routes_template = | Routes_template of TemplateData
 
 type Command_fs_template = | Command_fs_template of TemplateData
@@ -123,6 +125,13 @@ let writeResource<'Resource> (log: ILog) (workingDir: FilePath) overwrite dst (r
         File.WriteAllText(FilePath.asString dstPath, fileContents)
 
 let generateFiles log workingDir (templateData: TemplateData) =
+    writeResource<Router_template>
+        log
+        workingDir
+        true
+        [ ".elmish-land"; "Base"; "Router.fs" ]
+        Router_template
+
     writeResource<Routes_template>
         log
         workingDir

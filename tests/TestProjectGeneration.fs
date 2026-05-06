@@ -52,6 +52,7 @@ let withNewProject (f: AbsoluteProjectDir -> TemplateData -> Task<_>) : Task<uni
                             absoluteProjectDir
                             dotnetSdkVersion
                             nodeVersion
+                            "hash"
                             AutoAccept
 
                     return routeData

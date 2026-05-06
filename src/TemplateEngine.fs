@@ -488,15 +488,17 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                 |> String.concat ", "
 
             let urlPattern =
+                let queryBinding =
+                    if List.isEmpty queryParameters then "_" else "q"
                 route
                 |> String.split "/"
                 |> Array.map (fun x -> x.TrimStart('_') |> toCamelCase |> wrapWithTicksIfNeeded)
                 |> String.concat "; "
                 |> fun pattern ->
                     if pattern.Length > 0 then
-                        $"[ %s{pattern}; Query q ]"
+                        $"[ %s{pattern}; Query %s{queryBinding} ]"
                     else
-                        "[ Query q ]"
+                        $"[ Query %s{queryBinding} ]"
 
             let urlPatternWhen =
                 route

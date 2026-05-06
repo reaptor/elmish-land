@@ -7,7 +7,7 @@ mkdir -p integration-test
 pushd .
 cd integration-test
 dotnet new tool-manifest
-dotnet tool install elmish-land --version 1.0.4 --add-source ../src/nupkg
+dotnet tool install elmish-land --version 1.2.0 --add-source ../src/nupkg
 
 dotnet elmish-land init
 dotnet elmish-land restore

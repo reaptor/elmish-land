@@ -159,7 +159,6 @@ let getWelcomeTitle () =
 let cliName = "dotnet elmish-land"
 
 let help eachLine =
-    // %s{cliName} upgrade ....... upgrade project to the latest elmish-land
     // %s{cliName} add layout <name> ...................... add a new layout
     $"""Here are the available commands:
 
@@ -167,6 +166,7 @@ let help eachLine =
 %s{cliName} server ........................... run a local dev server
 %s{cliName} build ..................... build your app for production
 %s{cliName} restore ....... restores dependencies and generates files
+%s{cliName} upgrade ......... upgrade dependencies to latest versions
 %s{cliName} add page <url> ........................... add a new page
 
 Want to learn more? Visit https://elmish.land
@@ -390,22 +390,21 @@ type ProjectName =
 
     static member asString(ProjectName projectName) = projectName
 
-let getDotnetToolDependencies () = [ "fable", "--version 4.*" ]
+let getDotnetToolDependencies () = [ "fable", 5 ]
 
 let nugetDependencies =
     Set [
-        "FSharp.Core", "10.0.100"
-        "Fable.Promise", "3.2.0"
-        "Fable.Elmish", "5.0.2"
-        "Fable.Elmish.HMR", "8.0.0"
-        "Fable.Elmish.React", "5.0.0"
-        "Feliz", "2.9.0"
-        "Feliz.Router", "4.0.0"
+        "FSharp.Core", 10
+        "Fable.Promise", 3
+        "Fable.Elmish", 5
+        "Fable.Elmish.HMR", 9
+        "Fable.Elmish.React", 5
+        "Feliz", 3
     ]
 
-let npmDependencies = Set [ "react", "19"; "react-dom", "19" ]
+let npmDependencies = Set [ "react", 19; "react-dom", 19 ]
 
-let npmDevDependencies = Set [ "vite", "7" ]
+let npmDevDependencies = Set [ "vite", 8 ]
 
 type UserPromptBehaviour =
     | AutoAccept

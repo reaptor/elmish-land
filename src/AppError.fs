@@ -12,3 +12,4 @@ type AppError =
     | ElmishLandProjectMissing
     | InvalidSettings of string
     | MissingMainLayout
+    | PackageVersionResolutionFailed of string
