@@ -13,6 +13,7 @@ open ElmishLand.Server
 open ElmishLand.Build
 open ElmishLand.AddPage
 open ElmishLand.AddLayout
+open ElmishLand.Upgrade
 
 let (|NotFlag|_|) (x: string) =
     if x.StartsWith("--") || x.StartsWith("-") then
@@ -45,6 +46,7 @@ let run argv =
                 addPage workingDir absoluteProjectDir url (getPromptAcceptFlag argv)
             | "add" :: "layout" :: NotFlag url :: _ ->
                 addLayout workingDir absoluteProjectDir url (getPromptAcceptFlag argv)
+            | "upgrade" :: _ -> upgrade workingDir absoluteProjectDir (getPromptAcceptFlag argv)
             | _ ->
                 $"""
     %s{getWelcomeTitle ()}

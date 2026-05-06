@@ -159,7 +159,6 @@ let getWelcomeTitle () =
 let cliName = "dotnet elmish-land"
 
 let help eachLine =
-    // %s{cliName} upgrade ....... upgrade project to the latest elmish-land
     // %s{cliName} add layout <name> ...................... add a new layout
     $"""Here are the available commands:
 
@@ -168,6 +167,7 @@ let help eachLine =
 %s{cliName} build ..................... build your app for production
 %s{cliName} restore ....... restores dependencies and generates files
 %s{cliName} add page <url> ........................... add a new page
+%s{cliName} upgrade ......... upgrade this project to Feliz 3 / Fable 5
 
 Want to learn more? Visit https://elmish.land
 """
@@ -390,7 +390,7 @@ type ProjectName =
 
     static member asString(ProjectName projectName) = projectName
 
-let getDotnetToolDependencies () = [ "fable", "--version 4.*" ]
+let getDotnetToolDependencies () = [ "fable", "--version 5.* --prerelease" ]
 
 let nugetDependencies =
     Set [
@@ -399,7 +399,7 @@ let nugetDependencies =
         "Fable.Elmish", "5.0.2"
         "Fable.Elmish.HMR", "8.0.0"
         "Fable.Elmish.React", "5.0.0"
-        "Feliz", "2.9.0"
+        "Feliz", "3.0.0"
         "Feliz.Router", "4.0.0"
     ]
 

@@ -1,0 +1,107 @@
+---
+slug: announcing-elmish-land-2-0
+title: Announcing Elmish Land 2.0 — Feliz 3 and Fable 5
+authors: [klofberg]
+---
+
+# Elmish Land 2.0
+
+Elmish Land 2.0 ships the framework on top of [Fable 5](https://fable.io/) and [Feliz 3](https://fable-hub.github.io/Feliz/). The headline change is renderer-related: Feliz 3 removes some of the "compiler magic" around `React.memo`, `React.lazy'`, and React contexts in favor of explicit call sites, and renames a handful of helper components to PascalCase to match React conventions.
+
+To make the upgrade as boring as possible, 2.0 also introduces a new `dotnet elmish-land upgrade` command that walks your project, applies the safe rewrites for you, and points you at the spots that need a human eye.
+
+<!-- truncate -->
+
+## What changed in the runtime
+
+For new projects (`dotnet elmish-land init`), 2.0 scaffolds:
+
+- **Fable 5** as the F# → JS compiler (currently a prerelease tool)
+- **Feliz 3** for the React DSL
+- **React 19**, **vite 7**
+
+Existing 1.x projects keep working — but you'll want to run the upgrade command before bumping any of the underlying packages.
+
+## The new `upgrade` command
+
+```bash
+dotnet elmish-land upgrade
+```
+
+The command does two distinct things:
+
+1. **Updates dependency versions** in `Directory.Packages.props`, `package.json`, and `.config/dotnet-tools.json` to the versions that 2.0 ships with.
+2. **Rewrites your `.fs` files** under `src/` for the source-level renames that Feliz 3 introduced — and prints a per-line warning for anything that needs a human migration, with a deep link into the Feliz upgrade docs.
+
+Files under `.elmish-land/`, `bin/`, `obj/`, `node_modules/`, and `fable_modules/` are skipped — those either get regenerated or aren't yours to edit.
+
+### What the upgrade command does for you
+
+The following Feliz 2 → 3 renames are applied automatically:
+
+| Old (Feliz 2)                  | New (Feliz 3)                    |
+| ------------------------------ | -------------------------------- |
+| `React.fragment`               | `React.Fragment`                 |
+| `React.keyedFragment`          | `React.KeyedFragment`            |
+| `React.imported`               | `React.Imported`                 |
+| `React.dynamicImported`        | `React.DynamicImported`          |
+| `React.strictMode`             | `React.StrictMode`               |
+| `React.suspense`               | `React.Suspense`                 |
+| `React.createDisposable`       | `FsReact.createDisposable`       |
+| `React.useDisposable`          | `FsReact.useDisposable`          |
+| `React.useCancellationToken`   | `FsReact.useCancellationToken`   |
+
+The matcher uses identifier boundaries on both sides, so unrelated names like `React.fragmentExtra` are left alone, and re-running `upgrade` on an already-upgraded project is a no-op.
+
+### What you have to migrate by hand
+
+Three Feliz 3 changes can't be applied with a search-and-replace, because they require restructuring the call sites — splitting one expression into a "definition" and a "renderer." When the upgrade command sees these patterns, it prints the file, line number, and the exact section of the Feliz upgrade guide to read:
+
+- **`React.memo`** — the wrapper no longer auto-renders. You now define the memoized component once, and call `React.memoRenderer(MyComp, props)` at each use site. See [`#reactmemo`](https://fable-hub.github.io/Feliz/api-docs/Upgrade#reactmemo).
+- **`React.lazy'`** — same pattern: the lazy definition is one thing, the call site uses `React.lazyRender(LazyComp, ())` (typically inside a `React.Suspense`). See [`#reactlazy`](https://fable-hub.github.io/Feliz/api-docs/Upgrade#reactlazy).
+- **`React.contextProvider` / `React.contextConsumer`** — the API was redesigned around the context value itself. You now write `MyContext.Provider(value, child)` / `MyContext.Consumer(...)` instead of going through `React.contextProvider`. See [`#reactcontext`](https://fable-hub.github.io/Feliz/api-docs/Upgrade#reactcontext).
+
+A typical run looks like:
+
+```text
+Manual migration required:
+  • src/Pages/Home.fs:42 — React.memo now requires explicit React.memoRenderer call sites at usage points
+      see https://fable-hub.github.io/Feliz/api-docs/Upgrade#reactmemo
+  • src/Pages/Settings.fs:18 — React.context API redesigned - use ContextName.Provider(...) / ContextName.Consumer(...)
+      see https://fable-hub.github.io/Feliz/api-docs/Upgrade#reactcontext
+```
+
+### After the upgrade
+
+The command finishes by reminding you to run:
+
+```bash
+dotnet tool restore       # install Fable 5
+npm install               # install React 19 / vite 7
+dotnet elmish-land restore # regenerate the framework files
+```
+
+And — because this is what the upgrade command actually changes — you can always commit before running it and review the diff.
+
+## Getting Started
+
+For a new project:
+
+```bash
+dotnet new tool-manifest
+dotnet tool install elmish-land --prerelease
+dotnet elmish-land init
+```
+
+For an existing 1.x project:
+
+```bash
+dotnet tool update elmish-land --prerelease
+dotnet elmish-land upgrade
+```
+
+There's a more thorough walkthrough in the [Migrating from 1.x to 2.0](/docs/guides/migrating-from-v1-to-v2) guide.
+
+---
+
+*Elmish Land is a framework for building F# browser apps with Fable, React, and Elmish. [GitHub repository](https://github.com/reaptor/elmish-land)*

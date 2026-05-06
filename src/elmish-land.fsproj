@@ -94,6 +94,7 @@
         <Compile Include="Commands\Server.fs" />
         <Compile Include="Commands\AddPage.fs" />
         <Compile Include="Commands\AddLayout.fs" />
+        <Compile Include="Commands\Upgrade.fs" />
         <Compile Include="Program.fs" />
 
         <Content Include="../README.md" Pack="true" PackagePath="\" />
