@@ -199,7 +199,7 @@ let getSortedLayoutFiles absoluteProjectDir =
     }
 
 let wrapWithTicksIfNeeded (s: string) =
-    if Regex.IsMatch(s, "^[0-9a-zA-Z_]+$") && not (Array.contains s reservedWords) then
+    if Regex.IsMatch(s, "^[0-9a-zA-Z_.]+$") && not (Array.contains s reservedWords) then
         s
     else
         $"``%s{s}``"
