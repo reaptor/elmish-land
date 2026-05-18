@@ -28,7 +28,7 @@ type IHttp =
     abstract member GetAsync: url: string -> Task<Result<string, AppError>>
 
 module Http =
-    let getString(url: string) =
+    let getString (url: string) =
         Effect.Create(fun (provider: #IHttp) -> provider.GetAsync(url))
 
 type IEffectEnv =

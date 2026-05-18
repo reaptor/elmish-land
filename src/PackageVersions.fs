@@ -68,11 +68,9 @@ let resolveLatestNpmVersion (name: string) (major: int) =
     let url = $"https://registry.npmjs.org/%s{name}"
     resolveLatest "npm" name major url npmVersionsDecoder
 
-let private resolveAll
-    (resolver: string -> int -> Effect<IEffectEnv, string, AppError>)
-    (deps: (string * int) seq)
-    =
-    let initial: Effect<IEffectEnv, (string * string) list, AppError> = eff { return [] }
+let private resolveAll (resolver: string -> int -> Effect<IEffectEnv, string, AppError>) (deps: (string * int) seq) =
+    let initial: Effect<IEffectEnv, (string * string) list, AppError> =
+        eff { return [] }
 
     deps
     |> Seq.fold
@@ -85,6 +83,7 @@ let private resolveAll
         initial
     |> Effect.map List.rev
 
-let resolveNugetDependencies deps = resolveAll resolveLatestNugetVersion deps
+let resolveNugetDependencies deps =
+    resolveAll resolveLatestNugetVersion deps
 
 let resolveNpmDependencies deps = resolveAll resolveLatestNpmVersion deps

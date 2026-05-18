@@ -10,12 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > **Breaking change release.** The dependency upgrades below — in particular Feliz 3, Fable 5, and vite 8 — contain breaking changes that may require updates to your application code. See the [2.0 preview blog post](https://elmish.land/blog/announcing-elmish-land-2-0-preview) for the list of upstream breaking changes and migration tips.
 
 ### Changed
-- **Breaking**: Scaffolded projects (created by `init`) now target Fable 5 and the matching ecosystem majors. Each of these is a major release with breaking changes — review your application code after upgrading:
+- Scaffolded projects (created by `init`) now target Fable 5 and the matching ecosystem majors.
   - Fable dotnet tool: major version `5` (upgraded from `4`) — requires .NET 10 SDK; `FABLE_COMPILER_4` directive renamed to `FABLE_COMPILER_5`; legacy Buildalyzer cracker removed
   - `Feliz`: major version `3` (upgraded from `2`) — `React.memo` now requires a paired `React.memoRender`; implicit single-record-argument transform for `[<ReactComponent>]` removed; React hook signatures realigned with React's API
   - `Fable.Elmish.HMR`: major version `9` (upgraded from `8`) — no API changes, but pulls in Fable 5 / Elmish 5
   - `vite`: major version `8` (upgraded from `7`) — Rollup replaced by Rolldown (`rollupOptions` → `rolldownOptions`); default browser targets raised; CJS default-import semantics changed; JS/CSS minifiers swapped
-- **Breaking**: URL change handling in scaffolded apps moved from a `React.router` element to a subscription (`Router.subscribeToUrlChanges`), so the router no longer wraps the view tree. Application code that assumed the view was rendered inside a `React.router` element will need adjustment.
+- URL change handling in scaffolded apps moved from a `React.router` element to a subscription (`Router.subscribeToUrlChanges`), so the router no longer wraps the view tree. Application code that assumed the view was rendered inside a `React.router` element will need adjustment.
 - Scaffolded projects now include a vendored `Router.fs` (copy of Feliz Router) under `.elmish-land/Base/`, used by the new subscription-based URL change handling. The `Feliz.Router` NuGet dependency has been removed.
 
 ### Added

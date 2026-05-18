@@ -7,8 +7,8 @@ sidebar_position: 2
 ## Prerequisites
 Before initiating a project, ensure that your development environment includes:
 
-* **[.NET SDK](https://dotnet.microsoft.com/)**: Version 8.0 or higher is required, with version 10.0 recommended.​
-* **[Node.js](https://nodejs.org/)**: Version 18.0 or above is necessary. Utilizing a version manager like nvm can assist in handling multiple Node.js versions on a single machine.​
+* **[.NET SDK](https://dotnet.microsoft.com/)**: Version 10.0 or higher is required.​
+* **[Node.js](https://nodejs.org/)**: Version 20.19 or above is necessary. Utilizing a version manager like nvm can assist in handling multiple Node.js versions on a single machine.​
 
 
 ## Setting Up a New Project
@@ -22,7 +22,7 @@ cd MyProject
 
 ### 2. Install the Elmish Land Tool:
 ```bash
-dotnet tool install elmish-land --create-manifest-if-needed
+dotnet tool install elmish-land
 ```
 
 ### 3. Initialize the Elmish Land Project:

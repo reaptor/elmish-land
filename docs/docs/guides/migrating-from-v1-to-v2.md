@@ -17,11 +17,6 @@ dotnet tool update elmish-land --prerelease
 
 # 2. From inside your project directory, run the upgrade command
 dotnet elmish-land upgrade
-
-# 3. Pick up the new toolchain and regenerate framework files
-dotnet tool restore
-npm install
-dotnet elmish-land restore
 ```
 
 Then read the manual-migration list the upgrade command printed, and apply each fix using the linked Feliz docs as a reference.

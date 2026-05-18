@@ -30,7 +30,7 @@ try {
     Push-Location $testDir
     try {
         Write-Host "Installing elmish-land $version as a local tool..."
-        dotnet tool install elmish-land --create-manifest-if-needed --add-source $nupkgDir --version $version
+        dotnet tool install elmish-land --add-source $nupkgDir --version $version
         if ($LASTEXITCODE -ne 0) { throw "dotnet tool install failed" }
 
         Write-Host "Running elmish-land init..."

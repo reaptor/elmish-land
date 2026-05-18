@@ -488,8 +488,8 @@ let fileToRoute projectName absoluteProjectDir (RouteParameters pageSettings) (f
                 |> String.concat ", "
 
             let urlPattern =
-                let queryBinding =
-                    if List.isEmpty queryParameters then "_" else "q"
+                let queryBinding = if List.isEmpty queryParameters then "_" else "q"
+
                 route
                 |> String.split "/"
                 |> Array.map (fun x -> x.TrimStart('_') |> toCamelCase |> wrapWithTicksIfNeeded)

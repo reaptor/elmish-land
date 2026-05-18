@@ -125,12 +125,7 @@ let writeResource<'Resource> (log: ILog) (workingDir: FilePath) overwrite dst (r
         File.WriteAllText(FilePath.asString dstPath, fileContents)
 
 let generateFiles log workingDir (templateData: TemplateData) =
-    writeResource<Router_template>
-        log
-        workingDir
-        true
-        [ ".elmish-land"; "Base"; "Router.fs" ]
-        Router_template
+    writeResource<Router_template> log workingDir true [ ".elmish-land"; "Base"; "Router.fs" ] Router_template
 
     writeResource<Routes_template>
         log

@@ -71,7 +71,7 @@ function HomepageHeader() {
             API Reference
           </Link>
         </div>
-        <CopyCommand command="dnx elmish-land init" />
+        <CopyCommand command="dotnet tool install elmish-land && dotnet elmish-land init" />
       </div>
     </header>
   );

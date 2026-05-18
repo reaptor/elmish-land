@@ -27,7 +27,7 @@ trap 'rm -rf "$TEST_DIR"' EXIT
 cd "$TEST_DIR"
 
 echo "Installing elmish-land $VERSION as a local tool..."
-dotnet tool install elmish-land --create-manifest-if-needed --add-source "$NUPKG_DIR" --version "$VERSION"
+dotnet tool install elmish-land --add-source "$NUPKG_DIR" --version "$VERSION"
 
 echo "Running elmish-land init..."
 dotnet elmish-land init -y
