@@ -9,6 +9,7 @@ open ElmishLand.AddPage
 open ElmishLand.AddLayout
 open ElmishLand.Init
 open ElmishLand.Upgrade
+open ElmishLand.PackageVersions
 open ElmishLand.TemplateEngine
 open Runner
 open Xunit
@@ -761,7 +762,15 @@ let ``upgradeFiles updates Directory.Packages.props versions and preserves user-
 
             let! result, logs =
                 runEff (
-                    upgradeFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir dotnetSdkVersion
+                    eff {
+                        let! resolvedNuget = resolveNugetDependencies nugetDependencies
+
+                        do!
+                            upgradeRootFiles
+                                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                                dotnetSdkVersion
+                                resolvedNuget
+                    }
                 )
 
             Expects.ok logs result |> ignore
@@ -812,7 +821,15 @@ let ``upgradeFiles adds a managed package to Directory.Packages.props when missi
 
             let! result, logs =
                 runEff (
-                    upgradeFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir dotnetSdkVersion
+                    eff {
+                        let! resolvedNuget = resolveNugetDependencies nugetDependencies
+
+                        do!
+                            upgradeRootFiles
+                                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                                dotnetSdkVersion
+                                resolvedNuget
+                    }
                 )
 
             Expects.ok logs result |> ignore
@@ -840,7 +857,12 @@ let ``upgradeFiles updates package.json versions and preserves user-added depend
 
             let! result, logs =
                 runEff (
-                    upgradeFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir dotnetSdkVersion
+                    eff {
+                        let! resolvedNpm = resolveNpmDependencies npmDependencies
+                        let! resolvedNpmDev = resolveNpmDependencies npmDevDependencies
+                        let! resolvedTools = resolveNugetDependencies (getDotnetToolDependencies ())
+                        do! upgradeProjectFiles absoluteProjectDir resolvedNpm resolvedNpmDev resolvedTools
+                    }
                 )
 
             Expects.ok logs result |> ignore
@@ -888,7 +910,12 @@ let ``upgradeFiles updates dotnet-tools.json version while preserving user-added
 
             let! result, logs =
                 runEff (
-                    upgradeFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir dotnetSdkVersion
+                    eff {
+                        let! resolvedNpm = resolveNpmDependencies npmDependencies
+                        let! resolvedNpmDev = resolveNpmDependencies npmDevDependencies
+                        let! resolvedTools = resolveNugetDependencies (getDotnetToolDependencies ())
+                        do! upgradeProjectFiles absoluteProjectDir resolvedNpm resolvedNpmDev resolvedTools
+                    }
                 )
 
             Expects.ok logs result |> ignore
@@ -928,7 +955,15 @@ let ``upgradeFiles updates global.json sdk version while preserving other fields
 
             let! result, logs =
                 runEff (
-                    upgradeFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir dotnetSdkVersion
+                    eff {
+                        let! resolvedNuget = resolveNugetDependencies nugetDependencies
+
+                        do!
+                            upgradeRootFiles
+                                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                                dotnetSdkVersion
+                                resolvedNuget
+                    }
                 )
 
             Expects.ok logs result |> ignore
@@ -945,16 +980,13 @@ let ``upgradeFiles updates global.json sdk version while preserving other fields
         })
 
 [<Fact>]
-let ``upgradeFiles fails with ElmishLandProjectMissing when elmish-land.json is absent`` () =
+let ``upgrade fails with ElmishLandProjectMissing when no elmish-land.json files exist`` () =
     withEmptyProjectFolder (fun absoluteProjectDir ->
         task {
             Directory.CreateDirectory(AbsoluteProjectDir.asString absoluteProjectDir)
             |> ignore
 
-            let! result, _logs =
-                runEff (
-                    upgradeFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir dotnetSdkVersion
-                )
+            let! result, _logs = runEff (upgrade (AbsoluteProjectDir.asFilePath absoluteProjectDir) absoluteProjectDir)
 
             match result with
             | Error ElmishLandProjectMissing -> ()

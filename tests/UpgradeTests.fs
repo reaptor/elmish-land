@@ -114,3 +114,48 @@ let c = React.contextConsumer (Ctx, render)"""
         issues
         |> List.forall (fun i -> i.DocsUrl = "https://fable-hub.github.io/Feliz/api-docs/Upgrade#reactcontext")
     )
+
+[<Fact>]
+let ``detectManualMigrations flags Interop.reactApi.createElement with bindings docs link`` () =
+    let input =
+        "let root props = Interop.reactApi.createElement (Popover?Root, createObj !!props)"
+
+    let issues = detectManualMigrations input
+
+    let bindingIssue =
+        issues |> List.tryFind (fun i -> i.Pattern = "Interop.reactApi.createElement")
+
+    Assert.True(bindingIssue.IsSome)
+    Assert.Equal(1, bindingIssue.Value.Line)
+    Assert.Contains("writing-bindings", bindingIssue.Value.DocsUrl)
+    Assert.Contains("ReactLegacy.createElement", bindingIssue.Value.Message)
+    Assert.Contains("unbox<ReactElement>", bindingIssue.Value.Message)
+
+[<Fact>]
+let ``detectManualMigrations reports the line where multi-line Interop.reactApi.createElement starts`` () =
+    let input =
+        """let root props =
+    Interop.reactApi.createElement (
+        Popover?Root,
+        createObj !!props)"""
+
+    let issues = detectManualMigrations input
+
+    let bindingIssue =
+        issues |> List.tryFind (fun i -> i.Pattern = "Interop.reactApi.createElement")
+
+    Assert.True(bindingIssue.IsSome)
+    Assert.Equal(2, bindingIssue.Value.Line)
+
+[<Fact>]
+let ``detectManualMigrations does not flag non-createElement Interop.reactApi calls`` () =
+    let input = "let s = Interop.reactApi.useState 0"
+    let issues = detectManualMigrations input
+    Assert.Empty(issues)
+
+[<Fact>]
+let ``upgradeFelizSource leaves Interop.reactApi.createElement untouched`` () =
+    let input = "let x = Interop.reactApi.createElement (Foo, p)"
+    let actual, count = upgradeFelizSource input
+    Assert.Equal(input, actual)
+    Assert.Equal(0, count)

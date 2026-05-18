@@ -12,6 +12,32 @@ This is a **major version bump** because the underlying libraries contain breaki
 
 <!-- truncate -->
 
+:::warning Install .NET 10 first
+
+Elmish Land 2.0 requires the **.NET 10 SDK**. If you run `dotnet tool update elmish-land --prerelease` while .NET 10 isn't the active SDK (typically because your project's `global.json` pins an older version), the update fails with:
+
+```
+Unhandled exception: Settings file 'DotnetToolSettings.xml' was not found in the package.
+```
+
+Before running the commands below:
+
+1. Install the .NET 10 SDK from [dot.net/download](https://dot.net/download).
+2. Update your project's `global.json` so the `sdk.version` is a `10.x` value you have installed — for example:
+
+   ```json
+   {
+     "sdk": {
+       "version": "10.0.100",
+       "rollForward": "latestFeature"
+     }
+   }
+   ```
+
+   (If your project has no `global.json`, you can skip this step — `dotnet` will pick up the newest installed SDK on its own. `dotnet elmish-land upgrade` will create/update `global.json` for you on its next run.)
+
+:::
+
 ## Fable 5 by default
 
 The Fable dotnet tool installed by `dotnet elmish-land init` is now version 5. This is a major step forward for the F# → JavaScript compiler that powers every Elmish Land app. Existing 1.x projects were on Fable 4; 2.0 makes Fable 5 the default for new projects and gives existing projects a one-command path to move over.
@@ -96,6 +122,16 @@ This is the most likely source of code edits when upgrading. The full migration 
   ```
 
 - **`React.context` has been reworked** to align more closely with React itself. The new shape uses `React.createContext`, `React.useContext`, and `Provider` directly.
+
+- **Hand-written bindings move from `Interop.reactApi.createElement` to `ReactLegacy.createElement`**, with an explicit cast on the first argument.
+
+  ```fsharp
+  // Before
+  Interop.reactApi.createElement (Popover?Root, createObj !!props)
+
+  // After
+  ReactLegacy.createElement (unbox<ReactElement> Popover?Root, createObj !!props)
+  ```
 
 **Namespace migrations.** Several F# interop utilities have moved into the `FsReact` namespace. Update any references to:
 

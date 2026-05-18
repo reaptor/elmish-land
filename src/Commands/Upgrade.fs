@@ -3,13 +3,11 @@ module ElmishLand.Upgrade
 open System
 open System.IO
 open System.Text.RegularExpressions
-open System.Threading
 open ElmishLand.Effect
 open ElmishLand.Resources
 open Orsak
 open ElmishLand.Base
 open ElmishLand.DotNetCli
-open ElmishLand.Process
 open ElmishLand.AppError
 open ElmishLand.Generate
 open ElmishLand.PackageVersions
@@ -18,9 +16,11 @@ let successMessage () =
     let header = getCommandHeader "upgraded your project!"
 
     let content =
-        """Run the following command to start the development server:
+        """Your project files have been updated. To finish the upgrade, run:
 
-dotnet elmish-land server"""
+1. dotnet restore
+2. npm install
+3. dotnet elmish-land server"""
 
     getFormattedCommandOutput header content
 
@@ -75,7 +75,13 @@ let private lazyNeedsReview = Regex(@"\bReact\.lazy'")
 let private contextNeedsReview =
     Regex(@"\bReact\.(contextProvider|contextConsumer)\b")
 
+let private reactApiCreateElementNeedsReview =
+    Regex(@"\bInterop\.reactApi\.createElement\b")
+
 let felizUpgradeDocsBase = "https://fable-hub.github.io/Feliz/api-docs/Upgrade"
+
+let felizWritingBindingsDocsUrl =
+    "https://fable-hub.github.io/Feliz/docs/api-docs/guides/writing-bindings"
 
 /// Find code patterns that require manual migration after Feliz 2 → 3.
 let detectManualMigrations (content: string) : ManualMigration list = [
@@ -104,6 +110,15 @@ let detectManualMigrations (content: string) : ManualMigration list = [
                 Pattern = "React.context*"
                 Message = "React.context API redesigned - use ContextName.Provider(...) / ContextName.Consumer(...)"
                 DocsUrl = $"%s{felizUpgradeDocsBase}#reactcontext"
+            }
+
+        if reactApiCreateElementNeedsReview.IsMatch(line) then
+            yield {
+                Line = i + 1
+                Pattern = "Interop.reactApi.createElement"
+                Message =
+                    "Feliz 2 binding call. Rename to ReactLegacy.createElement and cast the first argument: ReactLegacy.createElement (unbox<ReactElement> Component, props, ...)"
+                DocsUrl = felizWritingBindingsDocsUrl
             }
 ]
 
@@ -193,91 +208,88 @@ let private updateGlobalJsonSdkVersion (version: string) (json: string) =
     else
         json
 
-let upgradeFiles workingDirectory (absoluteProjectDir: AbsoluteProjectDir) (dotnetSdkVersion: DotnetSdkVersion) =
+let upgradeRootFiles
+    workingDirectory
+    (dotnetSdkVersion: DotnetSdkVersion)
+    (resolvedNugetDependencies: (string * string) list)
+    =
     eff {
         let! log = Log().Get()
 
-        let elmishLandJsonPath =
+        log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
+
+        let globalJsonPath = workingDirectory |> FilePath.appendParts [ "global.json" ]
+
+        if FilePath.exists globalJsonPath then
+            let updated =
+                updateGlobalJsonSdkVersion
+                    (DotnetSdkVersion.asString dotnetSdkVersion)
+                    (FilePath.readAllText globalJsonPath)
+
+            File.WriteAllText(FilePath.asString globalJsonPath, updated)
+        else
+            writeResource<global_json_template> log workingDirectory false [ "global.json" ] {
+                DotNetSdkVersion = (DotnetSdkVersion.asString dotnetSdkVersion)
+            }
+
+        let packagesPropsPath =
+            workingDirectory |> FilePath.appendParts [ "Directory.Packages.props" ]
+
+        if FilePath.exists packagesPropsPath then
+            let updated =
+                (FilePath.readAllText packagesPropsPath, resolvedNugetDependencies)
+                ||> List.fold (fun acc (name, ver) -> updatePackageVersionEntry name ver acc)
+
+            File.WriteAllText(FilePath.asString packagesPropsPath, updated)
+        else
+            writeResource<Directory_Packages_props_template> log workingDirectory false [ "Directory.Packages.props" ] {
+                PackageVersions = getNugetPackageVersions resolvedNugetDependencies
+            }
+    }
+
+let upgradeProjectFiles
+    (absoluteProjectDir: AbsoluteProjectDir)
+    (resolvedNpmDependencies: (string * string) list)
+    (resolvedNpmDevDependencies: (string * string) list)
+    (resolvedDotnetTools: (string * string) list)
+    =
+    eff {
+        let! log = Log().Get()
+
+        log.Debug("Upgrading project: {}", AbsoluteProjectDir.asString absoluteProjectDir)
+
+        let packageJsonPath =
             absoluteProjectDir
             |> AbsoluteProjectDir.asFilePath
-            |> FilePath.appendParts [ "elmish-land.json" ]
+            |> FilePath.appendParts [ "package.json" ]
 
-        if not (FilePath.exists elmishLandJsonPath) then
-            return! Error AppError.ElmishLandProjectMissing
-        else
-            log.Debug("Upgrading project: {}", AbsoluteProjectDir.asString absoluteProjectDir)
-            log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
+        if FilePath.exists packageJsonPath then
+            let json =
+                (FilePath.readAllText packageJsonPath, resolvedNpmDependencies)
+                ||> List.fold (fun acc (name, ver) -> updateNpmDependencyVersion name ver acc)
 
-            let! resolvedNugetDependencies = resolveNugetDependencies nugetDependencies
-            let! resolvedNpmDependencies = resolveNpmDependencies npmDependencies
-            let! resolvedNpmDevDependencies = resolveNpmDependencies npmDevDependencies
-            let! resolvedDotnetTools = resolveNugetDependencies (getDotnetToolDependencies ())
+            let json =
+                (json, resolvedNpmDevDependencies)
+                ||> List.fold (fun acc (name, ver) -> updateNpmDependencyVersion name ver acc)
 
-            let globalJsonPath = workingDirectory |> FilePath.appendParts [ "global.json" ]
+            File.WriteAllText(FilePath.asString packageJsonPath, json)
 
-            if FilePath.exists globalJsonPath then
-                let updated =
-                    updateGlobalJsonSdkVersion
-                        (DotnetSdkVersion.asString dotnetSdkVersion)
-                        (FilePath.readAllText globalJsonPath)
+        let dotnetToolsJsonPaths = [
+            absoluteProjectDir
+            |> AbsoluteProjectDir.asFilePath
+            |> FilePath.appendParts [ ".config"; "dotnet-tools.json" ]
+            absoluteProjectDir
+            |> AbsoluteProjectDir.asFilePath
+            |> FilePath.appendParts [ "dotnet-tools.json" ]
+        ]
 
-                File.WriteAllText(FilePath.asString globalJsonPath, updated)
-            else
-                writeResource<global_json_template> log workingDirectory false [ "global.json" ] {
-                    DotNetSdkVersion = (DotnetSdkVersion.asString dotnetSdkVersion)
-                }
-
-            let packagesPropsPath =
-                workingDirectory |> FilePath.appendParts [ "Directory.Packages.props" ]
-
-            if FilePath.exists packagesPropsPath then
-                let updated =
-                    (FilePath.readAllText packagesPropsPath, resolvedNugetDependencies)
-                    ||> List.fold (fun acc (name, ver) -> updatePackageVersionEntry name ver acc)
-
-                File.WriteAllText(FilePath.asString packagesPropsPath, updated)
-            else
-                writeResource<Directory_Packages_props_template>
-                    log
-                    workingDirectory
-                    false
-                    [ "Directory.Packages.props" ]
-                    {
-                        PackageVersions = getNugetPackageVersions resolvedNugetDependencies
-                    }
-
-            let packageJsonPath =
-                absoluteProjectDir
-                |> AbsoluteProjectDir.asFilePath
-                |> FilePath.appendParts [ "package.json" ]
-
-            if FilePath.exists packageJsonPath then
+        for path in dotnetToolsJsonPaths do
+            if FilePath.exists path then
                 let json =
-                    (FilePath.readAllText packageJsonPath, resolvedNpmDependencies)
-                    ||> List.fold (fun acc (name, ver) -> updateNpmDependencyVersion name ver acc)
+                    (FilePath.readAllText path, resolvedDotnetTools)
+                    ||> List.fold (fun acc (name, ver) -> updateDotnetToolVersion name ver acc)
 
-                let json =
-                    (json, resolvedNpmDevDependencies)
-                    ||> List.fold (fun acc (name, ver) -> updateNpmDependencyVersion name ver acc)
-
-                File.WriteAllText(FilePath.asString packageJsonPath, json)
-
-            let dotnetToolsJsonPaths = [
-                absoluteProjectDir
-                |> AbsoluteProjectDir.asFilePath
-                |> FilePath.appendParts [ ".config"; "dotnet-tools.json" ]
-                absoluteProjectDir
-                |> AbsoluteProjectDir.asFilePath
-                |> FilePath.appendParts [ "dotnet-tools.json" ]
-            ]
-
-            for path in dotnetToolsJsonPaths do
-                if FilePath.exists path then
-                    let json =
-                        (FilePath.readAllText path, resolvedDotnetTools)
-                        ||> List.fold (fun acc (name, ver) -> updateDotnetToolVersion name ver acc)
-
-                    File.WriteAllText(FilePath.asString path, json)
+                File.WriteAllText(FilePath.asString path, json)
     }
 
 /// Apply the Feliz 2 → 3 source-level renames across the project's user .fs files,
@@ -318,50 +330,50 @@ let upgradeUserSourceFiles (absoluteProjectDir: AbsoluteProjectDir) =
                 log.Info $"      see %s{issue.DocsUrl}"
     }
 
-let upgradeCliCommands _workingDirectory (absoluteProjectDir: AbsoluteProjectDir) =
-    let isVerbose = System.Environment.CommandLine.Contains("--verbose")
-
-    eff {
-        let projectName = ProjectName.fromAbsoluteProjectDir absoluteProjectDir
-
-        do!
-            runProcess
-                isVerbose
-                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
-                "dotnet"
-                [|
-                    "restore"
-                    $".elmish-land/App/ElmishLand.%s{ProjectName.asString projectName}.App.fsproj"
-                |]
-                CancellationToken.None
-                ignore
-            |> Effect.map ignore<string * string>
-
-        do!
-            runProcess
-                isVerbose
-                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
-                "npm"
-                [| "install" |]
-                CancellationToken.None
-                ignore
-            |> Effect.map ignore<string * string>
-    }
-
 let upgrade workingDirectory (absoluteProjectDir: AbsoluteProjectDir) =
     eff {
         let! log = Log().Get()
 
         let! dotnetSdkVersion = getLatestInstalledDotnetSdkVersion workingDirectory
 
-        do!
-            withSpinner "Upgrading your project..." (fun _ ->
-                eff {
-                    do! upgradeFiles workingDirectory absoluteProjectDir dotnetSdkVersion
-                    do! upgradeUserSourceFiles absoluteProjectDir
-                    do! generate workingDirectory absoluteProjectDir dotnetSdkVersion
-                    do! upgradeCliCommands workingDirectory absoluteProjectDir
-                })
+        let settingsFiles =
+            Directory.EnumerateFiles(
+                AbsoluteProjectDir.asString absoluteProjectDir,
+                "elmish-land.json",
+                SearchOption.AllDirectories
+            )
+            |> Seq.toList
 
-        log.Info(successMessage ())
+        if List.isEmpty settingsFiles then
+            return! Error AppError.ElmishLandProjectMissing
+        else
+            let! resolvedNugetDependencies = resolveNugetDependencies nugetDependencies
+            let! resolvedNpmDependencies = resolveNpmDependencies npmDependencies
+            let! resolvedNpmDevDependencies = resolveNpmDependencies npmDevDependencies
+            let! resolvedDotnetTools = resolveNugetDependencies (getDotnetToolDependencies ())
+
+            do!
+                withSpinner "Upgrading your project..." (fun _ ->
+                    eff {
+                        do! upgradeRootFiles workingDirectory dotnetSdkVersion resolvedNugetDependencies
+
+                        for settingsFile in settingsFiles do
+                            let subAbsoluteProjectDir =
+                                settingsFile
+                                |> FilePath.fromString
+                                |> FilePath.directoryPath
+                                |> AbsoluteProjectDir
+
+                            do!
+                                upgradeProjectFiles
+                                    subAbsoluteProjectDir
+                                    resolvedNpmDependencies
+                                    resolvedNpmDevDependencies
+                                    resolvedDotnetTools
+
+                            do! upgradeUserSourceFiles subAbsoluteProjectDir
+                            do! generate workingDirectory subAbsoluteProjectDir dotnetSdkVersion
+                    })
+
+            log.Info(successMessage ())
     }

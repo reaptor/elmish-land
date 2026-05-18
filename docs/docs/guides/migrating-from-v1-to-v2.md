@@ -5,9 +5,35 @@ title: Migrating from 1.x to 2.0
 
 # Migrating from 1.x to 2.0
 
-Elmish Land 2.0 moves the framework onto [Fable 5](https://fable.io) and [Feliz 3](https://fable-hub.github.io/Feliz/). The runtime gets a few breaking changes — most are mechanical renames, but three call sites (`React.memo`, `React.lazy'`, and the React context API) need a small restructuring you have to do by hand.
+Elmish Land 2.0 moves the framework onto [Fable 5](https://fable.io) and [Feliz 3](https://fable-hub.github.io/Feliz/). The runtime gets a few breaking changes — most are mechanical renames, but four areas (`React.memo`, `React.lazy'`, the React context API, and any hand-written `Interop.reactApi.createElement` bindings) need a small restructuring you have to do by hand.
 
 The `dotnet elmish-land upgrade` command does the mechanical work for you and prints a checklist of the manual edits, with a deep link into the Feliz upgrade docs for each one.
+
+:::warning Install .NET 10 first
+
+Elmish Land 2.0 requires the **.NET 10 SDK**. If you run `dotnet tool update elmish-land --prerelease` while .NET 10 isn't the active SDK (typically because your project's `global.json` pins an older version), the update fails with:
+
+```
+Unhandled exception: Settings file 'DotnetToolSettings.xml' was not found in the package.
+```
+
+Before running the commands below:
+
+1. Install the .NET 10 SDK from [dot.net/download](https://dot.net/download).
+2. Update your project's `global.json` so the `sdk.version` is a `10.x` value you have installed — for example:
+
+   ```json
+   {
+     "sdk": {
+       "version": "10.0.100",
+       "rollForward": "latestFeature"
+     }
+   }
+   ```
+
+   (If your project has no `global.json`, you can skip this step — `dotnet` will pick up the newest installed SDK on its own. `dotnet elmish-land upgrade` will create/update `global.json` for you on its next run.)
+
+:::
 
 ## TL;DR
 
@@ -161,6 +187,28 @@ let UseContext () =
 ```
 
 Full details: [Feliz upgrade — `React.context`](https://fable-hub.github.io/Feliz/api-docs/Upgrade#reactcontext).
+
+### Bindings: `Interop.reactApi.createElement` → `ReactLegacy.createElement`
+
+If your project wraps a JavaScript React component by hand (a common pattern when binding to libraries like Radix or Floating UI), the call into Feliz has moved. Feliz 2 used `Interop.reactApi.createElement`; Feliz 3 exposes it as `ReactLegacy.createElement`, and the first argument now needs an explicit `unbox<ReactElement>` cast.
+
+**Before (Feliz 2):**
+
+```fsharp
+let root props =
+    Interop.reactApi.createElement (Popover?Root, createObj !!props)
+```
+
+**After (Feliz 3):**
+
+```fsharp
+let root props =
+    ReactLegacy.createElement (unbox<ReactElement> Popover?Root, createObj !!props)
+```
+
+`dotnet elmish-land upgrade` detects this call and prints each site so you can fix them by hand; it doesn't rewrite them automatically because the cast requires knowledge of the binding's static type.
+
+Full details: [Feliz writing-bindings guide](https://fable-hub.github.io/Feliz/docs/api-docs/guides/writing-bindings).
 
 ## After the upgrade
 
