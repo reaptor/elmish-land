@@ -7,7 +7,9 @@
     <PropertyGroup>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryUrl>https://github.com/reaptor/elmish-land</RepositoryUrl>
-        <Copyright>Copyright © 2025</Copyright>
+        <ProjectUrl>https://elmish.land</ProjectUrl>
+        <PackageDescription>Build reliable, type-safe web applications with the power of F# and the Elm Architecture.</PackageDescription>
+        <Copyright>Copyright © 2026</Copyright>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <FsDocsLicenseLink>https://github.com/reaptor/elmish-land/blob/main/LICENSE</FsDocsLicenseLink>
         <FsDocsLogoLink>https://elmish.land</FsDocsLogoLink>

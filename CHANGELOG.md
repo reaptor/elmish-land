@@ -5,27 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0 beta 1] - 2026-05-05
+## [2.0.0 beta 1] - 2026-05-19
 
-> **Breaking change release.** The dependency upgrades below — in particular Feliz 3, Fable 5, and vite 8 — contain breaking changes that may require updates to your application code. See the [2.0 preview blog post](https://elmish.land/blog/announcing-elmish-land-2-0-preview) for the list of upstream breaking changes and migration tips.
+> **Breaking change release.** The dependency upgrades below — in particular Feliz 3, Fable 5, and vite 8 — contain breaking changes that may require updates to your application code. See the [2.0 preview blog post](https://elmish.land/blog/announcing-elmish-land-2-0-preview) and the [migration guide](https://elmish.land/docs/guides/migrating-from-v1-to-v2) for upstream breaking changes and step-by-step migration instructions.
 
 ### Changed
-- Scaffolded projects (created by `init`) now target Fable 5 and the matching ecosystem majors.
-  - Fable dotnet tool: major version `5` (upgraded from `4`) — requires .NET 10 SDK; `FABLE_COMPILER_4` directive renamed to `FABLE_COMPILER_5`; legacy Buildalyzer cracker removed
-  - `Feliz`: major version `3` (upgraded from `2`) — `React.memo` now requires a paired `React.memoRender`; implicit single-record-argument transform for `[<ReactComponent>]` removed; React hook signatures realigned with React's API
-  - `Fable.Elmish.HMR`: major version `9` (upgraded from `8`) — no API changes, but pulls in Fable 5 / Elmish 5
-  - `vite`: major version `8` (upgraded from `7`) — Rollup replaced by Rolldown (`rollupOptions` → `rolldownOptions`); default browser targets raised; CJS default-import semantics changed; JS/CSS minifiers swapped
+- Scaffolded projects (created by `init`) now target Fable 5 and the matching ecosystem majors. Requires the .NET 10 SDK and Node.js 20.19+.
+  - `fable` (dotnet tool): `4` → `5`
+  - `FSharp.Core`: now pinned at `10`
+  - `Fable.Core`: now pinned at `5` (previously implicit)
+  - `Fable.Promise`: now pinned at `3`
+  - `Fable.Elmish`: now pinned at `5`
+  - `Fable.Elmish.HMR`: `8` → `9`
+  - `Fable.Elmish.React`: now pinned at `5`
+  - `Feliz`: `2` → `3`
+  - `Feliz.Router`: removed — replaced by a vendored copy at `.elmish-land/Base/Router.fs`
+  - `react` / `react-dom`: now pinned at `19`
+  - `vite`: `7` → `8`
 - URL change handling in scaffolded apps moved from a `React.router` element to a subscription (`Router.subscribeToUrlChanges`), so the router no longer wraps the view tree. Application code that assumed the view was rendered inside a `React.router` element will need adjustment.
 - Scaffolded projects now include a vendored `Router.fs` (copy of Feliz Router) under `.elmish-land/Base/`, used by the new subscription-based URL change handling. The `Feliz.Router` NuGet dependency has been removed.
 
 ### Added
-- Dynamic resolution of NuGet and npm package versions during `init` — the CLI now queries the NuGet and npm registries for the latest version matching each pinned major instead of hardcoding exact versions, so newly created projects always pick up the latest patch and minor releases without waiting for a new Elmish Land release.
-- New `upgrade` command (`dotnet elmish-land upgrade`) that brings an existing project up to the dependency versions used by the current Elmish Land release:
-  - Updates `Directory.Packages.props` (NuGet `PackageVersion` entries), preserving any user-added entries
+- Dynamic resolution of NuGet and npm package versions during `init` and `upgrade` — the CLI now queries the NuGet and npm registries for the latest version matching each pinned major instead of hardcoding exact versions, so newly created and upgraded projects always pick up the latest patch and minor releases without waiting for a new Elmish Land release.
+- New `upgrade` command (`dotnet elmish-land upgrade`) that brings an existing project up to the 2.0 dependency set and applies the mechanical parts of the Feliz 2 → 3 migration:
+  - Updates `Directory.Packages.props` (NuGet `PackageVersion` entries), preserving any user-added entries, and removes the `Feliz.Router` entry
   - Updates `package.json` dependencies and devDependencies, preserving user-added packages
   - Updates `.config/dotnet-tools.json` (or root `dotnet-tools.json`) tool versions, preserving user-added tools
-  - Updates the `sdk.version` in `global.json` to the latest installed .NET SDK
-  - Regenerates files under `.elmish-land/` and runs `dotnet restore` and `npm install` to apply the changes
+  - Strips any leftover `<PackageReference Include="Feliz.Router" />` entries from user `.fsproj` files
+  - Applies whole-identifier renames across user `.fs` files for the Feliz 2 → 3 PascalCase components (`React.fragment` → `React.Fragment`, `React.suspense` → `React.Suspense`, etc.) and the `FsReact` namespace move (`React.createDisposable` → `FsReact.createDisposable`, etc.)
+  - Prints a checklist of manual migrations with deep links into the Feliz 3 upgrade docs for patterns that cannot be auto-rewritten: `React.memo`, `React.lazy'`, the redesigned `React.context` API, and hand-written bindings using `Interop.reactApi.createElement`
+  - Walks the project tree for `elmish-land.json` files so a solution root containing multiple Elmish Land apps upgrades all of them in one invocation
+  - Regenerates files under `.elmish-land/` for each app
+  - Does **not** edit `global.json` or your `.fsproj` `<TargetFramework>` — those .NET 10 prerequisites are documented in the migration guide and must be set up by hand before running `upgrade`. After `upgrade` completes, run `dotnet restore` and `npm install` yourself.
 
 ### Fixed
 - The interactive route-mode prompt during `init` is no longer interrupted by spinner output — the prompt now runs before the spinner starts
