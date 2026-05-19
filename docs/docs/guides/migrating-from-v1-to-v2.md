@@ -63,18 +63,34 @@ Then read the manual-migration list the upgrade command printed, and apply each 
 
 ### Dependency versions
 
-The command rewrites these files, if they exist, to match what 2.0 ships:
+`upgrade` re-pins every managed package to its 2.0 major. Versions are resolved against the live NuGet and npm registries at the moment you run it, so you always land on the latest patch within each major.
 
-- **`Directory.Packages.props`** — re-pins the `<PackageVersion>` for every package elmish-land manages (notably `Feliz` to 3.x and `Fable.Core` to 5.x). The `Feliz.Router` entry is also removed: 2.0 vendors a small Router at `.elmish-land/Base/Router.fs` instead of taking the NuGet package as a runtime dependency.
-- **`package.json`** — bumps `react` and `react-dom` to **19.x** and `vite` to **8.x**.
-- **`.config/dotnet-tools.json`** — bumps the `fable` tool to 5.x (prerelease).
+| Package                              | 1.1                | 2.0           |
+| ------------------------------------ | ------------------ | ------------- |
+| `fable` (dotnet tool)                | 4                  | **5**         |
+| `FSharp.Core`                        | 10                 | 10            |
+| `Fable.Core`                         | *(implicit)*       | **5**         |
+| `Fable.Promise`                      | 3                  | 3             |
+| `Fable.Elmish`                       | 5                  | 5             |
+| `Fable.Elmish.HMR`                   | 8                  | **9**         |
+| `Fable.Elmish.React`                 | 5                  | 5             |
+| `Feliz`                              | 2                  | **3**         |
+| `Feliz.Router`                       | 4                  | **removed**   |
+| `react`                              | 19                 | 19            |
+| `react-dom`                          | 19                 | 19            |
+| `vite`                               | 7                  | **8**         |
+
+
+The files `upgrade` rewrites:
+
+- **`Directory.Packages.props`** — re-pins every managed `<PackageVersion>` and removes the `Feliz.Router` entry (2.0 vendors a small Router at `.elmish-land/Base/Router.fs` instead).
+- **`package.json`** — bumps `react`, `react-dom`, and `vite`.
+- **`.config/dotnet-tools.json`** — bumps the `fable` tool to 5.x.
 - **User `.fsproj` files** — strips any leftover `<PackageReference Include="Feliz.Router" />` entries. The default v1 scaffold kept this reference inside `.elmish-land/Base/...fsproj`, which is regenerated anyway; this cleanup catches projects that copied the reference up into a hand-edited project file.
-
-If a file isn't found, the command prints an instruction telling you what to do manually instead.
 
 ### Source-level renames
 
-For every `.fs` file under `src/` (and outside the auto-generated and tooling directories), these whole-identifier renames are applied:
+For every `.fs` file, these whole-identifier renames are applied:
 
 | Feliz 2                          | Feliz 3                            |
 | -------------------------------- | ---------------------------------- |
@@ -208,7 +224,6 @@ If your project wraps a JavaScript React component by hand (a common pattern whe
 ## After the upgrade
 
 ```bash
-dotnet tool restore        # picks up Fable 5
 npm install                # installs React 19 / vite 8
 dotnet elmish-land restore # regenerates the .elmish-land/ framework files
 dotnet elmish-land build   # sanity-check that everything compiles
@@ -220,4 +235,3 @@ If `build` fails on something other than the patterns above, that's almost alway
 
 - **Commit before running `upgrade`.** It's the easiest way to review exactly what changed.
 - **Re-run `upgrade` after manually editing.** It's a no-op on already-upgraded code, and any new manual-migration warnings will surface again.
-- **Pass `-y` for non-interactive runs** (e.g. CI scripts that just want to bump versions): `dotnet elmish-land upgrade -y`.
