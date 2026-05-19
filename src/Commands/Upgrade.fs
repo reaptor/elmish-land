@@ -75,13 +75,10 @@ let private lazyNeedsReview = Regex(@"\bReact\.lazy'")
 let private contextNeedsReview =
     Regex(@"\bReact\.(contextProvider|contextConsumer)\b")
 
-let private reactApiCreateElementNeedsReview =
-    Regex(@"\bInterop\.reactApi\.createElement\b")
-
 let felizUpgradeDocsBase = "https://fable-hub.github.io/Feliz/api-docs/Upgrade"
 
 let felizWritingBindingsDocsUrl =
-    "https://fable-hub.github.io/Feliz/docs/api-docs/guides/writing-bindings"
+    "https://fable-hub.github.io/Feliz/api-docs/guides/writing-bindings"
 
 /// Find code patterns that require manual migration after Feliz 2 → 3.
 let detectManualMigrations (content: string) : ManualMigration list = [
@@ -111,27 +108,20 @@ let detectManualMigrations (content: string) : ManualMigration list = [
                 Message = "React.context API redesigned - use ContextName.Provider(...) / ContextName.Consumer(...)"
                 DocsUrl = $"%s{felizUpgradeDocsBase}#reactcontext"
             }
-
-        if reactApiCreateElementNeedsReview.IsMatch(line) then
-            yield {
-                Line = i + 1
-                Pattern = "Interop.reactApi.createElement"
-                Message =
-                    "Feliz 2 binding call. Rename to ReactLegacy.createElement and cast the first argument: ReactLegacy.createElement (unbox<ReactElement> Component, props, ...)"
-                DocsUrl = felizWritingBindingsDocsUrl
-            }
 ]
 
 let private isUserSourceFile (relPath: string) =
     let p = relPath.Replace("\\", "/")
 
+    let isExcludedDir (dir: string) =
+        p.StartsWith(dir + "/") || p.Contains("/" + dir + "/")
+
     p.EndsWith(".fs", StringComparison.OrdinalIgnoreCase)
-    && not (p.Contains("/.elmish-land/"))
-    && not (p.StartsWith(".elmish-land/"))
-    && not (p.Contains("/bin/"))
-    && not (p.Contains("/obj/"))
-    && not (p.Contains("/node_modules/"))
-    && not (p.Contains("/fable_modules/"))
+    && not (isExcludedDir ".elmish-land")
+    && not (isExcludedDir "bin")
+    && not (isExcludedDir "obj")
+    && not (isExcludedDir "node_modules")
+    && not (isExcludedDir "fable_modules")
 
 let private enumerateUserSourceFiles (projectRoot: string) =
     if not (Directory.Exists projectRoot) then
@@ -200,37 +190,67 @@ let private updatePackageVersionEntry (name: string) (version: string) (xml: str
             else
                 xml
 
-let private updateGlobalJsonSdkVersion (version: string) (json: string) =
-    let pattern = "(\"sdk\"\\s*:\\s*\\{[^}]*?\"version\"\\s*:\\s*\")[^\"]*"
+let private removePackageVersionEntry (name: string) (xml: string) =
+    let escapedName = Regex.Escape name
+    // Match a self-closing <PackageVersion Include="name" ... /> plus the whitespace and
+    // newline that precede it, so we don't leave a blank line behind.
+    let pattern = $"\\s*<PackageVersion\\b[^/>]*\\bInclude=\"%s{escapedName}\"[^/>]*/>"
 
-    if Regex.IsMatch(json, pattern) then
-        Regex.Replace(json, pattern, $"${{1}}%s{version}")
+    Regex.Replace(xml, pattern, "")
+
+let private removePackageReferenceEntry (name: string) (xml: string) =
+    let escapedName = Regex.Escape name
+
+    let pattern =
+        $"\\s*<PackageReference\\b[^/>]*\\bInclude=\"%s{escapedName}\"[^/>]*/>"
+
+    Regex.Replace(xml, pattern, "")
+
+let removedNugetDependencies = [ "Feliz.Router" ]
+
+let private isUserProjectFile (relPath: string) =
+    let p = relPath.Replace("\\", "/")
+
+    let isExcludedDir (dir: string) =
+        p.StartsWith(dir + "/") || p.Contains("/" + dir + "/")
+
+    p.EndsWith(".fsproj", StringComparison.OrdinalIgnoreCase)
+    && not (isExcludedDir ".elmish-land")
+    && not (isExcludedDir "bin")
+    && not (isExcludedDir "obj")
+    && not (isExcludedDir "node_modules")
+    && not (isExcludedDir "fable_modules")
+
+let private enumerateUserProjectFiles (projectRoot: string) =
+    if not (Directory.Exists projectRoot) then
+        Seq.empty
     else
-        json
+        Directory.EnumerateFiles(projectRoot, "*.fsproj", SearchOption.AllDirectories)
+        |> Seq.filter (fun full ->
+            let rel = Path.GetRelativePath(projectRoot, full).Replace("\\", "/")
+            isUserProjectFile rel)
 
-let upgradeRootFiles
-    workingDirectory
-    (dotnetSdkVersion: DotnetSdkVersion)
-    (resolvedNugetDependencies: (string * string) list)
-    =
+let upgradeUserProjectFiles (workingDirectory: FilePath) =
     eff {
         let! log = Log().Get()
+        let projectRoot = FilePath.asString workingDirectory
 
-        log.Debug("Using .NET SDK: {}", dotnetSdkVersion)
+        for path in enumerateUserProjectFiles projectRoot do
+            let original = File.ReadAllText(path)
 
-        let globalJsonPath = workingDirectory |> FilePath.appendParts [ "global.json" ]
-
-        if FilePath.exists globalJsonPath then
             let updated =
-                updateGlobalJsonSdkVersion
-                    (DotnetSdkVersion.asString dotnetSdkVersion)
-                    (FilePath.readAllText globalJsonPath)
+                (original, removedNugetDependencies)
+                ||> List.fold (fun acc name -> removePackageReferenceEntry name acc)
 
-            File.WriteAllText(FilePath.asString globalJsonPath, updated)
-        else
-            writeResource<global_json_template> log workingDirectory false [ "global.json" ] {
-                DotNetSdkVersion = (DotnetSdkVersion.asString dotnetSdkVersion)
-            }
+            if updated <> original then
+                File.WriteAllText(path, updated)
+                let rel = Path.GetRelativePath(projectRoot, path)
+                log.Debug("Stripped removed PackageReference entries from {}", rel)
+    }
+
+let upgradeRootFiles workingDirectory (resolvedNugetDependencies: (string * string) list) =
+    eff {
+        let! log = Log().Get()
 
         let packagesPropsPath =
             workingDirectory |> FilePath.appendParts [ "Directory.Packages.props" ]
@@ -240,6 +260,10 @@ let upgradeRootFiles
                 (FilePath.readAllText packagesPropsPath, resolvedNugetDependencies)
                 ||> List.fold (fun acc (name, ver) -> updatePackageVersionEntry name ver acc)
 
+            let updated =
+                (updated, removedNugetDependencies)
+                ||> List.fold (fun acc name -> removePackageVersionEntry name acc)
+
             File.WriteAllText(FilePath.asString packagesPropsPath, updated)
         else
             writeResource<Directory_Packages_props_template> log workingDirectory false [ "Directory.Packages.props" ] {
@@ -247,8 +271,12 @@ let upgradeRootFiles
             }
     }
 
+/// Update package.json and dotnet-tools.json under the given directory, if they exist.
+/// Called once per candidate directory (working directory and each per-project dir),
+/// deduped by the caller — repos vary on whether these files live at the solution root
+/// or inside each app dir.
 let upgradeProjectFiles
-    (absoluteProjectDir: AbsoluteProjectDir)
+    (projectDir: FilePath)
     (resolvedNpmDependencies: (string * string) list)
     (resolvedNpmDevDependencies: (string * string) list)
     (resolvedDotnetTools: (string * string) list)
@@ -256,12 +284,9 @@ let upgradeProjectFiles
     eff {
         let! log = Log().Get()
 
-        log.Debug("Upgrading project: {}", AbsoluteProjectDir.asString absoluteProjectDir)
+        log.Debug("Upgrading project files in: {}", FilePath.asString projectDir)
 
-        let packageJsonPath =
-            absoluteProjectDir
-            |> AbsoluteProjectDir.asFilePath
-            |> FilePath.appendParts [ "package.json" ]
+        let packageJsonPath = projectDir |> FilePath.appendParts [ "package.json" ]
 
         if FilePath.exists packageJsonPath then
             let json =
@@ -275,12 +300,8 @@ let upgradeProjectFiles
             File.WriteAllText(FilePath.asString packageJsonPath, json)
 
         let dotnetToolsJsonPaths = [
-            absoluteProjectDir
-            |> AbsoluteProjectDir.asFilePath
-            |> FilePath.appendParts [ ".config"; "dotnet-tools.json" ]
-            absoluteProjectDir
-            |> AbsoluteProjectDir.asFilePath
-            |> FilePath.appendParts [ "dotnet-tools.json" ]
+            projectDir |> FilePath.appendParts [ ".config"; "dotnet-tools.json" ]
+            projectDir |> FilePath.appendParts [ "dotnet-tools.json" ]
         ]
 
         for path in dotnetToolsJsonPaths do
@@ -292,14 +313,16 @@ let upgradeProjectFiles
                 File.WriteAllText(FilePath.asString path, json)
     }
 
-/// Apply the Feliz 2 → 3 source-level renames across the project's user .fs files,
-/// and collect any patterns that require manual migration. Skips generated and
-/// tooling directories.
-let upgradeUserSourceFiles (absoluteProjectDir: AbsoluteProjectDir) =
+/// Apply the Feliz 2 → 3 source-level renames across every user .fs file under
+/// the working directory, and collect any patterns that require manual migration.
+/// Skips generated and tooling directories. Walking from the working directory
+/// (rather than per elmish-land app dir) ensures shared libraries and sibling
+/// projects in the same repository are also rewritten.
+let upgradeUserSourceFiles (workingDirectory: FilePath) =
     eff {
         let! log = Log().Get()
 
-        let projectRoot = AbsoluteProjectDir.asString absoluteProjectDir
+        let projectRoot = FilePath.asString workingDirectory
         let mutable totalCodeChanges = 0
         let manualNeeded = ResizeArray<string * ManualMigration>()
 
@@ -328,6 +351,10 @@ let upgradeUserSourceFiles (absoluteProjectDir: AbsoluteProjectDir) =
             for rel, issue in manualNeeded do
                 log.Info $"  • %s{rel}:%d{issue.Line} — %s{issue.Message}"
                 log.Info $"      see %s{issue.DocsUrl}"
+
+        log.Info "For information on breaking changes in Feliz 3:"
+        log.Info $"  • Upgrade to v3: %s{felizUpgradeDocsBase}"
+        log.Info $"  • Writing Bindings: %s{felizWritingBindingsDocsUrl}"
     }
 
 let upgrade workingDirectory (absoluteProjectDir: AbsoluteProjectDir) =
@@ -355,23 +382,32 @@ let upgrade workingDirectory (absoluteProjectDir: AbsoluteProjectDir) =
             do!
                 withSpinner "Upgrading your project..." (fun _ ->
                     eff {
-                        do! upgradeRootFiles workingDirectory dotnetSdkVersion resolvedNugetDependencies
+                        do! upgradeRootFiles workingDirectory resolvedNugetDependencies
+                        do! upgradeUserProjectFiles workingDirectory
+                        do! upgradeUserSourceFiles workingDirectory
 
-                        for settingsFile in settingsFiles do
-                            let subAbsoluteProjectDir =
+                        let subAbsoluteProjectDirs =
+                            settingsFiles
+                            |> List.map (fun settingsFile ->
                                 settingsFile
                                 |> FilePath.fromString
                                 |> FilePath.directoryPath
-                                |> AbsoluteProjectDir
+                                |> AbsoluteProjectDir)
 
+                        let projectFileDirs =
+                            workingDirectory
+                            :: (subAbsoluteProjectDirs |> List.map AbsoluteProjectDir.asFilePath)
+                            |> List.distinctBy FilePath.asString
+
+                        for projectDir in projectFileDirs do
                             do!
                                 upgradeProjectFiles
-                                    subAbsoluteProjectDir
+                                    projectDir
                                     resolvedNpmDependencies
                                     resolvedNpmDevDependencies
                                     resolvedDotnetTools
 
-                            do! upgradeUserSourceFiles subAbsoluteProjectDir
+                        for subAbsoluteProjectDir in subAbsoluteProjectDirs do
                             do! generate workingDirectory subAbsoluteProjectDir dotnetSdkVersion
                     })
 

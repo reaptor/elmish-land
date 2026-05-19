@@ -765,11 +765,7 @@ let ``upgradeFiles updates Directory.Packages.props versions and preserves user-
                     eff {
                         let! resolvedNuget = resolveNugetDependencies nugetDependencies
 
-                        do!
-                            upgradeRootFiles
-                                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
-                                dotnetSdkVersion
-                                resolvedNuget
+                        do! upgradeRootFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) resolvedNuget
                     }
                 )
 
@@ -800,6 +796,70 @@ let ``upgradeFiles updates Directory.Packages.props versions and preserves user-
         })
 
 [<Fact>]
+let ``upgradeFiles removes Feliz.Router PackageVersion from Directory.Packages.props`` () =
+    withNewProject (fun absoluteProjectDir _ ->
+        task {
+            let folder = AbsoluteProjectDir.asString absoluteProjectDir
+            let propsPath = Path.Combine(folder, "Directory.Packages.props")
+
+            // Inject a v1-style Feliz.Router entry plus an unrelated user-added package.
+            let original = File.ReadAllText(propsPath)
+
+            let withFelizRouter =
+                original.Replace(
+                    "</ItemGroup>",
+                    "    <PackageVersion Include=\"Feliz.Router\" Version=\"4.0.0\" />\n        <PackageVersion Include=\"Newtonsoft.Json\" Version=\"13.0.3\" />\n    </ItemGroup>"
+                )
+
+            File.WriteAllText(propsPath, withFelizRouter)
+            Assert.Contains("Feliz.Router", File.ReadAllText(propsPath))
+
+            let! result, logs =
+                runEff (
+                    eff {
+                        let! resolvedNuget = resolveNugetDependencies nugetDependencies
+
+                        do! upgradeRootFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) resolvedNuget
+                    }
+                )
+
+            Expects.ok logs result |> ignore
+
+            let updated = File.ReadAllText(propsPath)
+
+            // Feliz.Router stripped, but the user-added package and other managed entries kept.
+            Assert.DoesNotContain("Feliz.Router", updated)
+            Assert.Contains("<PackageVersion Include=\"Newtonsoft.Json\" Version=\"13.0.3\"", updated)
+            Assert.Contains("<PackageVersion Include=\"Feliz\"", updated)
+        })
+
+[<Fact>]
+let ``upgradeUserProjectFiles strips Feliz.Router PackageReference from user fsproj`` () =
+    withNewProject (fun absoluteProjectDir _ ->
+        task {
+            let folder = AbsoluteProjectDir.asString absoluteProjectDir
+            let projPath = Path.Combine(folder, "fsproj-with-router.fsproj")
+
+            File.WriteAllText(
+                projPath,
+                """<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="Feliz.Router" />
+        <PackageReference Include="Feliz" />
+    </ItemGroup>
+</Project>"""
+            )
+
+            let! result, logs = runEff (upgradeUserProjectFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir))
+
+            Expects.ok logs result |> ignore
+
+            let updated = File.ReadAllText(projPath)
+            Assert.DoesNotContain("Feliz.Router", updated)
+            Assert.Contains("<PackageReference Include=\"Feliz\"", updated)
+        })
+
+[<Fact>]
 let ``upgradeFiles adds a managed package to Directory.Packages.props when missing`` () =
     withNewProject (fun absoluteProjectDir _ ->
         task {
@@ -824,11 +884,7 @@ let ``upgradeFiles adds a managed package to Directory.Packages.props when missi
                     eff {
                         let! resolvedNuget = resolveNugetDependencies nugetDependencies
 
-                        do!
-                            upgradeRootFiles
-                                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
-                                dotnetSdkVersion
-                                resolvedNuget
+                        do! upgradeRootFiles (AbsoluteProjectDir.asFilePath absoluteProjectDir) resolvedNuget
                     }
                 )
 
@@ -861,7 +917,13 @@ let ``upgradeFiles updates package.json versions and preserves user-added depend
                         let! resolvedNpm = resolveNpmDependencies npmDependencies
                         let! resolvedNpmDev = resolveNpmDependencies npmDevDependencies
                         let! resolvedTools = resolveNugetDependencies (getDotnetToolDependencies ())
-                        do! upgradeProjectFiles absoluteProjectDir resolvedNpm resolvedNpmDev resolvedTools
+
+                        do!
+                            upgradeProjectFiles
+                                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                                resolvedNpm
+                                resolvedNpmDev
+                                resolvedTools
                     }
                 )
 
@@ -914,7 +976,13 @@ let ``upgradeFiles updates dotnet-tools.json version while preserving user-added
                         let! resolvedNpm = resolveNpmDependencies npmDependencies
                         let! resolvedNpmDev = resolveNpmDependencies npmDevDependencies
                         let! resolvedTools = resolveNugetDependencies (getDotnetToolDependencies ())
-                        do! upgradeProjectFiles absoluteProjectDir resolvedNpm resolvedNpmDev resolvedTools
+
+                        do!
+                            upgradeProjectFiles
+                                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
+                                resolvedNpm
+                                resolvedNpmDev
+                                resolvedTools
                     }
                 )
 
@@ -929,54 +997,6 @@ let ``upgradeFiles updates dotnet-tools.json version while preserving user-added
             // unmanaged tool fantomas preserved
             Assert.Contains("\"fantomas\":", updated)
             Assert.Contains("\"version\": \"7.0.3\"", updated)
-        })
-
-[<Fact>]
-let ``upgradeFiles updates global.json sdk version while preserving other fields`` () =
-    withNewProject (fun absoluteProjectDir _ ->
-        task {
-            let folder = AbsoluteProjectDir.asString absoluteProjectDir
-            let globalJsonPath = Path.Combine(folder, "global.json")
-
-            File.WriteAllText(
-                globalJsonPath,
-                """{
-  "sdk": {
-    "version": "1.0.0",
-    "rollForward": "latestFeature",
-    "allowPrerelease": false
-  },
-  "msbuild-sdks": {
-    "Some.Custom.Sdk": "2.3.4"
-  }
-}
-"""
-            )
-
-            let! result, logs =
-                runEff (
-                    eff {
-                        let! resolvedNuget = resolveNugetDependencies nugetDependencies
-
-                        do!
-                            upgradeRootFiles
-                                (AbsoluteProjectDir.asFilePath absoluteProjectDir)
-                                dotnetSdkVersion
-                                resolvedNuget
-                    }
-                )
-
-            Expects.ok logs result |> ignore
-
-            let updated = File.ReadAllText(globalJsonPath)
-            Assert.Contains(DotnetSdkVersion.asString dotnetSdkVersion, updated)
-            Assert.False(updated.Contains("\"1.0.0\""), "Old SDK pin should be replaced")
-            // Other sdk fields preserved
-            Assert.Contains("\"rollForward\": \"latestFeature\"", updated)
-            Assert.Contains("\"allowPrerelease\": false", updated)
-            // User's msbuild-sdks block preserved
-            Assert.Contains("\"msbuild-sdks\"", updated)
-            Assert.Contains("\"Some.Custom.Sdk\": \"2.3.4\"", updated)
         })
 
 [<Fact>]

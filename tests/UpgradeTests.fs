@@ -116,36 +116,12 @@ let c = React.contextConsumer (Ctx, render)"""
     )
 
 [<Fact>]
-let ``detectManualMigrations flags Interop.reactApi.createElement with bindings docs link`` () =
+let ``detectManualMigrations does not flag Interop.reactApi.createElement`` () =
     let input =
         "let root props = Interop.reactApi.createElement (Popover?Root, createObj !!props)"
 
     let issues = detectManualMigrations input
-
-    let bindingIssue =
-        issues |> List.tryFind (fun i -> i.Pattern = "Interop.reactApi.createElement")
-
-    Assert.True(bindingIssue.IsSome)
-    Assert.Equal(1, bindingIssue.Value.Line)
-    Assert.Contains("writing-bindings", bindingIssue.Value.DocsUrl)
-    Assert.Contains("ReactLegacy.createElement", bindingIssue.Value.Message)
-    Assert.Contains("unbox<ReactElement>", bindingIssue.Value.Message)
-
-[<Fact>]
-let ``detectManualMigrations reports the line where multi-line Interop.reactApi.createElement starts`` () =
-    let input =
-        """let root props =
-    Interop.reactApi.createElement (
-        Popover?Root,
-        createObj !!props)"""
-
-    let issues = detectManualMigrations input
-
-    let bindingIssue =
-        issues |> List.tryFind (fun i -> i.Pattern = "Interop.reactApi.createElement")
-
-    Assert.True(bindingIssue.IsSome)
-    Assert.Equal(2, bindingIssue.Value.Line)
+    Assert.Empty(issues)
 
 [<Fact>]
 let ``detectManualMigrations does not flag non-createElement Interop.reactApi calls`` () =

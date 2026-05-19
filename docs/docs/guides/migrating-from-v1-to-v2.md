@@ -9,9 +9,9 @@ Elmish Land 2.0 moves the framework onto [Fable 5](https://fable.io) and [Feliz 
 
 The `dotnet elmish-land upgrade` command does the mechanical work for you and prints a checklist of the manual edits, with a deep link into the Feliz upgrade docs for each one.
 
-:::warning Install .NET 10 first
+:::warning Upgrade to .NET 10 before upgrading Elmish Land
 
-Elmish Land 2.0 requires the **.NET 10 SDK**. If you run `dotnet tool update elmish-land --prerelease` while .NET 10 isn't the active SDK (typically because your project's `global.json` pins an older version), the update fails with:
+Elmish Land 2.0 requires the **.NET 10 SDK**. Move your existing project onto .NET 10 *first*, and only then run `dotnet elmish-land upgrade`. If you skip ahead and run `dotnet tool update elmish-land --prerelease` while .NET 10 isn't the active SDK (typically because your project's `global.json` pins an older version), the update fails with:
 
 ```
 Unhandled exception: Settings file 'DotnetToolSettings.xml' was not found in the package.
@@ -31,7 +31,19 @@ Before running the commands below:
    }
    ```
 
-   (If your project has no `global.json`, you can skip this step — `dotnet` will pick up the newest installed SDK on its own. `dotnet elmish-land upgrade` will create/update `global.json` for you on its next run.)
+   (If your project has no `global.json`, you can skip this step — `dotnet` will pick up the newest installed SDK on its own.) `dotnet elmish-land upgrade` does not touch `global.json`; flip the SDK version yourself before running the upgrade.
+3. Bump the `<TargetFramework>` in every `.fsproj` file in your project from `net9.0` (or older) to `net10.0`:
+
+   ```xml
+   <PropertyGroup>
+       <TargetFramework>net10.0</TargetFramework>
+   </PropertyGroup>
+   ```
+
+   `dotnet elmish-land upgrade` does not edit your project files' target framework — it only regenerates the `.elmish-land/` projects. You need to flip this in your own `.fsproj` files by hand.
+4. Verify your project still compiles on .NET 10 by running `dotnet build` from the project root. Fix any SDK-related errors before continuing, so you have a clean baseline before introducing the elmish-land upgrade on top.
+
+Note: once the active SDK is .NET 10, the elmish-land 1.1 tool can no longer run `dotnet elmish-land build` or `dotnet elmish-land server` — those commands were built against the older Fable and SDK combination. Plan to run the steps above and then immediately continue with `dotnet tool update elmish-land --prerelease` and `dotnet elmish-land upgrade`; don't stop in the middle expecting the 1.1 commands to keep working.
 
 :::
 
@@ -53,9 +65,10 @@ Then read the manual-migration list the upgrade command printed, and apply each 
 
 The command rewrites these files, if they exist, to match what 2.0 ships:
 
-- **`Directory.Packages.props`** — re-pins the `<PackageVersion>` for every package elmish-land manages (notably `Feliz` to 3.x).
-- **`package.json`** — bumps `react`, `react-dom`, and `vite` to the versions 2.0 scaffolds with.
+- **`Directory.Packages.props`** — re-pins the `<PackageVersion>` for every package elmish-land manages (notably `Feliz` to 3.x and `Fable.Core` to 5.x). The `Feliz.Router` entry is also removed: 2.0 vendors a small Router at `.elmish-land/Base/Router.fs` instead of taking the NuGet package as a runtime dependency.
+- **`package.json`** — bumps `react` and `react-dom` to **19.x** and `vite` to **8.x**.
 - **`.config/dotnet-tools.json`** — bumps the `fable` tool to 5.x (prerelease).
+- **User `.fsproj` files** — strips any leftover `<PackageReference Include="Feliz.Router" />` entries. The default v1 scaffold kept this reference inside `.elmish-land/Base/...fsproj`, which is regenerated anyway; this cleanup catches projects that copied the reference up into a hand-edited project file.
 
 If a file isn't found, the command prints an instruction telling you what to do manually instead.
 
@@ -188,33 +201,15 @@ let UseContext () =
 
 Full details: [Feliz upgrade — `React.context`](https://fable-hub.github.io/Feliz/api-docs/Upgrade#reactcontext).
 
-### Bindings: `Interop.reactApi.createElement` → `ReactLegacy.createElement`
+### Hand-written React bindings
 
-If your project wraps a JavaScript React component by hand (a common pattern when binding to libraries like Radix or Floating UI), the call into Feliz has moved. Feliz 2 used `Interop.reactApi.createElement`; Feliz 3 exposes it as `ReactLegacy.createElement`, and the first argument now needs an explicit `unbox<ReactElement>` cast.
-
-**Before (Feliz 2):**
-
-```fsharp
-let root props =
-    Interop.reactApi.createElement (Popover?Root, createObj !!props)
-```
-
-**After (Feliz 3):**
-
-```fsharp
-let root props =
-    ReactLegacy.createElement (unbox<ReactElement> Popover?Root, createObj !!props)
-```
-
-`dotnet elmish-land upgrade` detects this call and prints each site so you can fix them by hand; it doesn't rewrite them automatically because the cast requires knowledge of the binding's static type.
-
-Full details: [Feliz writing-bindings guide](https://fable-hub.github.io/Feliz/docs/api-docs/guides/writing-bindings).
+If your project wraps a JavaScript React component by hand (a common pattern when binding to libraries like Radix or Floating UI), the call into Feliz has moved. See the [Feliz writing-bindings guide](https://fable-hub.github.io/Feliz/api-docs/guides/writing-bindings) for the rewrite (in short: `Interop.reactApi.createElement` becomes `ReactLegacy.createElement` and the component argument needs an `unbox<ReactElement>` cast).
 
 ## After the upgrade
 
 ```bash
 dotnet tool restore        # picks up Fable 5
-npm install                # installs React 19 / vite 7
+npm install                # installs React 19 / vite 8
 dotnet elmish-land restore # regenerates the .elmish-land/ framework files
 dotnet elmish-land build   # sanity-check that everything compiles
 ```

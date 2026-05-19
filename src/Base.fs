@@ -395,6 +395,7 @@ let getDotnetToolDependencies () = [ "fable", 5 ]
 let nugetDependencies =
     Set [
         "FSharp.Core", 10
+        "Fable.Core", 5
         "Fable.Promise", 3
         "Fable.Elmish", 5
         "Fable.Elmish.HMR", 9
