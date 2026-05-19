@@ -107,7 +107,7 @@ Configures the view layer and UI library used by your application.
 **Type:** `string`
 **Default:** `"Feliz"`
 
-The F# module that contains your view types and elements. By default, Elmish Land uses [Feliz](https://zaid-ajaj.github.io/Feliz/) for building React UIs.
+The F# module that contains your view types and elements. By default, Elmish Land uses [Feliz](https://fable-hub.github.io/Feliz/) for building React UIs.
 
 #### view.type
 
