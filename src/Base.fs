@@ -12,7 +12,14 @@ type DotnetSdkVersion = | DotnetSdkVersion of Version
 
 module DotnetSdkVersion =
     let fromString (s: string) =
-        match Version.TryParse s with
+        // Trim prerelease suffixes (e.g. "10.0.300-preview.0.26177.108") that
+        // System.Version cannot parse — we only care about major.minor.build.
+        let core =
+            match s.IndexOf('-') with
+            | -1 -> s
+            | i -> s.Substring(0, i)
+
+        match Version.TryParse core with
         | true, version -> Some(DotnetSdkVersion version)
         | _ -> None
 
@@ -22,7 +29,7 @@ module DotnetSdkVersion =
     let asFrameworkVersion (DotnetSdkVersion version) =
         $"net%i{version.Major}.%i{version.Minor}"
 
-let minimumRequiredDotnetSdk = DotnetSdkVersion(Version(6, 0, 100))
+let minimumRequiredDotnetSdk = DotnetSdkVersion(Version(10, 0, 100))
 
 let minimumRequiredNode = Version(18, 0)
 

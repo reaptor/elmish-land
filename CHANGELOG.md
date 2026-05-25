@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0 beta 2] - 2026-05-25
+
+### Changed
+- Minimum required .NET SDK raised from `6.0.100` to `10.0.100`, matching the .NET 10 requirement for scaffolded 2.0 projects
+
+### Fixed
+- SDK version check no longer fails when the latest installed .NET SDK is a preview release (e.g. `10.0.300-preview.0.26177.108`), see https://github.com/reaptor/elmish-land/issues/40
+
 ## [2.0.0 beta 1] - 2026-05-19
 
 > **Breaking change release.** The dependency upgrades below — in particular Feliz 3, Fable 5, and vite 8 — contain breaking changes that may require updates to your application code. See the [2.0 preview blog post](https://elmish.land/blog/announcing-elmish-land-2-0-preview) and the [migration guide](https://elmish.land/docs/guides/migrating-from-v1-to-v2) for upstream breaking changes and step-by-step migration instructions.
