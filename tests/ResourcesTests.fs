@@ -672,7 +672,6 @@ type MappedPage<'pageMsg, 'pageModel, 'layoutMsg, 'layoutProps> =
         Subscriptions: 'pageModel -> (string list * (('pageMsg -> unit) -> System.IDisposable)) list
         LayoutProps: 'layoutProps
         LayoutMsgToPageMsg: 'layoutMsg -> 'pageMsg
-        LayoutMsgToMsg: 'layoutMsg -> Msg
     }
 
 [<RequireQualifiedAccess>]
@@ -709,7 +708,7 @@ let rec sharedCommandToCmd (command: Command<SharedMsg, SharedMsg, _>): Cmd<Msg>
     | Command.Batch cmds -> Cmd.batch (List.map sharedCommandToCmd cmds)
     | Command.Cmd cmd -> Cmd.map SharedMsg cmd
     | Command.SharedMsg msg -> Cmd.ofMsg (SharedMsg msg)
-    | Command.LayoutMsg msg -> failwith "Layout messages should not occur in shared commands"
+    | Command.LayoutMsg _ -> failwith "Layout messages should not occur in shared commands"
 
 let getLayoutsNameLayout currentLayout currentRoute sharedModel layoutProps =
     let layout = LayoutsModuleName.layout layoutProps currentRoute sharedModel
@@ -725,9 +724,6 @@ let mapPage (f: 'pageMsg -> Msg) (mapLayout: 'layoutMsg -> Msg) (p: Page<SharedM
         fun f' -> f'
                 >> fun (m: 'pageModel, c: Command<'pageMsg, SharedMsg, 'layoutMsg>) ->
                     (m, Command.map f mapLayout c)
-    let layoutMsgToPageMsg layoutMsg =
-        p.LayoutMsgToPageMsg layoutMsg |> f
-
     {
         Init = init
         Update = update
@@ -735,10 +731,7 @@ let mapPage (f: 'pageMsg -> Msg) (mapLayout: 'layoutMsg -> Msg) (p: Page<SharedM
         Subscriptions = p.Subscriptions
         LayoutProps = p.LayoutProps
         LayoutMsgToPageMsg = p.LayoutMsgToPageMsg
-        LayoutMsgToMsg = layoutMsgToPageMsg
     }
-
-let layoutMsgToPageMsg page f layoutMsg = page.LayoutMsgToPageMsg layoutMsg |> f
 
 let initRoutesNamePage model route sharedCmd =
     let mapPage sharedModel = RoutesModuleName.page sharedModel route |> mapPage (PageMsg.RoutesNameMsg >> PageMsg) (LayoutMsg.RoutesLayoutNameMsg >> LayoutMsg)
@@ -758,7 +751,6 @@ let initRoutesNamePage model route sharedCmd =
     Command.batch [
         sharedCmd
         pageCmd
-        Command.map mappedPage.LayoutMsgToMsg mappedPage.LayoutMsgToMsg layoutCmd
         Command.map (LayoutMsg.RoutesLayoutNameMsg >> LayoutMsg) (LayoutMsg.RoutesLayoutNameMsg >> LayoutMsg) layoutCmd
     ] |> commandToCmd SharedMsg id
 
@@ -874,11 +866,8 @@ let view (model: Model) (dispatch: Msg -> unit) =
             (LayoutsModuleName.layout props model.CurrentRoute model.Shared).View m currentPageView (LayoutMsg.LayoutsMsgName >> LayoutMsg >> dispatch)
         | Layout.None -> currentPageView
 
-    let currentReactElement =
-        match currentView with
-        | Renderable x -> x.Render()
-
-    currentReactElement
+    match currentView with
+    | Renderable x -> x.Render()
 
 let private urlChangeSubscription _model : (string list * ((Msg -> unit) -> System.IDisposable)) list =
     let routeMode =

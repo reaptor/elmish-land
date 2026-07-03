@@ -333,7 +333,7 @@ let ``Ensure module names is wrapped in double ticks if project dir contains spe
                         RecordConstructor = "()"
                         RecordPattern = "()"
                         UrlUsage = """ "" """.Trim()
-                        UrlPattern = "[ Query q ]"
+                        UrlPattern = "[ Query _ ]"
                         IsMainLayout = true
                         UrlPatternWhen = ""
                     }

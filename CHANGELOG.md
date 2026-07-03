@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - SDK version check no longer fails when the latest installed .NET SDK is a preview release (e.g. `10.0.300-preview.0.26177.108`), see https://github.com/reaptor/elmish-land/issues/40
+- Commands returned by a layout's `routeChanged` (or `init`) are no longer dispatched to the page twice when navigating between sibling pages that share the same layout — the layout message now reaches the page's `update` exactly once
 
 ## [2.0.0 beta 1] - 2026-05-19
 

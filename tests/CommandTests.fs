@@ -489,6 +489,40 @@ let ``Add nested layouts and then pages, page uses correct layout`` () =
         |> Expects.effectOk runEff)
 
 [<Fact>]
+let ``Sibling pages sharing a layout batch the layout command once and still type-check`` () =
+    withNewProject (fun projectDir _ ->
+        task {
+            let dir = AbsoluteProjectDir.asFilePath projectDir
+
+            let! r1, l1 = runEff (addLayout dir projectDir "/Admin" AutoAccept)
+            Expects.ok l1 r1 |> ignore
+            let! r2, l2 = runEff (addPage dir projectDir "/Admin/Users" AutoAccept)
+            Expects.ok l2 r2 |> ignore
+            let! r3, l3 = runEff (addPage dir projectDir "/Admin/Settings" AutoAccept)
+            Expects.ok l3 r3 |> ignore
+
+            let! rg, lg = ElmishLand.Generate.generate dir projectDir dotnetSdkVersion |> runEff
+            Expects.ok lg rg |> ignore
+
+            let appFs =
+                File.ReadAllText(Path.Combine(AbsoluteProjectDir.asString projectDir, ".elmish-land", "App", "App.fs"))
+
+            // both sibling init functions exist and share the same layout
+            Expects.containsSubstring "let initAdmin_UsersPage" appFs
+            Expects.containsSubstring "let initAdmin_SettingsPage" appFs
+            Expects.containsSubstring "let getAdminLayout" appFs
+            // neither sibling carries the direct-to-page duplicate (name-independent)
+            Assert.DoesNotContain("mappedPage.LayoutMsgToMsg mappedPage.LayoutMsgToMsg", appFs)
+            // the two invariants the fix relies on are still emitted:
+            //   (a) LayoutMsg arm forwards to the page, (b) it updates the layout
+            Expects.containsSubstring "mappedPage.LayoutMsgToPageMsg layoutMsg'" appFs
+            Expects.containsSubstring "updateLayout model layout props" appFs
+
+            // compile-level regression: the shared-layout generated project type-checks
+            do! expectProjectTypeChecks projectDir
+        })
+
+[<Fact>]
 let ``Nested page with wrong layout reference should generate correct error message`` () =
     withNewProject (fun projectDir _ ->
         task {

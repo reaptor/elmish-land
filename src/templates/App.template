@@ -59,7 +59,6 @@ type MappedPage<'pageMsg, 'pageModel, 'layoutMsg, 'layoutProps> =
         Subscriptions: 'pageModel -> (string list * (('pageMsg -> unit) -> System.IDisposable)) list
         LayoutProps: 'layoutProps
         LayoutMsgToPageMsg: 'layoutMsg -> 'pageMsg
-        LayoutMsgToMsg: 'layoutMsg -> Msg
     }
 
 [<RequireQualifiedAccess>]
@@ -118,9 +117,6 @@ let mapPage (f: 'pageMsg -> Msg) (mapLayout: 'layoutMsg -> Msg) (p: Page<SharedM
         fun f' -> f'
                 >> fun (m: 'pageModel, c: Command<'pageMsg, SharedMsg, 'layoutMsg>) ->
                     (m, Command.map f mapLayout c)
-    let layoutMsgToPageMsg layoutMsg =
-        p.LayoutMsgToPageMsg layoutMsg |> f
-
     {
         Init = init
         Update = update
@@ -128,10 +124,7 @@ let mapPage (f: 'pageMsg -> Msg) (mapLayout: 'layoutMsg -> Msg) (p: Page<SharedM
         Subscriptions = p.Subscriptions
         LayoutProps = p.LayoutProps
         LayoutMsgToPageMsg = p.LayoutMsgToPageMsg
-        LayoutMsgToMsg = layoutMsgToPageMsg
     }
-
-let layoutMsgToPageMsg page f layoutMsg = page.LayoutMsgToPageMsg layoutMsg |> f
 
 {{#each Routes}}
 let init{{Name}}Page model route sharedCmd =
@@ -152,7 +145,6 @@ let init{{Name}}Page model route sharedCmd =
     Command.batch [
         sharedCmd
         pageCmd
-        Command.map mappedPage.LayoutMsgToMsg mappedPage.LayoutMsgToMsg layoutCmd
         Command.map (LayoutMsg.{{LayoutName}}Msg >> LayoutMsg) (LayoutMsg.{{LayoutName}}Msg >> LayoutMsg) layoutCmd
     ] |> commandToCmd SharedMsg id
 
