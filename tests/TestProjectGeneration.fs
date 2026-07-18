@@ -14,8 +14,8 @@ open Xunit
 open Orsak
 open Ionide.ProjInfo
 
-let getFolder () =
-    Path.Combine(Environment.CurrentDirectory, "Proj_" + Guid.NewGuid().ToString().Replace("-", ""))
+let getFolder (projectName: string) =
+    Path.Combine(Environment.CurrentDirectory, projectName + "_" + Guid.NewGuid().ToString().Replace("-", ""))
 
 let leadingWhitespace (s: string) =
     let mutable i = 0
@@ -27,9 +27,9 @@ let leadingWhitespace (s: string) =
 
 let dotnetSdkVersion = DotnetSdkVersion(Version(10, 0, 103))
 
-let withEmptyProjectFolder (f: AbsoluteProjectDir -> Task<_>) : Task<unit> =
+let withEmptyProjectFolder (projectName: string) (f: AbsoluteProjectDir -> Task<_>) : Task<unit> =
     task {
-        let folder = getFolder ()
+        let folder = getFolder projectName
 
         try
             let absoluteProjectDir = AbsoluteProjectDir(FilePath.fromString folder)
@@ -39,8 +39,8 @@ let withEmptyProjectFolder (f: AbsoluteProjectDir -> Task<_>) : Task<unit> =
                 Directory.Delete(folder, true)
     }
 
-let withNewProject (f: AbsoluteProjectDir -> TemplateData -> Task<_>) : Task<unit> =
-    withEmptyProjectFolder (fun absoluteProjectDir ->
+let withNewProject (projectName: string) (f: AbsoluteProjectDir -> TemplateData -> Task<_>) : Task<unit> =
+    withEmptyProjectFolder projectName (fun absoluteProjectDir ->
         task {
             let nodeVersion = Version(20, 0, 0)
 

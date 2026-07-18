@@ -18,7 +18,7 @@ open TestProjectGeneration
 
 [<Fact>]
 let ``addPage creates page with correct indentation in preview and fsproj`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             // Run addPage with auto-accept = true to avoid user interaction
             let! result, logs =
@@ -112,7 +112,7 @@ let ``addPage creates page with correct indentation in preview and fsproj`` () =
 
 [<Fact>]
 let ``addLayout after addPage updates project file order and page layout reference`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             // Step 1: Add a page first
             let! addPageResult, addPageLogs =
@@ -179,7 +179,7 @@ let ``addLayout after addPage updates project file order and page layout referen
 
 [<Fact>]
 let ``nested layout with page uses correct layout message reference`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             // Step 1: Add nested layout first
             let! addLayoutResult, addLayoutLogs =
@@ -265,7 +265,7 @@ let ``nested layout with page uses correct layout message reference`` () =
 
 [<Fact>]
 let ``validate should report missing files and only check layout references for pages in project file`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             // Create an additional page file that is NOT in the project file
             // This page uses the main Layout.Msg which would normally be flagged as wrong
@@ -401,7 +401,7 @@ Compilation failed
 
 [<Fact>]
 let ``Wrong layout reference in page should generate helpful error message`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             // Step 1: Add an About page with its own layout
             let! addLayoutResult, addLayoutLogs =
@@ -463,7 +463,7 @@ Compilation failed"""
 
 [<Fact>]
 let ``Add layout and then page, page uses correct layout`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         eff {
             do! addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" AutoAccept
             do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" AutoAccept
@@ -475,7 +475,7 @@ let ``Add layout and then page, page uses correct layout`` () =
 
 [<Fact>]
 let ``Add nested layouts and then pages, page uses correct layout`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         eff {
             do! addLayout (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" AutoAccept
             do! addPage (AbsoluteProjectDir.asFilePath projectDir) projectDir "/About" AutoAccept
@@ -490,7 +490,7 @@ let ``Add nested layouts and then pages, page uses correct layout`` () =
 
 [<Fact>]
 let ``Sibling pages sharing a layout batch the layout command once and still type-check`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             let dir = AbsoluteProjectDir.asFilePath projectDir
 
@@ -524,7 +524,7 @@ let ``Sibling pages sharing a layout batch the layout command once and still typ
 
 [<Fact>]
 let ``Nested page with wrong layout reference should generate correct error message`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             // Step 1: Add About layout
             let! addLayoutResult, addLayoutLogs =
@@ -587,7 +587,7 @@ Compilation failed"""
 
 [<Fact>]
 let ``initFiles creates project files without CLI commands`` () =
-    withNewProject (fun absoluteProjectDir routeData ->
+    withNewProject "Proj" (fun absoluteProjectDir routeData ->
         task {
             let folder = AbsoluteProjectDir.asString absoluteProjectDir
 
@@ -662,7 +662,7 @@ let ``initFiles creates project files without CLI commands`` () =
 let ``Add page command with multiple URL parts, own layout and auto updating layout reference, updates correct layout reference in page``
     ()
     =
-    withNewProject (fun absoluteProjectDir _ ->
+    withNewProject "Proj" (fun absoluteProjectDir _ ->
         task {
             let folder = AbsoluteProjectDir.asString absoluteProjectDir
 
@@ -679,7 +679,7 @@ let ``Add page command with multiple URL parts, own layout and auto updating lay
 
 [<Fact>]
 let ``Ensure auto accept layout change write correct namespace`` () =
-    withNewProject (fun absoluteProjectDir _ ->
+    withNewProject "Proj" (fun absoluteProjectDir _ ->
         task {
             let folder = AbsoluteProjectDir.asString absoluteProjectDir
 
@@ -703,11 +703,15 @@ let ``Ensure auto accept layout change write correct namespace`` () =
 
 [<Fact>]
 let ``Init command creates a buildable project`` () =
-    withNewProject (fun projectDir _ -> expectProjectTypeChecks projectDir)
+    withNewProject "Proj" (fun projectDir _ -> expectProjectTypeChecks projectDir)
+
+[<Fact>]
+let ``Init command creates a buildable project when the project name contains a namespace`` () =
+    withNewProject "MyOrg.MyProject" (fun projectDir _ -> expectProjectTypeChecks projectDir)
 
 [<Fact>]
 let ``Init command with UserPromptBehaviour Accept, initializes project with route mode "hash"`` () =
-    withEmptyProjectFolder (fun absoluteProjectDir ->
+    withEmptyProjectFolder "Proj" (fun absoluteProjectDir ->
         task {
             let nodeVersion = Version(20, 0, 0)
 
@@ -731,7 +735,7 @@ let ``Init command with UserPromptBehaviour Accept, initializes project with rou
 
 [<Fact>]
 let ``Init command with UserPromptBehaviour Decline, initializes project with route mode "path"`` () =
-    withEmptyProjectFolder (fun absoluteProjectDir ->
+    withEmptyProjectFolder "Proj" (fun absoluteProjectDir ->
         task {
             let nodeVersion = Version(20, 0, 0)
 
@@ -755,7 +759,7 @@ let ``Init command with UserPromptBehaviour Decline, initializes project with ro
 
 [<Fact>]
 let ``Ensure orphan page files are reported as validation errors`` () =
-    withNewProject (fun absoluteProjectDir _ ->
+    withNewProject "Proj" (fun absoluteProjectDir _ ->
         task {
             let folder = AbsoluteProjectDir.asString absoluteProjectDir
 
@@ -776,7 +780,7 @@ let ``Ensure orphan page files are reported as validation errors`` () =
 
 [<Fact>]
 let ``upgradeFiles updates Directory.Packages.props versions and preserves user-added entries`` () =
-    withNewProject (fun absoluteProjectDir _ ->
+    withNewProject "Proj" (fun absoluteProjectDir _ ->
         task {
             let folder = AbsoluteProjectDir.asString absoluteProjectDir
             let propsPath = Path.Combine(folder, "Directory.Packages.props")
@@ -831,7 +835,7 @@ let ``upgradeFiles updates Directory.Packages.props versions and preserves user-
 
 [<Fact>]
 let ``upgradeFiles removes Feliz.Router PackageVersion from Directory.Packages.props`` () =
-    withNewProject (fun absoluteProjectDir _ ->
+    withNewProject "Proj" (fun absoluteProjectDir _ ->
         task {
             let folder = AbsoluteProjectDir.asString absoluteProjectDir
             let propsPath = Path.Combine(folder, "Directory.Packages.props")
@@ -869,7 +873,7 @@ let ``upgradeFiles removes Feliz.Router PackageVersion from Directory.Packages.p
 
 [<Fact>]
 let ``upgradeUserProjectFiles strips Feliz.Router PackageReference from user fsproj`` () =
-    withNewProject (fun absoluteProjectDir _ ->
+    withNewProject "Proj" (fun absoluteProjectDir _ ->
         task {
             let folder = AbsoluteProjectDir.asString absoluteProjectDir
             let projPath = Path.Combine(folder, "fsproj-with-router.fsproj")
@@ -895,7 +899,7 @@ let ``upgradeUserProjectFiles strips Feliz.Router PackageReference from user fsp
 
 [<Fact>]
 let ``upgradeFiles adds a managed package to Directory.Packages.props when missing`` () =
-    withNewProject (fun absoluteProjectDir _ ->
+    withNewProject "Proj" (fun absoluteProjectDir _ ->
         task {
             let folder = AbsoluteProjectDir.asString absoluteProjectDir
             let propsPath = Path.Combine(folder, "Directory.Packages.props")
@@ -930,7 +934,7 @@ let ``upgradeFiles adds a managed package to Directory.Packages.props when missi
 
 [<Fact>]
 let ``upgradeFiles updates package.json versions and preserves user-added dependencies`` () =
-    withNewProject (fun absoluteProjectDir _ ->
+    withNewProject "Proj" (fun absoluteProjectDir _ ->
         task {
             let folder = AbsoluteProjectDir.asString absoluteProjectDir
             let packageJsonPath = Path.Combine(folder, "package.json")
@@ -976,7 +980,7 @@ let ``upgradeFiles updates package.json versions and preserves user-added depend
 
 [<Fact>]
 let ``upgradeFiles updates dotnet-tools.json version while preserving user-added tools`` () =
-    withNewProject (fun absoluteProjectDir _ ->
+    withNewProject "Proj" (fun absoluteProjectDir _ ->
         task {
             let folder = AbsoluteProjectDir.asString absoluteProjectDir
             let configDir = Path.Combine(folder, ".config")
@@ -1035,7 +1039,7 @@ let ``upgradeFiles updates dotnet-tools.json version while preserving user-added
 
 [<Fact>]
 let ``upgrade fails with ElmishLandProjectMissing when no elmish-land.json files exist`` () =
-    withEmptyProjectFolder (fun absoluteProjectDir ->
+    withEmptyProjectFolder "Proj" (fun absoluteProjectDir ->
         task {
             Directory.CreateDirectory(AbsoluteProjectDir.asString absoluteProjectDir)
             |> ignore
