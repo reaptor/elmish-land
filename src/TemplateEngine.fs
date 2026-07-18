@@ -198,11 +198,20 @@ let getSortedLayoutFiles absoluteProjectDir =
                 |> Ok
     }
 
+// Each dot separated part is checked individually so that a namespaced name, such as
+// MyOrg.MyProject, becomes a real namespace instead of a single identifier containing a dot.
 let wrapWithTicksIfNeeded (s: string) =
-    if Regex.IsMatch(s, "^[0-9a-zA-Z_]+$") && not (Array.contains s reservedWords) then
-        s
-    else
-        $"``%s{s}``"
+    s
+    |> String.split "."
+    |> Array.map (fun part ->
+        if
+            Regex.IsMatch(part, "^[0-9a-zA-Z_]+$")
+            && not (Array.contains part reservedWords)
+        then
+            part
+        else
+            $"``%s{part}``")
+    |> String.concat "."
 
 let toPascalCase (s: string) = $"%s{s[0..0].ToUpper()}%s{s[1..]}"
 let toCamelCase (s: string) = $"%s{s[0..0].ToLower()}%s{s[1..]}"

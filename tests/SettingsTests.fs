@@ -29,7 +29,7 @@ type AppConfig() =
 
 [<Fact>]
 let ``Default renderMethod is written to App.fs`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             let workingDir = AbsoluteProjectDir.asString projectDir
 
@@ -47,7 +47,7 @@ let ``Default renderMethod is written to App.fs`` () =
 
 [<Fact>]
 let ``Changing renderMethod to batched writes it to App.fs`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             let workingDir = AbsoluteProjectDir.asString projectDir
 
@@ -72,7 +72,7 @@ let ``Changing renderMethod to batched writes it to App.fs`` () =
 
 [<Fact>]
 let ``Default routeMode is "hash"`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             let workingDir = AbsoluteProjectDir.asString projectDir
 
@@ -86,7 +86,7 @@ let ``Default routeMode is "hash"`` () =
 
 [<Fact>]
 let ``Missing routeMode uses "hash"`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             let workingDir = AbsoluteProjectDir.asString projectDir
 
@@ -103,7 +103,7 @@ let ``Missing routeMode uses "hash"`` () =
 
 [<Fact>]
 let ``Changing routeMode to "path" generates correct App.fs, Routes.fs and Command.fs`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             let workingDir = AbsoluteProjectDir.asString projectDir
 
@@ -120,7 +120,7 @@ let ``Changing routeMode to "path" generates correct App.fs, Routes.fs and Comma
 
 [<Fact>]
 let ``Default fable settings have server noCache false and build noCache true`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             let! result, logs = getSettings projectDir |> runEff
 
@@ -131,7 +131,7 @@ let ``Default fable settings have server noCache false and build noCache true`` 
 
 [<Fact>]
 let ``Custom fable settings are parsed from elmish-land.json`` () =
-    withNewProject (fun projectDir _ ->
+    withNewProject "Proj" (fun projectDir _ ->
         task {
             let workingDir = AbsoluteProjectDir.asString projectDir
             let filepath = Path.Combine(workingDir, "elmish-land.json")

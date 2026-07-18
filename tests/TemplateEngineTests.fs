@@ -355,8 +355,83 @@ let ``Ensure module names is wrapped in double ticks if project dir contains spe
     }
 
 [<Fact>]
+let ``Ensure each dot separated part of a name is wrapped in double ticks individually`` () =
+    // A project named MyOrg.MyProject must produce a real two part namespace, not a
+    // single identifier containing a dot.
+    wrapWithTicksIfNeeded "MyOrg.MyProject" |> Expects.equals "MyOrg.MyProject"
+    // Only the part that needs escaping is escaped.
+    wrapWithTicksIfNeeded "type.Api" |> Expects.equals "``type``.Api"
+    wrapWithTicksIfNeeded "My-Org.Project" |> Expects.equals "``My-Org``.Project"
+    // Names without dots are unaffected.
+    wrapWithTicksIfNeeded "TestProject" |> Expects.equals "TestProject"
+    wrapWithTicksIfNeeded "test-project" |> Expects.equals "``test-project``"
+
+[<Fact>]
+let ``Ensure module names are not wrapped in double ticks if project dir contains a namespace`` () =
+    let tempDir = Path.Combine(Path.GetTempPath(), "test_" + Guid.NewGuid().ToString())
+    let testProjectDir = Path.Combine(tempDir, "My.Test.Project")
+    let projectDir = FilePath.fromString testProjectDir
+    let absoluteProjectDir = AbsoluteProjectDir projectDir
+
+    task {
+        try
+            Directory.CreateDirectory(Path.Combine(testProjectDir, "src", "Pages"))
+            |> ignore
+
+            File.WriteAllText(Path.Combine(testProjectDir, "src", "Pages", "Page.fs"), "module Page")
+            File.WriteAllText(Path.Combine(testProjectDir, "src", "Pages", "Layout.fs"), "module Layout")
+            File.WriteAllText(Path.Combine(testProjectDir, "elmish-land.json"), "{}")
+
+            let! result, logs =
+                getTemplateData (ProjectName.fromAbsoluteProjectDir absoluteProjectDir) absoluteProjectDir
+                |> runEff
+
+            result
+            |> Expects.ok logs
+            |> Expects.equalsWLogs logs {
+                RenderFunction = "withReactSynchronous"
+                RenderTargetElementId = "app"
+                ViewModule = "Feliz"
+                ViewType = "ReactElement"
+                RootModule = "My.Test.Project"
+                ElmishLandAppProjectFullName = "ElmishLand.My.Test.Project.App"
+                Routes = [|
+                    {
+                        Name = "Home"
+                        RouteName = "HomeRoute"
+                        LayoutName = "Main"
+                        LayoutModuleName = "My.Test.Project.Pages.Layout"
+                        LayoutModulePath = ""
+                        MsgName = "HomeMsg"
+                        ModuleName = "My.Test.Project.Pages.Page"
+                        RecordDefinition = "unit"
+                        RecordConstructor = "()"
+                        RecordPattern = "()"
+                        UrlUsage = """ "" """.Trim()
+                        UrlPattern = "[ Query _ ]"
+                        IsMainLayout = true
+                        UrlPatternWhen = ""
+                    }
+                |]
+                Layouts = [|
+                    {
+                        Name = "Main"
+                        MsgName = "MainMsg"
+                        ModuleName = "My.Test.Project.Pages.Layout"
+                        ModulePath = ""
+                    }
+                |]
+                RouteParamModules = []
+                UseRouterPathMode = false
+            }
+        finally
+            if Directory.Exists(tempDir) then
+                Directory.Delete(tempDir, true)
+    }
+
+[<Fact>]
 let ``Ensure static routes takes precedence over dynamic routes`` () =
-    withNewProject (fun absoluteProjectDir _ ->
+    withNewProject "Proj" (fun absoluteProjectDir _ ->
         task {
             let folder = AbsoluteProjectDir.asString absoluteProjectDir
 

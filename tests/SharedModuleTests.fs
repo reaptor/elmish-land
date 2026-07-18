@@ -11,7 +11,7 @@ open TestProjectGeneration
 
 [<Fact>]
 let ``Init function in Shared can handle promises`` () =
-    withNewProject (fun absoluteProjectDir _ ->
+    withNewProject "Proj" (fun absoluteProjectDir _ ->
         task {
             let folder = AbsoluteProjectDir.asString absoluteProjectDir
 
