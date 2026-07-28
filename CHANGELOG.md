@@ -5,7 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2026-07-28
+- Includes everything from 2.0.0 beta
 
 ### Fixed
 - Projects whose name contains a namespace, e.g. `MyOrg.MyProject`, now build. Each dot separated part of the name is escaped individually, so the generated modules form a real namespace instead of a single identifier containing a dot, see https://github.com/reaptor/elmish-land/pull/42

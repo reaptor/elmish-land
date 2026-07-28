@@ -36,7 +36,7 @@ Fable 5 lands together with several aligned ecosystem upgrades:
 | `react` / `react-dom`                | 19                                                  |
 | `vite`                               | 8                                                   |
 
-`init` and `upgrade` resolves each major to the latest published patch at the moment you run it (see [Dynamic version resolution](#dynamic-version-resolution-during-init) below). The major bumps were upgraded together because they're all part of the same release wave. See the [migration guide](/docs/guides/migrating-from-v1-to-v2) for the complete list of files `upgrade` touches.
+`init` and `upgrade` resolves each major to the latest published patch at the moment you run it (see [Dynamic version resolution](#dynamic-version-resolution-during-init-and-upgrade) below). The major bumps were upgraded together because they're all part of the same release wave. See the [migration guide](/docs/guides/migrating-from-v1-to-v2) for the complete list of files `upgrade` touches.
 
 ### URL change handling moved to a subscription
 
@@ -68,7 +68,7 @@ If you wrote any code that assumed the view was rendered inside a `React.router`
 
 ## Breaking changes you may hit
 
-Most code edits land in Feliz 3 territory: a handful of APIs that used to do extra work behind the scenes now require an explicit second call. The patterns to watch for are `React.memo` (now paired with `React.memoRender`), `React.lazy'` (paired with `React.lazyRender`), the redesigned `React.context` API, hand-written bindings using `Interop.reactApi.createElement` (now `ReactLegacy.createElement`), several helpers that moved into the `FsReact` namespace, and built-in component values that are now PascalCase (`React.Fragment`, `React.Suspense`, …).
+Most code edits land in Feliz 3 territory: a handful of APIs that used to do extra work behind the scenes now require an explicit second call. The patterns to watch for are `React.memo` (now paired with `React.memoRenderer`), `React.lazy'` (paired with `React.lazyRender`), the redesigned `React.context` API, hand-written bindings using `Interop.reactApi.createElement` (now `ReactLegacy.createElement`), several helpers that moved into the `FsReact` namespace, and built-in component values that are now PascalCase (`React.Fragment`, `React.Suspense`, …).
 
 Fable 5, vite 8, and Fable.Elmish.HMR 9 also ship their own breaking changes — most notably the `FABLE_COMPILER_4` → `FABLE_COMPILER_5` rename, vite's switch from Rollup to Rolldown, and raised default browser targets.
 

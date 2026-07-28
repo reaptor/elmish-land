@@ -11,7 +11,7 @@ The `dotnet elmish-land upgrade` command does the mechanical work for you and pr
 
 :::warning Upgrade to .NET 10 before upgrading Elmish Land
 
-Elmish Land 2.0 requires the **.NET 10 SDK**. Move your existing project onto .NET 10 *first*, and only then run `dotnet elmish-land upgrade`. If you skip ahead and run `dotnet tool update elmish-land --prerelease` while .NET 10 isn't the active SDK (typically because your project's `global.json` pins an older version), the update fails with:
+Elmish Land 2.0 requires the **.NET 10 SDK**. Move your existing project onto .NET 10 *first*, and only then run `dotnet elmish-land upgrade`. If you skip ahead and run `dotnet tool update elmish-land` while .NET 10 isn't the active SDK (typically because your project's `global.json` pins an older version), the update fails with:
 
 ```
 Unhandled exception: Settings file 'DotnetToolSettings.xml' was not found in the package.
@@ -43,7 +43,7 @@ Before running the commands below:
    `dotnet elmish-land upgrade` does not edit your project files' target framework — it only regenerates the `.elmish-land/` projects. You need to flip this in your own `.fsproj` files by hand.
 4. Verify your project still compiles on .NET 10 by running `dotnet build` from the project root. Fix any SDK-related errors before continuing, so you have a clean baseline before introducing the elmish-land upgrade on top.
 
-Note: once the active SDK is .NET 10, the elmish-land 1.1 tool can no longer run `dotnet elmish-land build` or `dotnet elmish-land server` — those commands were built against the older Fable and SDK combination. Plan to run the steps above and then immediately continue with `dotnet tool update elmish-land --prerelease` and `dotnet elmish-land upgrade`; don't stop in the middle expecting the 1.1 commands to keep working.
+Note: once the active SDK is .NET 10, the elmish-land 1.1 tool can no longer run `dotnet elmish-land build` or `dotnet elmish-land server` — those commands were built against the older Fable and SDK combination. Plan to run the steps above and then immediately continue with `dotnet tool update elmish-land` and `dotnet elmish-land upgrade`; don't stop in the middle expecting the 1.1 commands to keep working.
 
 :::
 
@@ -51,7 +51,7 @@ Note: once the active SDK is .NET 10, the elmish-land 1.1 tool can no longer run
 
 ```bash
 # 1. Update the elmish-land tool to 2.x
-dotnet tool update elmish-land --prerelease
+dotnet tool update elmish-land
 
 # 2. From inside your project directory, run the upgrade command
 dotnet elmish-land upgrade
